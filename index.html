@@ -22,7 +22,12 @@ a{color:var(--navy-2)}
 .brand b{display:block;font-size:15px;color:var(--navy)}
 .brand span{font-size:12px;color:var(--muted)}
 .nav{padding:8px;overflow:auto;flex:1}
-.nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:12px 10px 4px}
+.nav .grp{display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;cursor:pointer;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:12px 10px 4px;text-align:left}
+.nav .grp:hover{color:var(--ink)}
+.nav .grp .chev{display:inline-block;width:10px;transition:transform .15s}
+.nav .grp.closed .chev{transform:rotate(-90deg)}
+.nav .grp.has-active{color:var(--navy);font-weight:600}
+.nav .grp .badge{margin-left:auto}
 .nav a{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--ink)}
 .nav a:hover{background:var(--bg)}
 .nav a.on{background:#e8edf6;color:var(--navy);font-weight:600}
@@ -263,7 +268,8 @@ function emptyState(){
 
 /* ---------------- app state ---------------- */
 let store = null, S = emptyState(), lastPush = null, saveErr = null, savedAt = null;
-let ui = {toast:null, importPreview:null, tab:{}, filters:{status:"All", problem:"All", type:"All"}};
+function loadCollapsed(){ try { return JSON.parse(localStorage.getItem("drm-collapsed") || "{}"); } catch(e){ return {}; } }
+let ui = {collapsed:loadCollapsed(), toast:null, importPreview:null, tab:{}, filters:{status:"All", problem:"All", type:"All"}};
 
 const sortById = a => a.sort((x, y) => String(x.id).localeCompare(String(y.id), undefined, {numeric:true}));
 function byId(list, id){ return list.find(r => r.id === id); }
@@ -605,6 +611,12 @@ window.addEventListener("hashchange", () => render());
 function shell(content){
   const m = metrics(); const r = route();
   const link = (h, label, badge) => `<a href="#/${h}" class="${r.page === h.split("/")[0] ? "on" : ""}"><span>${label}</span>${badge || ""}</a>`;
+  // Collapsible sidebar groups. A collapsed group still shows pending review count and highlights if it holds the current page.
+  const group = (key, title, items, pending) => {
+    const closed = !!ui.collapsed[key]; const active = items.some(([h]) => h === r.page);
+    return `<button class="grp ${closed ? "closed" : ""} ${closed && active ? "has-active" : ""}" data-act="toggleGroup" data-grp="${key}" aria-expanded="${!closed}"><span class="chev">▾</span>${esc(title)}${closed && pending ? `<span class="badge warn">${pending}</span>` : ""}</button>
+      ${closed ? "" : items.map(([h, l, b]) => link(h, l, b)).join("")}`;
+  };
   const demo = store.kind === "demo";
   return `${demo ? `<div class="banner"><b>Demo mode.</b> This is a fictional example and nothing is saved. <button class="btn link" data-act="leave">Open your own DRM folder</button></div>` : ""}
   <div class="app" style="${demo ? "height:calc(100vh - 37px)" : ""}">
@@ -612,19 +624,13 @@ function shell(content){
       <div class="brand"><b>Discovery Records</b><span>${esc(S.config.venture || "Untitled venture")}</span></div>
       <nav class="nav">
         ${link("home","Dashboard")}
-        <div class="grp">Level 1 · Problem</div>
-        ${link("interviews","Interviews", `<span class="chip gray">${S.interviews.length}</span>`)}
-        ${link("review","Review AI suggestions", m.candidates ? `<span class="badge warn">${m.candidates}</span>` : "")}
-        ${link("quotes","All quotes")}
-        ${link("problems","Problems")}
-        ${link("persona","Customer Persona")}
-        <div class="grp">Level 2 · Jobs</div>
-        ${link("jobs","Jobs")}
-        ${link("mvp","MVP Scope")}
-        <div class="grp">Help</div>
-        ${link("guide","Pain Scale & rubric")}
-        ${link("report","Coach report")}
-        ${link("settings","Settings")}
+        ${group("l1", "Level 1 · Problem", [
+          ["interviews","Interviews", `<span class="chip gray">${S.interviews.length}</span>`],
+          ["review","Review AI suggestions", m.candidates ? `<span class="badge warn">${m.candidates}</span>` : ""],
+          ["quotes","All quotes"], ["problems","Problems"], ["persona","Customer Persona"]
+        ], m.candidates)}
+        ${group("l2", "Level 2 · Jobs", [["jobs","Jobs"], ["mvp","MVP Scope"]])}
+        ${group("help", "Help", [["guide","Pain Scale & rubric"], ["report","Coach report"], ["settings","Settings"]])}
       </nav>
       <div class="sidefoot">${demo ? "Demo data" : `Folder: <b>${esc(store.name)}</b><br>${saveErr ? `<span style="color:var(--bad)">Save failed: ${esc(saveErr)}</span>` : savedAt ? "Saved " + ago(savedAt) : "All changes save automatically"}<br>${lastPush ? "Last push detected " + ago(lastPush) : "Push in GitHub Desktop before coach meetings"}`}</div>
     </aside>
@@ -1000,6 +1006,7 @@ document.addEventListener("click", async ev => {
   else if (a === "leave"){ store = null; S = emptyState(); ui.savedHandle = await idb.get("root").catch(() => null); location.hash = ""; render(); }
   else if (a === "undo"){ const u = ui.toast && ui.toast.undo; hideToast(); if (u) u(); render(); }
   else if (a === "newInterview"){ const id = nextId("INT-", S.interviews, 3); upsert("interviews", {id, date:today(), interviewee:"", role:"", source:"", interviewer:S.config.founder || "", recentInstance:"", leading:"", pitched:"", demoed:"", closing:"", rubricRun:false, notes:""}); ui.tab[id] = "quotes"; go("interviews/" + id); }
+  else if (a === "toggleGroup"){ const k = el.dataset.grp; ui.collapsed[k] = !ui.collapsed[k]; try { localStorage.setItem("drm-collapsed", JSON.stringify(ui.collapsed)); } catch(e){} render(); }
   else if (a === "tab"){ ui.tab[r.id] = el.dataset.tab; ui.editTranscript = false; render(); }
   else if (a === "seg"){ const iv = byId(S.interviews, r.id); upsert("interviews", {...iv, [el.dataset.field]: iv[el.dataset.field] === el.dataset.val ? "" : el.dataset.val}); render(); }
   else if (a === "editTranscript"){ ui.editTranscript = true; render(); }
