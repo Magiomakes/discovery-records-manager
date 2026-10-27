@@ -26,11 +26,11 @@ This folder is a founder's customer-discovery evidence ledger. The founder opens
 
 Before any interviews, the founder fills in the Week 1 toolkit: a **Leaner Canvas** (problems, a solution for each, every customer segment with the ideal one labelled 1, existing alternatives), a **value proposition** ("If we help [customer] solve [problem] with [approach], they will choose it over [competitors] because our solution is [differentiation]"), a **problem statement** ("When [context], it leads to [complication], which matters because [consequence]"), an **assumptions map** and a **leads list**.
 
-The canvas becomes sticky notes on the map. Each note has a `kind`: `problem`, `solution`, `customers`, `early-adopters`, `alternatives` or `other`. The founder drags it onto a 2×2: vertical axis **impact** (1 inconvenient … 5 catastrophic if wrong), horizontal axis **confidence** (1 likely wrong … 5 likely right). Top-left is riskiest and gets tested first. Priority = impact × (6 − confidence).
+The canvas becomes points on the map. Each point has a `kind`: `problem`, `solution`, `customers`, `early-adopters`, `alternatives`, `competition` or `other`. The founder drags it into a 2×2 grid: vertical axis **impact** (1 inconvenient … 5 catastrophic if wrong), horizontal axis **confidence** (1 likely wrong … 5 likely right). Top-left is riskiest and gets tested first. Priority = impact × (6 − confidence). The grid has edges: `pos` is `{"x":0..1,"y":0..1}` inside the grid (x = confidence, y = impact) or `null` when the point sits on the shelf, unrated.
 
-A note's **status** (Untested, Shaky, Holding up, Contradicted) is computed by the app from discovery evidence and never from a typed score: problem notes from confirmed pain scores on the linked problem; early-adopter and customer notes by comparing pain across interview segments; solution, alternatives and other notes from confirmed quotes the founder tags as for or against. Your job on the map is to place each note with your own impact and confidence, say exactly what evidence that rests on, and propose notes the founder missed.
+A point's **status** (Untested, Shaky, Holding up, Contradicted) is computed by the app from discovery evidence and never from a typed score: problem points from confirmed pain scores on the linked problem; early-adopter and customer points by comparing pain across interview segments; solution, alternatives, competition and other points from confirmed quotes the founder tags as for or against. Your job on the map is to rate each point with your own impact and confidence, say exactly what evidence that rests on, and propose points the founder missed. The app shows your rating on the opposite side of the page from the founder's, so never copy theirs.
 
-Focus areas for validation: **Problem** (problem notes; pain scores and the persona), **Solution** (solution notes; workaround quotes, jobs, MVP scope), **Customers and alternatives** (customers, early-adopters, alternatives, other).
+The app reads the evidence back as **Insights**, one page per focus area: **Problem** (problem points; pain per problem), **Customers** (customers and early-adopter points; which segment feels it most, where the interviews came from, the places you suggest to find more people, the persona), **Solution** (solution points; workaround and past-behavior quotes; jobs and MVP scope are parked here for later) and **Alternatives and competition** (alternatives, competition and other points).
 
 ## Folder layout
 
@@ -44,7 +44,8 @@ drm/
   transcripts/INT-001.md   the full transcript, read-only for you
   evidence/INT-001-Q01.json   one quote per file
   pain-scores/INT-001__PR-01.json   one per interview-problem pair
-  jobs/JB-01.json      Level 2 jobs to be done
+  jobs/JB-01.json      jobs to be done (kept for later)
+  places/PL-01.json    where to find people to interview, one place per file
   persona.json         the founder's persona draft (read-only for you)
   notes/2026-10-27-review-INT-001.md   your written reviews (Markdown)
 ```
@@ -78,7 +79,7 @@ Assumption `drm/assumptions/A-01.json`
  "aiImpact":5,"aiConfidence":2,"aiEvidence":["INT-001-Q01","INT-001-Q02"],"aiReason":"Everything rests on this. Two confirmed quotes from one treasurer show real cost and a kept workaround; one person is not a pattern.",
  "evidence":[{"id":"INT-001-Q03","stance":"supports"}],"note":"","status":"Active","foundBy":"Founder"}
 ```
-`kind` is one of `problem`, `solution`, `customers`, `early-adopters`, `alternatives`, `other`. The founder owns `impact`, `confidence`, `pos`, `text`, `evidence`, `note` and `status`: never change them. You own `aiImpact` (1 to 5, catastrophic if wrong = 5), `aiConfidence` (1 likely wrong … 5 likely right), `aiEvidence` (the evidence IDs you actually relied on; `[]` if none) and `aiReason` (one or two sentences). To propose a new assumption, write a file with `"status":"Candidate"`, `"pos":null`, `"impact":""`, `"confidence":""` and `"foundBy"` set to your tool name; the founder accepts or dismisses it. Interviews carry a `customerId` (a segment from compass.json) so pain can be compared across segments; if it's empty, say so in your note rather than guessing.
+`kind` is one of `problem`, `solution`, `customers`, `early-adopters`, `alternatives`, `competition`, `other`. The founder owns `impact`, `confidence`, `pos`, `text`, `evidence`, `note` and `status`: never change them. You own `aiImpact` (1 to 5, catastrophic if wrong = 5), `aiConfidence` (1 likely wrong … 5 likely right), `aiEvidence` (the evidence IDs you actually relied on; `[]` if none) and `aiReason` (one or two sentences). To propose a new assumption, write a file with `"status":"Candidate"`, `"pos":null`, `"impact":""`, `"confidence":""` and `"foundBy"` set to your tool name; the founder accepts or dismisses it. Interviews carry a `customerId` (a segment from compass.json) so pain can be compared across segments; if it's empty, say so in your note rather than guessing.
 
 Problem `drm/problems/PR-02.json`
 ```json
@@ -92,6 +93,13 @@ Job `drm/jobs/JB-01.json`
  "type":"Functional","problemId":"PR-01","workaround":"","moment":"","frequency":"Weekly","consequence":4,"decision":"Undecided","why":""}
 ```
 `type`: Functional, Emotional or Social. `frequency`: Daily, Weekly, Monthly, A few times a year, Rarely. `consequence`: 5 (serious loss) to 1 (barely matters). Leave `decision` as `Undecided`; the founder chooses.
+
+Place `drm/places/PL-01.json` (where to find people to interview)
+```json
+{"id":"PL-01","name":"Student union club-executive training","kind":"Event or meetup","url":"","how":"Ask the student union for the treasurer-training date and go.","who":"Student club treasurers","customerId":"C-01",
+ "why":"Treasurer A learned the job at this training and still uses the sheet she built after it.","evidenceIds":["INT-001-Q02"],"verified":"","foundBy":"Claude Code","status":"Candidate","note":""}
+```
+`kind` is one of: `LinkedIn search`, `Online community`, `Event or meetup`, `Organisation or club`, `Referral`, `Other`. `why` names the interview or quote the place rests on, and `evidenceIds` lists those quotes; with none, write `"evidenceIds":[]` and say in `why` that it's a guess from the segment description: the app stamps it as a guess. `url` only if you actually opened it. `verified` is what you saw there (member count, how active, date you looked); leave it `""` if you couldn't check. `customerId` is a segment from compass.json.
 
 ## The Pain Scale (score each interview-problem pair, by behavior)
 
@@ -126,8 +134,14 @@ Pass 1, extract. Pass 2, verify: for every evidence file you wrote, search the t
 1. Decide `aiImpact` (how much of the idea breaks if this is wrong; 5 = the whole thing) and `aiConfidence` (how likely it is to be right **given the confirmed evidence in this folder**, not general knowledge; with no evidence, confidence should sit at 1 or 2).
 2. List in `aiEvidence` the confirmed quote IDs you relied on. If none, write `[]`. Never list a quote you didn't read.
 3. Write `aiReason`: one or two plain sentences. Start with the evidence ("Two confirmed quotes show…" or "No evidence yet; this rests on…"), then your reasoning. Where your rating differs from the founder's by 2 or more, say what you'd want to see to close the gap.
-4. Propose missing assumptions as Candidate files: a buyer who isn't the user, a channel, a switching cost, a regulatory or timing dependency. Keep it to three at most.
+4. Propose missing assumptions as Candidate files: a buyer who isn't the user, a channel, a switching cost, a competitor who could copy it, a regulatory or timing dependency. Keep it to three at most.
 5. Write `drm/notes/YYYY-MM-DD-assumptions.md`: the riskiest untested assumption, why, and the two interview questions that would test it. Then run `node tools/check.js`.
+
+**Find where to interview next** (the Customers insight): the founder wants a list of places to find more of the right people, built from what the interviews have already shown, not from generic advice.
+1. Read `drm/compass.json` (the ideal customer and the other segments), every interview file (`source`, `role`, `customerId`, `notes`), every transcript and the confirmed evidence. In the transcripts, look for where these people gather and what they already use: communities, group chats, tools, events, training, job titles, who referred them, who they said to talk to.
+2. If your tool can browse the web, do a directed search for each segment: LinkedIn job-title searches, subreddits, Discord and Slack communities, Facebook groups, meetups, campus organisations, conferences, newsletters. List a place only if you actually opened it, and write what you saw in `verified`. If you can't browse, leave `verified` as `""` and write the exact search to run in `how`.
+3. Write up to eight `drm/places/PL-xx.json` files with `"status":"Candidate"`, numbered after the last existing one. Each `why` must name the interview or quote it rests on, with the IDs in `evidenceIds`; a place with no quote behind it says so in `why`. Never invent a URL, a member count or a quote. Don't duplicate a place that already has a file; update your own Candidate files instead.
+4. Write `drm/notes/YYYY-MM-DD-where-to-look.md`: the three best places and why, which segment they reach, and the one-line opener to use there, built from the problem statement ("Have you experienced [context] / [complication]?"). Then run `node tools/check.js`.
 
 **Audit the persona**: read `drm/persona.json` and the confirmed evidence. For each line, say whether the linked quotes actually support it, which lines are guesses, and which confirmed quotes they could cite. Write the result to `drm/notes/`. Don't edit persona.json.
 

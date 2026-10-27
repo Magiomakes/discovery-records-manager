@@ -1,0 +1,1 @@
+Run the 'Find where to interview next' task in CLAUDE.md: read the compass, every interview and transcript, search for where the ideal segment gathers, write Candidate files in drm/places/ that each say which quote they rest on (or that they are a guess), write the note to drm/notes/, then run node tools/check.js and paste its last line.

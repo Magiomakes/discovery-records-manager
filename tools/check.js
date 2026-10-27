@@ -5,15 +5,17 @@
 const fs = require("fs"), path = require("path");
 const root = path.resolve(__dirname, "..", "drm");
 const read = d => { const dir = path.join(root, d); if (!fs.existsSync(dir)) return []; return fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => { try { return {file: d + "/" + f, ...JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"))}; } catch (e) { return {file: d + "/" + f, _unreadable: e.message}; } }); };
-const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs");
+const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs"), places = read("places");
 const transcripts = {}; const tdir = path.join(root, "transcripts"); if (fs.existsSync(tdir)) for (const f of fs.readdirSync(tdir)) if (f.endsWith(".md")) transcripts[f.slice(0, -3)] = fs.readFileSync(path.join(tdir, f), "utf8");
 const TYPES = ["Past behavior, irreversible","Past behavior, reversible","Current workaround","Frequency","Cost (time or money)","Strong language","Opinion or future intent"];
 const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent","Not a Problem"];
+const KINDS = ["problem","solution","customers","early-adopters","alternatives","competition","other"];
+const PLACE_KINDS = ["LinkedIn search","Online community","Event or meetup","Organisation or club","Referral","Other"];
 const out = []; const bad = (w, m) => out.push(["PROBLEM", w, m]); const warn = (w, m) => out.push(["warning", w, m]); const note = (w, m) => out.push(["note", w, m]);
 function quoteRegex(q){ const t = String(q||"").trim().replace(/^["“”']+|["“”']+$/g, "").trim(); if (t.length < 4) return null; const body = t.split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/['’‘]/g, "['’‘]").replace(/["“”]/g, '["“”]')).join("\\s+"); try { return new RegExp(body, "i"); } catch (e) { return null; } }
 const byId = (list, id) => list.find(r => r.id === id);
-for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs]) { if (r._unreadable) bad(r.file, "Not valid JSON: " + r._unreadable); else if (!r.id) bad(r.file, "Missing id"); else if (r.file.split("/")[1] !== r.id + ".json") warn(r.file, `File name doesn't match id ${r.id}`); }
-const seen = new Set(); for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs]) { if (!r.id) continue; if (seen.has(r.id)) bad(r.file, "Duplicate id " + r.id); seen.add(r.id); }
+for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places]) { if (r._unreadable) bad(r.file, "Not valid JSON: " + r._unreadable); else if (!r.id) bad(r.file, "Missing id"); else if (r.file.split("/")[1] !== r.id + ".json") warn(r.file, `File name doesn't match id ${r.id}`); }
+const seen = new Set(); for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places]) { if (!r.id) continue; if (seen.has(r.id)) bad(r.file, "Duplicate id " + r.id); seen.add(r.id); }
 for (const e of evidence) {
   if (e._unreadable || !e.id) continue;
   if (!["Candidate","Confirmed","Rejected"].includes(e.status)) bad(e.file, `Bad status "${e.status}"`);
@@ -43,6 +45,8 @@ for (const a of assumptions) {
   if (a._unreadable || !a.id) continue;
   if (!["Candidate","Active","Retired"].includes(a.status)) bad(a.file, `Bad status "${a.status}"`);
   if (a.status === "Retired") continue;
+  if (!KINDS.includes(a.kind)) warn(a.file, `kind "${a.kind}" isn't one of ${KINDS.join(", ")}`);
+  if (a.pos !== null && a.pos !== undefined && !(typeof a.pos === "object" && a.pos.x >= 0 && a.pos.x <= 1 && a.pos.y >= 0 && a.pos.y <= 1)) warn(a.file, "pos must be null or {x: 0..1, y: 0..1} inside the grid");
   const rated = a.aiImpact || a.aiConfidence || a.aiReason;
   if (rated) {
     const ids = (a.aiEvidence || []).filter(Boolean);
@@ -52,8 +56,20 @@ for (const a of assumptions) {
     if (!a.aiReason) warn(a.file, "AI rating has no aiReason");
   }
 }
+for (const p of places) {
+  if (p._unreadable || !p.id) continue;
+  if (!["Candidate","Confirmed","Rejected"].includes(p.status)) bad(p.file, `Bad status "${p.status}"`);
+  if (p.status === "Rejected") continue;
+  if (!p.name) bad(p.file, "Place has no name");
+  if (!PLACE_KINDS.includes(p.kind)) warn(p.file, `kind "${p.kind}" isn't one of ${PLACE_KINDS.join(", ")}`);
+  const ids = (p.evidenceIds || []).filter(Boolean); const missing = ids.filter(id => !byId(evidence, id));
+  if (missing.length) bad(p.file, "evidenceIds cites quotes that don't exist: " + missing.join(", "));
+  if (!ids.length) note(p.file, "Place lists no quote behind it. Allowed, but `why` must say it's a guess; the app stamps it as one.");
+  if (!p.why) warn(p.file, "Place has no `why`: say which interview or quote it rests on, or that it's a guess.");
+  if (p.url && !/^https?:\/\//.test(p.url)) warn(p.file, "url should be a full http(s) address you actually opened, or empty");
+}
 for (const iv of interviews) { if (iv._unreadable || !iv.id) continue; if (!transcripts[iv.id]) warn(iv.file, "No transcript saved"); if (iv.rubricRun && !["Yes","No"].includes(iv.recentInstance)) warn(iv.file, "Reviewed but recentInstance isn't Yes or No"); }
 const counts = {PROBLEM:0, warning:0, note:0}; for (const [s] of out) counts[s]++;
 for (const [s, w, m] of out.sort((x, y) => ["PROBLEM","warning","note"].indexOf(x[0]) - ["PROBLEM","warning","note"].indexOf(y[0]))) console.log(`${s.padEnd(8)} ${w}: ${m}`);
-console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions.`);
+console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions, ${places.length} places.`);
 process.exit(counts.PROBLEM ? 1 : 0);

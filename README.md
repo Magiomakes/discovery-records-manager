@@ -6,9 +6,9 @@ A free, private evidence log for customer discovery. Founders record what custom
 
 ## What's in it
 
-- **Compass:** the Ideas Lab Week 1 toolkit as living documents: Leaner Canvas, Value Proposition, Problem Statement, Assumptions Map (drag sticky notes onto a 2×2), Leads List.
+- **Compass:** the Ideas Lab Week 1 toolkit as living documents: Leaner Canvas, Value Proposition, Problem Statement, Assumptions Map (a bounded canvas of points: drag each one into the 2×2 to rate it), Leads List.
 - **Evidence:** interviews with transcripts, a review queue for AI-suggested quotes and pain scores, every quote checked word for word.
-- **Validate:** each assumption's status read from the evidence, by focus area (Problem, Solution, Customers and alternatives).
+- **Insights:** each assumption's status read from the evidence, by focus area (Problem, Customers, Solution, Alternatives and competition), plus where to find the next people to interview.
 - **AI guardrails:** ratings must cite the quotes they rest on or they're stamped as guesses; pain tiers are checked against the quotes they cite; `tools/check.js` runs the same checks for the AI after every task.
 
 ## How it works

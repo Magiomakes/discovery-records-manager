@@ -62,10 +62,10 @@ It's the Week 1 toolkit, as working documents you keep editing all program. Clic
 
 1. **01 Leaner Canvas:** your top 1 to 3 problems, a possible solution for each, every possible customer with your ideal customer labelled 1, and how the problems are solved today.
 2. **02 Value Proposition** and **03 Problem Statement:** fill in the blanks. The sheet shows the finished sentence and the first discovery question it gives you.
-3. **04 Assumptions Map:** make sticky notes from your canvas and drag them onto the map. Up means catastrophic if wrong; left means likely wrong. Top-left gets tested first. Ask your AI to **Rank the riskiest assumptions**: it shows where it would put each note and what evidence that rests on. A note it rates with no evidence is stamped as a guess.
+3. **04 Assumptions Map:** make points from your canvas and drag each one into the grid. Up means catastrophic if wrong; left means likely wrong. Top-left gets tested first; the grid's edge is as far as a point can go. Click a point: your rating sits on the left of the page, your AI's on the right, and what the evidence says in between. Ask your AI to **Rank the riskiest assumptions**: it places its own dashed point next to yours and says what evidence that rests on. A point it rates with no evidence is stamped as a guess.
 4. **05 Leads List:** who you could talk to. Log an interview straight from a row.
 
-From then on, every interview updates the map. A note's status (No evidence yet, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score anyone types. **Validate** shows the picture by focus area: Problem, Solution, Customers and alternatives.
+From then on, every interview updates the map. A note's status (No evidence yet, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score anyone types. **Insights** shows the picture by focus area: Problem, Customers, Solution, Alternatives and competition.
 
 ## Connect your AI
 
