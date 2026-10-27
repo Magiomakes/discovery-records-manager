@@ -47,13 +47,18 @@ Skip this if you already have one.
 1. In **Chrome or Edge**, go to **[magiomakes.github.io/discovery-records-manager](https://magiomakes.github.io/discovery-records-manager/)**. Bookmark it.
 2. Click **Open my DRM folder** and choose the `my-drm` folder from Step 4. Pick the folder itself, not a file inside it.
 3. When the browser asks whether the site can edit files, click **Edit files** (or **Allow**).
-4. Type your name, your idea and your coach's name, then click **Create my DRM**.
+4. Type your name, your idea and your coach's name.
+5. Write down **the problem you believe exists**, the way a customer would say it (not your solution). It's a guess for now, and your interviews will test it. Then click **Create my DRM**.
 
 Done. Next time, open the bookmark and click **Reopen**.
 
 > Want to look around first? Click **Try the demo with example data** on the welcome screen. Nothing is saved.
 
 ---
+
+## Start with your problems
+
+Discovery starts with a guess about a problem, not an idea for a product. Add each problem you believe exists under **Problems**. The dashboard shows how many confirmed interviews each one has and how many it still needs.
 
 ## After every interview
 
@@ -62,7 +67,7 @@ Done. Next time, open the bookmark and click **Reopen**.
 3. Paste it into any AI chat (Claude, ChatGPT or another) and send it.
 4. Copy the AI's **whole** reply. Back in the DRM, open **Paste rubric results**, paste it and click **Check it**.
 5. Read the preview. Anything marked **not in transcript** means the AI changed the customer's words. Then click **Import as candidates**.
-6. Go to **Review AI suggestions**. Confirm ✓ what's real and in their own words. Reject ✕ the rest. **Only confirmed items count anywhere.**
+6. Go to **Review AI suggestions**. Click **View in transcript** to see each quote in context. Confirm ✓ what's real and in their own words. Reject ✕ the rest. **Only confirmed items count anywhere.**
 
 The two rules: **quotes, not summaries** and **behavior, not interpretation.**
 

@@ -120,6 +120,13 @@ pre.prompt{white-space:pre-wrap;background:#f8f9fb;border:1px solid var(--line);
 .md h1{font-size:20px}.md h2{font-size:16px;margin-top:20px}.md table{margin:8px 0 14px}.md td,.md th{border:1px solid var(--line)}
 .md blockquote{border-left:3px solid var(--line);margin:6px 0;padding:2px 10px;color:#333}
 .small{font-size:12px}
+.scrim{position:fixed;inset:0;background:rgba(20,30,50,.18);z-index:39}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,96vw);background:#fff;border-left:1px solid var(--line);box-shadow:-8px 0 30px rgba(0,0,0,.14);display:flex;flex-direction:column;z-index:40}
+.drawer .dh{padding:14px 18px;border-bottom:1px solid var(--line)}
+.drawer .db{overflow:auto;padding:16px 18px;flex:1}
+.drawer .transcript{max-height:none}
+mark.focus-mark,mark.focus{outline:2px solid var(--navy);outline-offset:1px}
+.near{background:#e6edf9;border-radius:3px;outline:2px dashed #8ea6d4;outline-offset:1px}
 .right{text-align:right}
 </style>
 </head>
@@ -269,7 +276,7 @@ function emptyState(){
 /* ---------------- app state ---------------- */
 let store = null, S = emptyState(), lastPush = null, saveErr = null, savedAt = null;
 function loadCollapsed(){ try { return JSON.parse(localStorage.getItem("drm-collapsed") || "{}"); } catch(e){ return {}; } }
-let ui = {collapsed:loadCollapsed(), toast:null, importPreview:null, tab:{}, filters:{status:"All", problem:"All", type:"All"}};
+let ui = {collapsed:loadCollapsed(), drafts:{transcript:{}, rubric:{}}, toast:null, importPreview:null, tab:{}, filters:{status:"All", problem:"All", type:"All"}};
 
 const sortById = a => a.sort((x, y) => String(x.id).localeCompare(String(y.id), undefined, {numeric:true}));
 function byId(list, id){ return list.find(r => r.id === id); }
@@ -606,7 +613,8 @@ function demoState(){
 /* ---------------- routing + rendering ---------------- */
 function route(){ const h = location.hash.replace(/^#\/?/, "") || "home"; const [page, id] = h.split("/"); return {page, id: id ? decodeURIComponent(id) : null}; }
 function go(h){ location.hash = "#/" + h; }
-window.addEventListener("hashchange", () => render());
+window.addEventListener("hashchange", () => { ui.drawer = null; render(); });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && ui.drawer){ ui.drawer = null; render(); } });
 
 function shell(content){
   const m = metrics(); const r = route();
@@ -625,9 +633,10 @@ function shell(content){
       <nav class="nav">
         ${link("home","Dashboard")}
         ${group("l1", "Level 1 · Problem", [
+          ["problems","Problems", `<span class="chip gray">${S.problems.length}</span>`],
           ["interviews","Interviews", `<span class="chip gray">${S.interviews.length}</span>`],
           ["review","Review AI suggestions", m.candidates ? `<span class="badge warn">${m.candidates}</span>` : ""],
-          ["quotes","All quotes"], ["problems","Problems"], ["persona","Customer Persona"]
+          ["quotes","All quotes"], ["persona","Customer Persona"]
         ], m.candidates)}
         ${group("l2", "Level 2 · Jobs", [["jobs","Jobs"], ["mvp","MVP Scope"]])}
         ${group("help", "Help", [["guide","Pain Scale & rubric"], ["report","Coach report"], ["settings","Settings"]])}
@@ -646,9 +655,10 @@ function render(){
   const r = route();
   const views = {home:dashView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : problemsView, persona:personaView, jobs:jobsView, mvp:mvpView, guide:guideView, report:reportView, settings:settingsView};
   const scrollEl = document.querySelector(".main"); const keep = scrollEl && root.dataset.page === location.hash ? scrollEl.scrollTop : 0;
-  root.innerHTML = shell((views[r.page] || dashView)(r.id));
+  root.innerHTML = shell((views[r.page] || dashView)(r.id)) + (ui.drawer ? drawerView() : "");
   root.dataset.page = location.hash;
   const m2 = document.querySelector(".main"); if (m2) m2.scrollTop = keep;
+  if (ui.drawer && ui.drawerScroll){ const f = document.querySelector(".drawer .focus-mark, .drawer .near"); if (f) f.scrollIntoView({block:"center"}); ui.drawerScroll = false; }
 }
 
 /* ---------------- views ---------------- */
@@ -678,6 +688,10 @@ function setupView(){
       <label class="f">Your name<input type="text" name="founder" required></label>
       <label class="f">Your venture or idea, in a few words<input type="text" name="venture" required></label>
       <label class="f">Your coach's name (optional)<input type="text" name="coach"></label>
+      <h3 style="margin-top:18px">The problem you believe exists</h3>
+      <p class="hint" style="margin-top:-4px">It's a guess for now. Your interviews will test it. Write it the way a customer would say it, not as your solution.</p>
+      <label class="f">Problem<input type="text" name="problem" required placeholder="e.g. Chasing club members for receipts before reimbursing them"></label>
+      <label class="f">Who has it<input type="text" name="who" placeholder="e.g. Student club treasurers"></label>
       <div class="row"><button class="btn pri" type="submit">Create my DRM</button><button class="btn" type="button" data-act="leave">Cancel</button></div>
     </form></div></div>`;
 }
@@ -699,7 +713,9 @@ function dashView(){
   const wedge = S.jobs.filter(j => j.decision === "Wedge");
   return `<h1>Dashboard</h1><p class="sub">${esc(S.config.founder || "")}${S.config.coach ? " · Coach: " + esc(S.config.coach) : ""}</p>
   <div class="next spread"><div><b>Next step:</b> ${esc(msg)}</div><a class="btn pri sm" href="#/${h}">${esc(btn)}</a></div>
-  <h2>Interviews</h2>
+  <div class="spread"><h2>Your problems</h2><a href="#/problems" class="small">Manage problems</a></div>
+  ${S.problems.length ? sortById([...S.problems]).map(p => problemProgress(p)).join("") : `<div class="card empty">Start by writing down the problem you think exists. <a href="#/problems">Add a problem</a></div>`}
+  <h2 style="margin-top:6px">Interviews</h2>
   <div class="grid g4" style="margin-bottom:16px">
     ${W("", m.n, "Interviews logged")}
     ${W(m.ffShare > 0.3 ? "warn" : "", Math.round(m.ffShare*100) + "%", "From friends or family", "Friends are polite. Aim for strangers.")}
@@ -717,10 +733,17 @@ function dashView(){
     ${tot ? `<div class="bar">${TIERS.map(t => m.tierCounts[t] ? `<div class="${TIER_CLASS[t]}" style="width:${m.tierCounts[t]/tot*100}%" title="${esc(t)}">${m.tierCounts[t]}</div>` : "").join("")}</div>
     <div class="row small" style="margin-top:8px">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${m.tierCounts[t]}</span>`).join("")}</div>` : `<p class="empty">No confirmed pain scores yet.</p>`}
   </div>
-  <div class="grid g2">
-    <div class="card"><h3>Problems</h3>${S.problems.length ? `<table>${sortById([...S.problems]).map(p => { const s = problemStats(p); return `<tr class="click" data-href="problems/${esc(p.id)}"><td>${esc(p.text)}</td><td class="right">${signalChip(s.signal)}</td></tr>`; }).join("")}</table>` : `<p class="empty">None yet.</p>`}</div>
+  <div>
     <div class="card"><h3>Wedge job</h3>${wedge.length === 1 ? `<p>${esc(wedge[0].statement)}</p>` : wedge.length > 1 ? `<p class="chip warn">More than one job is marked Wedge.</p>` : `<p class="empty">Not chosen yet. That's a Level 2 decision.</p>`}<a href="#/mvp" class="small">Open MVP Scope</a></div>
   </div>`;
+}
+function problemProgress(p){
+  const s = problemStats(p); const minN = Number(S.config.minInterviews ?? 5);
+  const pct = Math.min(100, s.n / minN * 100); const left = Math.max(0, minN - s.n);
+  return `<div class="card"><div class="spread"><div style="flex:1;min-width:240px"><a href="#/problems/${esc(p.id)}" style="text-decoration:none;color:inherit"><b>${esc(p.text)}</b></a><div class="hint">${esc(p.id)}${p.who ? " · " + esc(p.who) : ""}</div></div>
+    <div class="row">${signalChip(s.signal)}<button class="btn sm" data-act="newInterview">+ Log an interview</button></div></div>
+    <div style="margin-top:10px"><div class="bar" style="height:10px"><div style="width:${pct}%;background:${s.signal === "Strong signal" ? "#9bd0ad" : "#b9c8e6"}"></div></div>
+    <div class="row small" style="margin-top:6px"><span>${s.n} of ${minN} confirmed interviews${left ? `, ${left} to go` : ""}</span>${TIERS.filter(t => s.counts[t]).map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}<span class="hint">${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}</span></div></div></div>`;
 }
 function signalChip(s){ return `<span class="chip ${s === "Strong signal" ? "ok" : s === "Weak signal" ? "bad" : "gray"}">${esc(s)}</span>`; }
 
@@ -769,11 +792,11 @@ function interviewView(id){
   } else if (tab === "quotes"){
     body = `<div class="split"><div class="card"><div class="spread"><h3>Transcript</h3>${transcript ? `<button class="btn sm" data-act="editTranscript">Edit</button>` : ""}</div>
       ${transcript && !ui.editTranscript ? `<div class="transcript">${highlight(transcript, quotes)}</div><p class="hint">Highlights: <mark class="s-Confirmed">confirmed</mark> <mark class="s-Candidate">waiting for review</mark>. Click one to jump to its card.</p>`
-      : `<p class="hint">Paste the full transcript. It stays in your repo as a plain text file.</p><textarea id="transcriptBox" style="width:100%;min-height:340px" placeholder="Paste the transcript here">${esc(transcript)}</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-act="saveTranscript">Save transcript</button></div>`}
+      : `<p class="hint">Paste the full transcript. It stays in your repo as a plain text file.</p><textarea id="transcriptBox" data-iv="${esc(id)}" style="width:100%;min-height:340px" placeholder="Paste the transcript here">${esc(ui.drafts.transcript[id] ?? transcript)}</textarea><div class="row" style="margin-top:8px"><button class="btn pri" data-act="saveTranscript">Save transcript</button></div>`}
       </div><div>
       <div class="spread" style="margin-bottom:8px"><h3 style="margin:0">Quotes from this interview</h3><button class="btn sm" data-act="addQuote">+ Add a quote</button></div>
       ${ui.addQuote === id ? addQuoteForm(iv) : ""}
-      ${quotes.length ? sortById(quotes).map(e => quoteCard(e, transcript)).join("") : `<div class="card empty">No quotes yet. Copy the rubric prompt, run it in any AI chat, then paste the results.</div>`}
+      ${quotes.length ? sortById(quotes).map(e => quoteCard(e, transcript, {inInterview:true})).join("") : `<div class="card empty">No quotes yet. Copy the rubric prompt, run it in any AI chat, then paste the results.</div>`}
       </div></div>`;
   } else if (tab === "paste"){
     body = pasteView(iv);
@@ -785,13 +808,41 @@ function interviewView(id){
   return header + body;
 }
 
-function highlight(text, quotes){
+function highlight(text, quotes, focusId, near){
   const ranges = [];
-  for (const e of quotes){ if (e.status === "Rejected") continue; const r = findInTranscript(e.quote, text); if (r) ranges.push({...r, e}); }
+  for (const e of quotes){ if (e.status === "Rejected" && e.id !== focusId) continue; const r = findInTranscript(e.quote, text); if (r) ranges.push({...r, e}); }
+  if (near) ranges.push(near);
   ranges.sort((a, b) => a.start - b.start);
   let out = "", pos = 0;
-  for (const r of ranges){ if (r.start < pos) continue; out += esc(text.slice(pos, r.start)) + `<mark class="s-${r.e.status}" data-act="jump" data-id="${esc(r.e.id)}" id="m-${esc(r.e.id)}">${esc(text.slice(r.start, r.end))}</mark>`; pos = r.end; }
+  for (const r of ranges){
+    if (r.start < pos) continue;
+    const inner = esc(text.slice(r.start, r.end));
+    out += esc(text.slice(pos, r.start)) + (r.e ? `<mark class="s-${r.e.status}${r.e.id === focusId ? " focus-mark" : ""}" data-act="jump" data-id="${esc(r.e.id)}" id="m-${esc(r.e.id)}">${inner}</mark>` : `<span class="near" title="Around where the AI said this quote is">${inner}</span>`);
+    pos = r.end;
+  }
   return out + esc(text.slice(pos));
+}
+// When the exact words aren't in the transcript, point at the line the AI cited (its timestamp or opening words).
+function nearRange(e, text){
+  const w = String(e.where || "").trim(); if (w.length < 3 || !text) return null;
+  const i = text.toLowerCase().indexOf(w.toLowerCase()); if (i < 0) return null;
+  const start = text.lastIndexOf("\n", i) + 1; let end = text.indexOf("\n", i); if (end < 0) end = text.length;
+  return {start, end};
+}
+function drawerView(){
+  const e = byId(S.evidence, ui.drawer); if (!e) return "";
+  const iv = byId(S.interviews, e.interviewId) || {id:e.interviewId}; const text = S.transcripts[e.interviewId] || "";
+  const found = !!findInTranscript(e.quote, text); const near = found ? null : nearRange(e, text);
+  const queue = S.evidence.filter(x => x.status === "Candidate").sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric:true}));
+  const next = queue.find(x => x.id !== e.id && x.id.localeCompare(e.id, undefined, {numeric:true}) > 0) || queue.find(x => x.id !== e.id);
+  return `<div class="scrim" data-act="closeDrawer"></div><aside class="drawer" role="dialog" aria-label="Transcript">
+    <div class="dh"><div class="spread"><div><b>${esc(iv.id)}</b> · ${esc(iv.interviewee || "")}<div class="hint">${esc([iv.role, iv.date].filter(Boolean).join(" · "))}</div></div>
+      <div class="row">${next ? `<button class="btn sm" data-act="openDrawer" data-id="${esc(next.id)}">Next suggestion →</button>` : ""}<a class="btn sm" href="#/interviews/${esc(iv.id)}">Open interview</a><button class="btn icon" data-act="closeDrawer" title="Close (Esc)">✕</button></div></div>
+      <div style="margin-top:12px">${quoteCard(e, text, {inInterview:true})}</div>
+      ${found ? "" : `<p class="chip bad" style="white-space:normal;display:block;border-radius:8px;padding:8px 10px">These exact words aren't in the transcript, so the AI may have changed them. ${near ? "The dashed line is where it said the quote came from." : "Check the transcript before confirming."}</p>`}
+    </div>
+    <div class="db"><div class="transcript">${text ? highlight(text, S.evidence.filter(x => x.interviewId === e.interviewId), e.id, near) : `<p class="empty">No transcript saved for this interview.</p>`}</div></div>
+  </aside>`;
 }
 
 function quoteCard(e, transcript, opts = {}){
@@ -808,6 +859,7 @@ function quoteCard(e, transcript, opts = {}){
       <select data-act="evField" data-id="${esc(e.id)}" data-field="jobId" class="small"><option value="">No job</option>${S.jobs.map(j => opt(j.id, e.jobId, j.id)).join("")}</select>
       ${e.where ? `<span>@ ${esc(e.where)}</span>` : ""}
       ${e.type === "Opinion or future intent" ? `<span class="chip warn">Weak evidence</span>` : ""}
+      ${transcript ? (opts.inInterview ? `<button class="btn link small" data-act="jump" data-id="${esc(e.id)}">Show in transcript</button>` : `<button class="btn sm" data-act="openDrawer" data-id="${esc(e.id)}">View in transcript</button>`) : ""}
     </div>
     ${pr && opts.showProblem ? `<div class="hint" style="margin-top:6px">${esc(pr.text)}</div>` : ""}
   </div>`;
@@ -855,7 +907,7 @@ function pasteView(iv){
   }
   return `<div class="card"><h3>1. Copy the prompt</h3><p class="small">The prompt already includes this interview's ID, your problem list and the transcript. Paste it into Claude, ChatGPT or any AI chat.</p><button class="btn" data-act="copyPrompt">Copy rubric prompt for ${esc(iv.id)}</button></div>
   <div class="card"><h3>2. Paste the AI's whole reply</h3><p class="small">Paste everything it said. The app finds the rows it needs and ignores the rest.</p>
-  <textarea id="rubricBox" style="width:100%;min-height:200px" placeholder="Paste the AI's full reply here">${prev ? esc(prev.raw) : ""}</textarea>
+  <textarea id="rubricBox" data-iv="${esc(iv.id)}" style="width:100%;min-height:200px" placeholder="Paste the AI's full reply here">${esc(ui.drafts.rubric[iv.id] ?? (prev ? prev.raw : ""))}</textarea>
   <div class="row" style="margin-top:8px"><button class="btn pri" data-act="previewImport">Check it</button></div></div>${preview}`;
 }
 
@@ -882,7 +934,7 @@ function quotesView(){
 }
 
 function problemsView(){
-  return `<div class="spread"><div><h1>Problems</h1><p class="sub">The problems you're testing. Write them the way customers would say them.</p></div></div>
+  return `<div class="spread"><div><h1>Problems</h1><p class="sub">Start here. Write down the problems you believe exist, the way a customer would say them, then go interview people to test them.</p></div><button class="btn" data-act="newInterview">+ Log an interview</button></div>
   <div class="card" style="padding:0">${S.problems.length ? `<table><tr><th>ID</th><th>Problem</th><th class="right">Scored</th>${TIERS.map(t => `<th class="right" title="${esc(t)}"><span class="chip tier ${TIER_CLASS[t]}">${esc(t.split(" ").map(w => w[0]).join(""))}</span></th>`).join("")}<th class="right">Top-two share</th><th class="right">Quotes</th><th>Signal</th></tr>
   ${sortById([...S.problems]).map(p => { const s = problemStats(p); return `<tr class="click" data-href="problems/${esc(p.id)}"><td class="mono">${esc(p.id)}</td><td>${esc(p.text)}<div class="hint">${esc(p.who||"")}</div></td><td class="right">${s.n}</td>${TIERS.map(t => `<td class="right">${s.counts[t] || ""}</td>`).join("")}<td class="right">${s.n ? Math.round(s.share*100) + "%" : "–"}</td><td class="right">${s.quotes}</td><td>${signalChip(s.signal)}</td></tr>`; }).join("")}</table>` : `<p class="empty">No problems yet.</p>`}</div>
   <div class="card"><h3>Add a problem</h3><form data-form="addProblem" class="grid g2"><label class="f">Problem, in the customer's words<input type="text" name="text" required></label><label class="f">Who has it<input type="text" name="who"></label><div><button class="btn pri" type="submit">Add problem</button></div></form>
@@ -895,7 +947,7 @@ function problemView(id){
   const quotes = S.evidence.filter(e => e.problemId === id && e.status !== "Rejected");
   const pains = S.pains.filter(x => x.problemId === id);
   return `<div class="crumbs"><a href="#/problems">Problems</a> /</div>
-  <div class="spread"><h1>${esc(p.id)}</h1>${signalChip(s.signal)}</div>
+  <div class="spread"><h1>${esc(p.id)}</h1><div class="row">${signalChip(s.signal)}<button class="btn sm" data-act="newInterview">+ Log an interview</button></div></div>
   <div class="card"><form data-form="problem" class="grid g2"><label class="f">Problem, in the customer's words<input type="text" name="text" value="${esc(p.text)}"></label><label class="f">Who has it<input type="text" name="who" value="${esc(p.who||"")}"></label></form>
   <div class="row">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}<span class="hint">${s.n} confirmed interview${s.n === 1 ? "" : "s"}</span></div></div>
   <div class="split"><div><h2>Quotes (${quotes.length})</h2>${quotes.length ? sortById(quotes).map(e => quoteCard(e, S.transcripts[e.interviewId] ?? null, {showInterview:true})).join("") : `<div class="card empty">No quotes linked yet.</div>`}</div>
@@ -1006,18 +1058,20 @@ document.addEventListener("click", async ev => {
   else if (a === "leave"){ store = null; S = emptyState(); ui.savedHandle = await idb.get("root").catch(() => null); location.hash = ""; render(); }
   else if (a === "undo"){ const u = ui.toast && ui.toast.undo; hideToast(); if (u) u(); render(); }
   else if (a === "newInterview"){ const id = nextId("INT-", S.interviews, 3); upsert("interviews", {id, date:today(), interviewee:"", role:"", source:"", interviewer:S.config.founder || "", recentInstance:"", leading:"", pitched:"", demoed:"", closing:"", rubricRun:false, notes:""}); ui.tab[id] = "quotes"; go("interviews/" + id); }
+  else if (a === "openDrawer"){ ui.drawer = el.dataset.id; ui.drawerScroll = true; render(); }
+  else if (a === "closeDrawer"){ ui.drawer = null; render(); }
   else if (a === "toggleGroup"){ const k = el.dataset.grp; ui.collapsed[k] = !ui.collapsed[k]; try { localStorage.setItem("drm-collapsed", JSON.stringify(ui.collapsed)); } catch(e){} render(); }
   else if (a === "tab"){ ui.tab[r.id] = el.dataset.tab; ui.editTranscript = false; render(); }
   else if (a === "seg"){ const iv = byId(S.interviews, r.id); upsert("interviews", {...iv, [el.dataset.field]: iv[el.dataset.field] === el.dataset.val ? "" : el.dataset.val}); render(); }
   else if (a === "editTranscript"){ ui.editTranscript = true; render(); }
-  else if (a === "saveTranscript"){ const t = $("#transcriptBox").value; S.transcripts[r.id] = t; persist("transcript", {id:r.id, text:t}); ui.editTranscript = false; render(); toast("Transcript saved."); }
+  else if (a === "saveTranscript"){ const t = $("#transcriptBox").value; delete ui.drafts.transcript[r.id]; S.transcripts[r.id] = t; persist("transcript", {id:r.id, text:t}); ui.editTranscript = false; render(); toast("Transcript saved."); }
   else if (a === "copyPrompt"){ const iv = byId(S.interviews, r.id); if (!S.transcripts[iv.id]){ toast("Add the transcript first, so the prompt can include it."); return; } await copy(rubricPrompt(iv)); }
   else if (a === "copyGeneric") await copy(rubricPrompt(null));
   else if (a === "previewImport"){ const iv = byId(S.interviews, r.id); const raw = $("#rubricBox").value; const parsed = parseRubric(raw);
     if (!parsed.evidence.length && !parsed.pains.length && !parsed.hygiene){ toast("Couldn't find any rubric rows. Paste the AI's full reply, including the code blocks."); return; }
     ui.importPreview = {ivId:iv.id, raw, plan:planImport(iv, parsed)}; render(); }
-  else if (a === "cancelImport"){ ui.importPreview = null; render(); }
-  else if (a === "doImport"){ const iv = byId(S.interviews, r.id); const p = ui.importPreview.plan; applyImport(iv, p, ui.importPreview.raw); ui.importPreview = null; ui.tab[iv.id] = "quotes"; render();
+  else if (a === "cancelImport"){ ui.importPreview = null; delete ui.drafts.rubric[r.id]; render(); }
+  else if (a === "doImport"){ const iv = byId(S.interviews, r.id); const p = ui.importPreview.plan; applyImport(iv, p, ui.importPreview.raw); ui.importPreview = null; delete ui.drafts.rubric[iv.id]; ui.tab[iv.id] = "quotes"; render();
     toast(`Imported ${p.evidence.length} quotes and ${p.pains.filter(x => !x._skip).length} pain scores as candidates.`); }
   else if (a === "setStatus"){ const kind = el.dataset.kind; const rec = byId(S[kind], el.dataset.id); const prev = rec.status; upsert(kind, {...rec, status:el.dataset.val});
     render(); toast(`${el.dataset.val === "Confirmed" ? "Confirmed" : "Rejected"} ${kind === "pains" ? "pain score" : el.dataset.id}.`, () => upsert(kind, {...byId(S[kind], rec.id), status:prev})); }
@@ -1025,7 +1079,8 @@ document.addEventListener("click", async ev => {
   else if (a === "addPain"){ const sel = $("#newPainProblem"); if (!sel || !sel.value) return; upsert("pains", {id:`${r.id}__${sel.value}`, interviewId:r.id, problemId:sel.value, tier:"", evidenceIds:[], scoredBy:"Founder", status:"Confirmed", disagree:""}); render(); }
   else if (a === "addQuote"){ ui.addQuote = r.id; render(); }
   else if (a === "cancelQuote"){ ui.addQuote = null; render(); }
-  else if (a === "jump"){ const c = document.getElementById("q-" + el.dataset.id); if (c){ c.scrollIntoView({behavior:"smooth", block:"center"}); c.classList.add("focus"); setTimeout(() => c.classList.remove("focus"), 1500); } }
+  else if (a === "jump" && ui.drawer){ const mk = document.querySelector(".drawer #m-" + CSS.escape(el.dataset.id)); if (mk) mk.scrollIntoView({behavior:"smooth", block:"center"}); }
+  else if (a === "jump"){ const c = el.tagName === "MARK" ? document.getElementById("q-" + el.dataset.id) : document.getElementById("m-" + el.dataset.id); if (c){ c.scrollIntoView({behavior:"smooth", block:"center"}); c.classList.add("focus"); setTimeout(() => c.classList.remove("focus"), 1500); } }
   else if (a === "deleteInterview"){ if (!confirm("Delete this interview, its transcript, quotes and pain scores?")) return; const id = r.id;
     for (const e of S.evidence.filter(e => e.interviewId === id)) removeRec("evidence", e.id);
     for (const p of S.pains.filter(p => p.interviewId === id)) removeRec("pains", p.id);
@@ -1059,20 +1114,26 @@ function saveTextField(el){
 }
 const isTextField = el => el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && ["text","date","number"].includes(el.type));
 document.addEventListener("input", ev => {
-  const el = ev.target; if (!isTextField(el) || el.dataset.field === "leading") return;
+  const el = ev.target;
+  if (el.id === "transcriptBox"){ ui.drafts.transcript[el.dataset.iv] = el.value; return; }
+  if (el.id === "rubricBox"){ ui.drafts.rubric[el.dataset.iv] = el.value; return; }
+  if (!isTextField(el) || el.dataset.field === "leading") return;
   clearTimeout(typeTimers.get(el)); typeTimers.set(el, setTimeout(() => saveTextField(el), 400));
 });
 document.addEventListener("change", ev => {
-  const el = ev.target; if (!isTextField(el) || el.dataset.field === "leading") return;
+  const el = ev.target; if (!isTextField(el) || el.dataset.field === "leading" || el.id === "transcriptBox" || el.id === "rubricBox") return;
   clearTimeout(typeTimers.get(el)); saveTextField(el);
+  // refresh computed badges (persona status, job checks) once the person has left the field
+  if (el.dataset.act === "personaText" || el.dataset.act === "jobText" || el.closest("form[data-form=problem],form[data-form=config]")) setTimeout(render, 0);
 }, true);
-document.addEventListener("focusout", ev => { if (ev.target.closest("[data-act=personaText],[data-act=jobText],form[data-form]")) setTimeout(render, 450); });
 
 document.addEventListener("submit", async ev => {
   ev.preventDefault(); const f = ev.target; const d = Object.fromEntries(new FormData(f)); const r = route();
   if (f.dataset.form === "setup"){
     S = emptyState(); S.config = {founder:d.founder, venture:d.venture, coach:d.coach, minInterviews:5, strongShare:0.5, createdAt:new Date().toISOString()};
-    await persist("config"); await persist("persona"); await store.write("drm/README.md", "This folder holds your Discovery Records Manager data. Edit it with the DRM app, not by hand.\n");
+    await persist("config"); await persist("persona");
+    if ((d.problem || "").trim()) upsert("problems", {id:"PR-01", text:d.problem.trim(), who:(d.who || "").trim()});
+    await store.write("drm/README.md", "This folder holds your Discovery Records Manager data. Edit it with the DRM app, not by hand.\n");
     store.needsSetup = false; go("home"); render();
   } else if (f.dataset.form === "addProblem"){ upsert("problems", {id:nextId("PR-", S.problems, 2), text:d.text.trim(), who:(d.who||"").trim()}); f.reset(); render(); }
   else if (f.dataset.form === "addQuote"){ const id = nextId(r.id + "-Q", S.evidence.filter(x => x.id.startsWith(r.id + "-Q")), 2);
