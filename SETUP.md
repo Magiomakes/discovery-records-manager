@@ -60,16 +60,28 @@ Done. Next time, open the bookmark and click **Reopen**.
 
 Discovery starts with a guess about a problem, not an idea for a product. Add each problem you believe exists under **Problems**. The dashboard shows how many confirmed interviews each one has and how many it still needs.
 
+## Connect your AI
+
+The DRM app is where you enter evidence and judge it. The reviewing is done by your own AI assistant, working directly on the same folder. The repository includes a rules file (`CLAUDE.md`, with a copy as `AGENTS.md`) that teaches it the format, the two rules, and that it may only ever suggest.
+
+Pick whichever you use:
+- **Claude Code:** open a terminal in your DRM folder and run `claude`. Done. It reads the rules automatically. You also get shortcuts like `/review-interview INT-001`.
+- **Claude Desktop:** make a Project and connect your DRM folder to it (or add the folder to a conversation). Ask it to read `CLAUDE.md` the first time.
+- **Cursor, Windsurf, Codex or another coding assistant:** open the DRM folder as the workspace. They read `AGENTS.md`.
+
+No AI tool that can read your folder? Every interview page has a fallback where you copy a full prompt into any chat and paste the reply back.
+
 ## After every interview
 
-1. **Interviews → + New interview.** Paste the full transcript and click **Save transcript**.
-2. Click **Copy rubric prompt**. It already includes your interview ID, your problem list and the transcript.
-3. Paste it into any AI chat (Claude, ChatGPT or another) and send it.
-4. Copy the AI's **whole** reply. Back in the DRM, open **Paste rubric results**, paste it and click **Check it**.
-5. Read the preview. Anything marked **not in transcript** means the AI changed the customer's words. Then click **Import as candidates**.
-6. Go to **Review AI suggestions**. Click **View in transcript** to see each quote in context. Confirm ✓ what's real and in their own words. Reject ✕ the rest. **Only confirmed items count anywhere.**
+1. In the app: **Interviews → New interview.** Paste the full transcript and click **Save transcript**. Fill in who it was and how you found them.
+2. In your AI: say **Review interview INT-001** (the app shows you the exact line to copy). It reads the transcript and your problem list, pulls out quotes word for word, checks how you ran the interview, scores the pain, and writes a short note.
+3. Back in the app, within a few seconds: **Review suggestions** lights up. Open each quote in the transcript. Confirm what's real and in their own words. Reject the rest. **Only confirmed items count anywhere.**
+4. Read the AI's note under **AI notes**. It will tell you what to ask next time.
+5. Level 1: fill in **Customer persona**, linking a confirmed quote to every line. Level 2: add **Jobs**, mark one as the wedge, and check **MVP scope**.
 
-The two rules: **quotes, not summaries** and **behavior, not interpretation.**
+Other things to ask your AI, any time: **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**.
+
+The two rules: **quotes, not summaries** and **behavior, not interpretation.** Your AI knows them too, and it never confirms anything on your behalf.
 
 ## Before every coach meeting: push
 
@@ -85,7 +97,7 @@ Your coach opens your repository on GitHub and sees your **coach report** on the
 
 ## Good to know
 
-- **Where your data is:** everything is in the `drm` folder inside your repository, as plain text files. Don't edit them by hand; use the app.
+- **Where your data is:** everything is in the `drm` folder inside your repository, as plain text files. Use the app or your AI to change them rather than editing by hand.
 - **Back it up by pushing.** If you don't push and lose your laptop, your notes are gone. Pushing weekly is a good habit even without a meeting.
 - **Using another computer:** clone the repository there too (Step 4). Before you start, click **Fetch origin** then **Pull** in GitHub Desktop. When you're done, commit and push. Don't edit on two computers at the same time.
 - **Interviewee names:** use first names or aliases like "Treasurer A". Ask people before you record or transcribe them.

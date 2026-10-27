@@ -8,7 +8,7 @@ A free, private evidence log for customer discovery. Founders record what custom
 
 - Each founder makes a **private** copy of this repository with **Use this template** (not Fork, since forks of this repo are public).
 - The app runs in Chrome or Edge and saves into the founder's own copy on their laptop. Nothing is stored on a server.
-- After each interview, the founder pastes the transcript, copies a ready-made rubric prompt into any AI chat, and pastes the reply back. The app files every quote, checks that it appears **word for word** in the transcript, and marks everything as a candidate until the founder confirms it.
+- The founder's own AI assistant (Claude Code, Claude Desktop, Cursor, or similar) works on the same folder. `CLAUDE.md` / `AGENTS.md` teach it the format and the rules. The founder asks it to review an interview; it writes quotes, pain scores and a note into the folder as suggestions. The app notices within seconds, checks every quote **word for word** against the transcript, and shows them for the founder to confirm or reject. The AI never confirms anything.
 - When the founder pushes with GitHub Desktop, this README is replaced by their **coach report**: interviews, interview hygiene, pain scores per problem, persona and MVP scope. Coaches just open the repository.
 
 ## For coaches
