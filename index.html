@@ -73,7 +73,7 @@ h3{font-size:13.5px;font-weight:650;margin:0 0 8px}
 @media (max-width:1100px){.split{grid-template-columns:1fr}}
 
 /* controls */
-.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:var(--r);padding:7px 13px;cursor:pointer;white-space:nowrap;font-weight:500;color:var(--ink)}
+.btn{text-decoration:none;display:inline-block;border:1px solid var(--line-2);background:var(--surface);border-radius:var(--r);padding:7px 13px;cursor:pointer;white-space:nowrap;font-weight:500;color:var(--ink)}
 .btn:hover{border-color:var(--ink-3);background:#fafbf9}
 .btn.pri{background:var(--green);border-color:var(--green);color:#fff}
 .btn.pri:hover{background:var(--green-ink)}
@@ -283,7 +283,7 @@ const idb = {
   async set(k, v){ const db = await this.open(); return new Promise(res => { const t = db.transaction("kv","readwrite").objectStore("kv").put(v, k); t.onsuccess = () => res(); t.onerror = () => res(); }); }
 };
 
-const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs"};
+const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs", assumptions:"assumptions"};
 
 class FolderStore {
   constructor(root){ this.root = root; this.kind = "folder"; this.name = root.name; this.stamps = null; }
@@ -325,6 +325,7 @@ class FolderStore {
     const S = emptyState();
     S.config = JSON.parse(await this.read("drm/config.json") || "{}");
     S.persona = JSON.parse(await this.read("drm/persona.json") || "null") || S.persona;
+    S.compass = {...emptyCompass(), ...(JSON.parse(await this.read("drm/compass.json") || "null") || {})};
     for (const [key, dir] of Object.entries(DIRS)){
       let d; try { d = await this.dir("drm/" + dir, false); } catch(e){ continue; }
       for await (const [name, h] of d.entries()){
@@ -354,7 +355,7 @@ class MemoryStore {
 }
 
 function emptyState(){
-  return {config:{}, interviews:[], evidence:[], pains:[], problems:[], jobs:[], transcripts:{}, notes:[], unreadable:[],
+  return {config:{}, interviews:[], evidence:[], pains:[], problems:[], jobs:[], assumptions:[], compass:emptyCompass(), transcripts:{}, notes:[], unreadable:[],
           persona:{problemId:"", fields:Object.fromEntries(PERSONA_FIELDS.map(([k]) => [k, {text:"", evidence:[]}]))}};
 }
 
@@ -370,6 +371,7 @@ async function persist(type, rec){
   try {
     if (type === "config") await store.write("drm/config.json", JSON.stringify(S.config, null, 2));
     else if (type === "persona") await store.write("drm/persona.json", JSON.stringify(S.persona, null, 2));
+    else if (type === "compass") await store.write("drm/compass.json", JSON.stringify(S.compass, null, 2));
     else if (type === "transcript") await store.write(`drm/transcripts/${rec.id}.md`, rec.text);
     else await store.write(`drm/${DIRS[type]}/${rec.id}.json`, JSON.stringify(rec, null, 2));
     saveErr = null; savedAt = Date.now(); scheduleReport();
@@ -588,6 +590,13 @@ function buildReport(){
          `| Interviews with a hygiene issue | ${m.hygiene} |`, `| Pitched or sold the idea | ${m.pitched} |`, `| Demoed a product | ${m.demoed} |`, `| Leading questions, total | ${m.leading} |`,
          `| Interviews with a confirmed Hair on Fire problem | ${m.hof} |`, `| Confirmed quotes | ${m.confirmed} |`, `| Confirmed quotes that are only opinion or future intent | ${m.opinion} |`,
          `| AI suggestions not yet reviewed | ${m.candidates} |`, "");
+  L.push("## Compass", "");
+  L.push(`Solution: ${mdc(S.compass.solution) || "_not written_"}`, "");
+  const idealC = idealCustomer(); L.push(`Ideal first customer: ${idealC ? mdc(idealC.text) : "_not chosen_"}`, "");
+  if ((S.compass.alternatives||[]).length) L.push("Alternatives: " + S.compass.alternatives.map(x => mdc(x.name)).join(", "), "");
+  L.push(`Problem statement: ${mdc(problemStatementText())}`, "", `Value proposition: ${mdc(valuePropText())}`, "");
+  const ra = rankedAssumptions().filter(x => x.a.status === "Active");
+  if (ra.length){ L.push("| # | Assumption | Kind | Impact | Uncertainty | Priority | Evidence says |", "|---|---|---|---|---|---|---|"); for (const x of ra) L.push(`| ${x.a.id} | ${mdc(x.a.text)} | ${ASSUMPTION_KINDS[x.a.kind]?.label || x.a.kind} | ${x.a.impact||"?"} | ${x.a.uncertainty||"?"} | ${x.p||"?"} | **${x.s.status}**: ${mdc(x.s.why)} |`); L.push(""); const c = compassReadout(); L.push(`Direction check: ${c.verdict}`, ""); }
   L.push("## Problems", "");
   if (!S.problems.length) L.push("_No problems recorded yet._", "");
   else {
@@ -706,11 +715,217 @@ Nice to Have at most. She hasn't done anything about it.
 1. "Walk me through the last time you dealt with reimbursements."
 2. "What did you do about it?"
 3. Don't mention the app until the end, if at all.`}];
+  D.compass = {solution:"A phone app where members snap receipts and the treasurer approves and pays in one tap.",
+    customers:[{id:"C-01", text:"Student club treasurers", why:"They do the chasing", ideal:true},{id:"C-02", text:"Club presidents", why:"They get the complaints", ideal:false},{id:"C-03", text:"Student union finance staff", why:"They audit the clubs", ideal:false}],
+    alternatives:[{id:"ALT-01", name:"Group chat plus a spreadsheet", what:"Photos in the chat, matched by hand", gap:"Nothing ties a photo to a line"},{id:"ALT-02", name:"Free expense apps", what:"Capture and categorise receipts", gap:"Members won't install another app"}],
+    problemStatement:{who:"student club treasurers", context:"paying members back at month end", problem:"match receipts to payments", cause:"receipts arrive as photos in a group chat", impact:"a weekend a month and some trust"},
+    valueProp:{who:"club treasurers", what:"chasing receipts", how:"one-tap approvals", over:"the group chat", why:"nobody has to install anything new"}};
+  D.interviews[0].customerId = "C-01"; D.interviews[1].customerId = "C-01";
+  D.assumptions = [
+    {id:"A-01", seed:"problem:PR-01", kind:"problem", problemId:"PR-01", text:"Student club treasurers have this problem: Chasing members for receipts before reimbursing them", impact:5, uncertainty:3, aiImpact:5, aiUncertainty:4, aiReason:"Everything rests on this and you have one strong interview and one weak one.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-02", seed:"customer:C-01", kind:"customer", customerId:"C-01", text:"Student club treasurers feel this problem more than the other segments and are the right first customer", impact:4, uncertainty:4, aiImpact:4, aiUncertainty:4, aiReason:"You haven't talked to a president or finance staff yet, so you can't compare.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-03", seed:"alt:ALT-02", kind:"alternative", alternativeId:"ALT-02", text:"Free expense apps don't solve it well enough: members won't install another app", impact:3, uncertainty:2, aiImpact:3, aiUncertainty:3, aiReason:"One quote supports it; one treasurer's experience isn't a pattern.", evidence:[{id:"INT-001-Q03", stance:"supports"}], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-04", seed:"solution", kind:"solution", text:"Customers would switch their current workaround for: a phone app where members snap receipts", impact:4, uncertainty:5, aiImpact:4, aiUncertainty:5, aiReason:"No one has been asked about switching yet; the solution hasn't come up in any interview.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-05", seed:"", kind:"customer", customerId:"C-03", text:"Student union finance staff would pay for this on behalf of clubs", impact:4, uncertainty:5, aiImpact:4, aiUncertainty:5, aiReason:"A buyer assumption hiding in the value proposition. Worth one conversation.", evidence:[], note:"", status:"Candidate", foundBy:"Claude Code"}
+  ];
   D.persona.problemId = "PR-01";
   D.persona.fields.who = {text:"Treasurer of a student club who handles member reimbursements", evidence:["INT-001-Q01"]};
   D.persona.fields.workaround = {text:"Photos in the group chat plus a tracking sheet they built and update weekly", evidence:["INT-001-Q02","INT-001-Q03"]};
   D.persona.fields.moment = {text:"Weekends near month end", evidence:[]};
   return D;
+}
+
+/* ============================================================
+   COMPASS: snapshot, statements, riskiest assumptions map.
+   Hunches go in here; the rest of the app exists to test them.
+   ============================================================ */
+const ASSUMPTION_KINDS = {
+  problem:     {label:"Problem",     test:"Confirmed pain scores on this problem"},
+  customer:    {label:"Customer",    test:"Pain across customer segments"},
+  alternative: {label:"Alternative", test:"Quotes you tag as supporting or contradicting"},
+  solution:    {label:"Solution",    test:"Quotes you tag as supporting or contradicting"},
+  value:       {label:"Value",       test:"Quotes you tag as supporting or contradicting"}
+};
+const STATUS_ORDER = {"Contradicted":0, "Shaky":1, "Untested":2, "Holding up":3};
+// Ad-lib templates. Swap the wording here if your program uses different ones.
+const PS_FIELDS = [
+  ["who","", "A customer like"], ["context","when they are", "in the situation"], ["problem","struggle to", "the struggle"],
+  ["cause","because", "the reason"], ["impact","which costs them", "what it costs them"]
+];
+const VP_FIELDS = [["who","If we help"], ["what","solve"], ["how","with"], ["over","they will choose it over"], ["why","because"]];
+
+function emptyCompass(){
+  return {solution:"", customers:[], alternatives:[], problemStatement:{who:"",context:"",problem:"",cause:"",impact:""}, valueProp:{who:"",what:"",how:"",over:"",why:""}};
+}
+function idealCustomer(){ return (S.compass.customers || []).find(c => c.ideal) || null; }
+function problemStatementText(){
+  const p = S.compass.problemStatement; return PS_FIELDS.map(([k, lead]) => (lead ? lead + " " : "") + (p[k] || "…")).join(" ");
+}
+function valuePropText(){ const v = S.compass.valueProp; return VP_FIELDS.map(([k, lead]) => lead + " " + (v[k] || "…")).join(" ") + "."; }
+
+/* Seed assumptions from the snapshot. Idempotent: each seed has a key; existing ones are kept. */
+function seedAssumptions(){
+  const seeds = [];
+  for (const p of S.problems) seeds.push({key:"problem:" + p.id, kind:"problem", problemId:p.id, text:`${p.who ? p.who : "Our customers"} have this problem: ${p.text}`});
+  const ideal = idealCustomer();
+  if (ideal) seeds.push({key:"customer:" + ideal.id, kind:"customer", customerId:ideal.id, text:`${ideal.text} feel this problem more than the other segments and are the right first customer`});
+  for (const a of S.compass.alternatives || []) seeds.push({key:"alt:" + a.id, kind:"alternative", alternativeId:a.id, text:`${a.name} doesn't solve it well enough${a.gap ? ": " + a.gap : ""}`});
+  if (S.compass.solution) seeds.push({key:"solution", kind:"solution", text:`Customers would switch their current workaround for: ${S.compass.solution}`});
+  if (S.compass.valueProp.why) seeds.push({key:"value", kind:"value", text:`They would choose us over ${S.compass.valueProp.over || "the alternatives"} because ${S.compass.valueProp.why}`});
+  let added = 0;
+  for (const s of seeds){
+    if (S.assumptions.some(a => a.seed === s.key)) continue;
+    const id = nextId("A-", S.assumptions, 2);
+    upsert("assumptions", {id, seed:s.key, kind:s.kind, text:s.text, problemId:s.problemId || "", customerId:s.customerId || "", alternativeId:s.alternativeId || "", impact:"", uncertainty:"", aiImpact:"", aiUncertainty:"", aiReason:"", evidence:[], note:"", status:"Active", foundBy:"Founder"});
+    added++;
+  }
+  return added;
+}
+
+/* Evidence-based status. This is the part that differs from score-based tools: the reading comes from discovery data. */
+function assumptionStatus(a){
+  const minN = Number(S.config.minInterviews ?? 5), strong = Number(S.config.strongShare ?? 0.5);
+  const confirmed = confirmedPains();
+  if (a.kind === "problem" && a.problemId){
+    const ps = confirmed.filter(p => p.problemId === a.problemId);
+    const n = ps.length; const top2 = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)).length; const share = n ? top2 / n : 0;
+    if (n < minN) return {status:"Untested", why:`${n} of ${minN} confirmed interviews scored on this problem`, n, share};
+    if (share >= strong) return {status:"Holding up", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${Math.round(share*100)}%)`, n, share};
+    if (share <= 0.2) return {status:"Contradicted", why:`Only ${top2} of ${n} interviews show real pain (${Math.round(share*100)}%)`, n, share};
+    return {status:"Shaky", why:`${top2} of ${n} interviews show real pain (${Math.round(share*100)}%), below your ${Math.round(strong*100)}% bar`, n, share};
+  }
+  if (a.kind === "customer" && a.customerId){
+    const bySeg = {};
+    for (const p of confirmed){ const iv = byId(S.interviews, p.interviewId); const seg = iv && iv.customerId ? iv.customerId : "?"; (bySeg[seg] = bySeg[seg] || []).push(p); }
+    const share = ps => ps.length ? ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)).length / ps.length : 0;
+    const mine = bySeg[a.customerId] || []; const untagged = (bySeg["?"] || []).length;
+    if (mine.length < 3) return {status:"Untested", why:`${mine.length} of 3 confirmed scores from this segment${untagged ? ` (${untagged} interviews have no segment yet)` : ""}`, n:mine.length};
+    const others = Object.entries(bySeg).filter(([k]) => k !== a.customerId && k !== "?").map(([k, ps]) => ({k, share:share(ps), n:ps.length})).filter(o => o.n >= 3);
+    const best = others.sort((x, y) => y.share - x.share)[0];
+    const s = share(mine);
+    if (best && best.share >= s + 0.25){ const c = byId(S.compass.customers, best.k); return {status:"Contradicted", why:`${c ? c.text : best.k} shows more pain (${Math.round(best.share*100)}% vs ${Math.round(s*100)}%)`, n:mine.length, share:s}; }
+    if (s >= strong) return {status:"Holding up", why:`${Math.round(s*100)}% of this segment's scores show real pain${best ? `, ahead of ${Math.round(best.share*100)}% elsewhere` : ""}`, n:mine.length, share:s};
+    return {status:"Shaky", why:`Only ${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
+  }
+  const ev = (a.evidence || []).map(x => ({...x, e:byId(S.evidence, x.id)})).filter(x => x.e && x.e.status === "Confirmed");
+  const sup = ev.filter(x => x.stance === "supports").length, con = ev.filter(x => x.stance === "contradicts").length;
+  if (!ev.length) return {status:"Untested", why:"No confirmed quotes tagged to this yet", n:0};
+  if (con >= sup) return {status:"Contradicted", why:`${con} quote${con === 1 ? "" : "s"} against, ${sup} for`, n:ev.length};
+  if (sup >= 3 && sup >= 2 * con) return {status:"Holding up", why:`${sup} quotes for, ${con} against`, n:ev.length};
+  return {status:"Shaky", why:`${sup} for, ${con} against; not enough yet`, n:ev.length};
+}
+function assumptionPriority(a){ const i = Number(a.impact) || 0, u = Number(a.uncertainty) || 0; return i && u ? i * u : null; }
+function rankedAssumptions(){
+  return S.assumptions.filter(a => a.status !== "Retired").map(a => ({a, p:assumptionPriority(a), s:assumptionStatus(a)}))
+    .sort((x, y) => (y.p ?? -1) - (x.p ?? -1) || STATUS_ORDER[x.s.status] - STATUS_ORDER[y.s.status] || x.a.id.localeCompare(y.a.id));
+}
+function compassReadout(){
+  const r = rankedAssumptions(); const active = r.filter(x => x.a.status === "Active");
+  const rated = active.filter(x => x.p);
+  const counts = {Contradicted:0, Shaky:0, Untested:0, "Holding up":0}; for (const x of active) counts[x.s.status]++;
+  const top = rated.slice(0, 3);
+  const riskiestOpen = rated.find(x => x.s.status === "Untested") || null;
+  let verdict, cls;
+  if (!active.length) verdict = "No assumptions yet.", cls = "gray";
+  else if (!rated.length) verdict = "Rate impact and uncertainty to find the riskiest.", cls = "gray";
+  else if (top.some(x => x.s.status === "Contradicted")) verdict = "A top assumption is contradicted by your interviews. Time to rethink that part.", cls = "bad";
+  else if (top.every(x => x.s.status === "Holding up")) verdict = "Your three riskiest assumptions are holding up. Keep testing the next ones.", cls = "ok";
+  else if (top.some(x => x.s.status === "Shaky")) verdict = "A top assumption is shaky. More interviews with the right people will settle it.", cls = "warn";
+  else verdict = "Your riskiest assumptions are still untested. That's where the next interviews go.", cls = "warn";
+  return {counts, top, riskiestOpen, verdict, cls, total:active.length, rated:rated.length, candidates:S.assumptions.filter(a => a.status === "Candidate").length};
+}
+function statusChipA(s){ return `<span class="chip ${s === "Holding up" ? "ok" : s === "Contradicted" ? "bad" : s === "Shaky" ? "warn" : "gray"}">${esc(s)}</span>`; }
+function scale5(name, id, val, cls){ return `<span class="seg ${cls||""}">${[1,2,3,4,5].map(n => `<button class="${String(val) === String(n) ? "on" : ""}" data-act="aScale" data-id="${esc(id)}" data-field="${name}" data-val="${n}">${n}</button>`).join("")}</span>`; }
+
+/* ---- Compass views ---- */
+function compassTabs(cur){
+  const steps = [["snapshot","1. Snapshot"],["statements","2. Statements"],["assumptions","3. Riskiest assumptions"]];
+  return `<div class="tabs">${steps.map(([k, l]) => `<button class="${cur === k ? "on" : ""}" data-act="go" data-href="compass/${k}">${l}</button>`).join("")}</div>`;
+}
+function compassView(step){
+  step = step || "snapshot";
+  if (step === "statements") return statementsView();
+  if (step === "assumptions") return assumptionsView();
+  return snapshotView();
+}
+function listEditor(kind, items, fields, extra){
+  return `${items.map(it => `<div class="row" style="margin-bottom:8px;align-items:flex-start">${extra ? extra(it) : ""}${fields.map(([f, ph, w]) => `<input type="text" data-act="cItem" data-kind="${kind}" data-id="${esc(it.id)}" data-field="${f}" value="${esc(it[f]||"")}" placeholder="${esc(ph)}" style="flex:${w||1};min-width:${kind === "alternatives" ? "100%" : "120px"}">`).join("")}<button class="btn icon no" title="Remove" data-act="cRemove" data-kind="${kind}" data-id="${esc(it.id)}">✕</button></div>`).join("")}
+  <button class="btn sm" data-act="cAdd" data-kind="${kind}">Add</button>`;
+}
+function snapshotView(){
+  const C = S.compass; const ideal = idealCustomer();
+  return `<h1>Compass</h1><p class="lede">Write down what you believe before you test it. Hunches are fine here; that's the point. Everything else in this app exists to find out which of these are true.</p>
+  ${compassTabs("snapshot")}
+  <div class="grid g2">
+    <div class="card"><h3>Solution</h3><p class="hint" style="margin-top:-4px">What you think you'll build. One or two sentences.</p><textarea data-act="cField" data-field="solution" style="width:100%;min-height:80px">${esc(C.solution||"")}</textarea></div>
+    <div class="card"><h3>Problems</h3><p class="hint" style="margin-top:-4px">The problems you believe exist, in the customer's words. Each one becomes something your interviews test.</p>
+      ${S.problems.length ? sortById([...S.problems]).map(p => `<div class="row" style="margin-bottom:8px"><span class="mono muted">${esc(p.id)}</span><input type="text" data-act="pField" data-id="${esc(p.id)}" data-field="text" value="${esc(p.text)}" style="flex:2;min-width:160px" placeholder="Problem"><input type="text" data-act="pField" data-id="${esc(p.id)}" data-field="who" value="${esc(p.who||"")}" style="flex:1;min-width:100px" placeholder="Who has it"></div>`).join("") : ""}
+      <form data-form="addProblem" class="row"><input type="text" name="text" placeholder="Another problem you suspect" required style="flex:2;min-width:160px"><input type="text" name="who" placeholder="Who has it" style="flex:1;min-width:100px"><button class="btn sm" type="submit">Add</button></form></div>
+    <div class="card"><h3>Customers</h3><p class="hint" style="margin-top:-4px">Every segment that might have the problem. Tick the one you'd bet on as the first customer. That bet gets tested.</p>
+      ${listEditor("customers", C.customers, [["text","Segment, e.g. Student club treasurers",2],["why","Why they might care most",2]], it => `<label title="Ideal first customer" style="display:flex;align-items:center;gap:4px;padding-top:7px;font-size:12px;color:var(--ink-3)"><input type="radio" name="ideal" data-act="cIdeal" data-id="${esc(it.id)}" ${it.ideal ? "checked" : ""}>ideal</label>`)}
+      ${!ideal && C.customers.length ? `<div class="notice warn" style="margin-top:10px">Pick one ideal first customer.</div>` : ""}</div>
+    <div class="card"><h3>Competitors and alternatives</h3><p class="hint" style="margin-top:-4px">What people use today, including spreadsheets, group chats and doing nothing. And the gap you think each one leaves.</p>
+      ${listEditor("alternatives", C.alternatives, [["name","Name",1],["what","What it does today",2],["gap","The gap you believe it leaves",2]])}</div>
+  </div>
+  <div class="row" style="margin-top:6px"><a class="btn pri" href="#/compass/statements">Next: statements</a></div>`;
+}
+function statementsView(){
+  const P = S.compass.problemStatement, V = S.compass.valueProp;
+  const ideal = idealCustomer(); const pr = S.problems[0]; const alt = (S.compass.alternatives||[])[0];
+  const fill = (obj, k, ph, w) => `<input type="text" data-act="cStmt" data-stmt="${obj}" data-field="${k}" value="${esc((obj === "problemStatement" ? P : V)[k]||"")}" placeholder="${esc(ph)}" style="flex:${w||1};min-width:140px">`;
+  return `<h1>Compass</h1><p class="lede">Two sentences you'll keep rewriting as the evidence comes in.</p>
+  ${compassTabs("statements")}
+  <div class="card"><h3>Problem statement</h3><p class="hint" style="margin-top:-4px">Fill in the blanks. No solution words allowed in here.</p>
+    <div class="row" style="gap:8px 10px;margin:10px 0">
+      <span>A customer like</span>${fill("problemStatement","who", ideal ? ideal.text : "who", 2)}
+      <span>, when they are</span>${fill("problemStatement","context","in what situation", 2)}
+      <span>, struggles to</span>${fill("problemStatement","problem", pr ? pr.text : "do what", 3)}
+      <span>because</span>${fill("problemStatement","cause","the root cause", 2)}
+      <span>, which costs them</span>${fill("problemStatement","impact","time, money, stress", 2)}<span>.</span></div>
+    <p style="font-family:var(--serif);font-size:17px;margin:10px 0 0;max-width:70ch">${esc(problemStatementText())}</p></div>
+  <div class="card"><h3>Value proposition</h3><p class="hint" style="margin-top:-4px">The claim you'll have to earn.</p>
+    <div class="row" style="gap:8px 10px;margin:10px 0">
+      <span>If we help</span>${fill("valueProp","who", ideal ? ideal.text : "who", 2)}
+      <span>solve</span>${fill("valueProp","what", pr ? pr.text : "what", 3)}
+      <span>with</span>${fill("valueProp","how", S.compass.solution ? S.compass.solution.slice(0,60) : "how", 3)}
+      <span>, they will choose it over</span>${fill("valueProp","over", alt ? alt.name : "the alternative", 2)}
+      <span>because</span>${fill("valueProp","why","why", 3)}<span>.</span></div>
+    <p style="font-family:var(--serif);font-size:17px;margin:10px 0 0;max-width:70ch">${esc(valuePropText())}</p></div>
+  <div class="row"><a class="btn" href="#/compass/snapshot">Back</a><a class="btn pri" href="#/compass/assumptions">Next: riskiest assumptions</a></div>`;
+}
+function assumptionCard(x, opts = {}){
+  const a = x.a, s = x.s; const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind, test:""};
+  const confirmedQuotes = S.evidence.filter(e => e.status === "Confirmed");
+  const tagged = (a.evidence || []).map(t => ({...t, e:byId(S.evidence, t.id)})).filter(t => t.e);
+  const taggable = ["alternative","solution","value"].includes(a.kind);
+  const link = a.kind === "problem" && a.problemId ? `<a href="#/problems/${esc(a.problemId)}" class="small">See the problem</a>` : a.kind === "customer" ? `<a href="#/interviews" class="small">Tag interviews with a segment</a>` : "";
+  return `<div class="card" style="border-left:4px solid ${s.status === "Holding up" ? "var(--green)" : s.status === "Contradicted" ? "var(--red)" : s.status === "Shaky" ? "#e2b93b" : "var(--line-2)"}">
+    <div class="spread"><div class="row"><span class="mono muted">${esc(a.id)}</span><span class="chip gray">${esc(k.label)}</span>${x.p ? `<span class="chip blue">Priority ${x.p}</span>` : `<span class="chip warn">Not rated</span>`}${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
+      <div class="row">${statusChipA(s.status)}${a.status === "Candidate" ? `<button class="btn icon no" title="Dismiss" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">✕</button><button class="btn icon yes" title="Accept" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">✓</button>` : `<button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired" title="Retire this assumption">Retire</button>`}</div></div>
+    <textarea data-act="aText" data-id="${esc(a.id)}" style="width:100%;min-height:46px;margin-top:8px;font-family:var(--serif);font-size:15.5px">${esc(a.text)}</textarea>
+    <div class="grid g2" style="margin-top:10px">
+      <div><div class="small muted">If this is wrong, how much of the idea breaks?</div><div class="row" style="margin-top:4px">${scale5("impact", a.id, a.impact)}<span class="hint">1 little, 5 everything</span></div>
+        <div class="small muted" style="margin-top:8px">How sure are you it's true, today?</div><div class="row" style="margin-top:4px">${scale5("uncertainty", a.id, a.uncertainty)}<span class="hint">1 sure, 5 pure guess</span></div></div>
+      <div>${a.aiImpact || a.aiReason ? `<div class="small"><span class="ai">AI's view</span> impact ${esc(a.aiImpact || "?")}, uncertainty ${esc(a.aiUncertainty || "?")}</div><div class="small" style="margin-top:4px;max-width:60ch">${esc(a.aiReason || "")}</div>` : `<div class="hint">Your AI hasn't rated this yet. Ask it: <span class="kbd">Rank the riskiest assumptions</span></div>`}</div>
+    </div>
+    <div class="notice ${s.status === "Holding up" ? "ok" : s.status === "Contradicted" ? "bad" : s.status === "Shaky" ? "warn" : ""}" style="margin-top:10px;${s.status === "Untested" ? "background:#eef0ed;color:var(--ink-2)" : ""}"><b>Evidence:</b> ${esc(s.why)}. <span class="muted">${esc(k.test)}.</span> ${link}</div>
+    ${taggable ? `<div style="margin-top:10px">${tagged.map(t => `<div class="q compact s-${esc(t.e.status)}" style="margin-bottom:6px"><div class="spread"><span class="words">${esc(t.e.quote)}</span><div class="row"><span class="seg"><button class="${t.stance === "supports" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="supports">For</button><button class="${t.stance === "contradicts" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="contradicts">Against</button></span><button class="btn icon no" title="Untag" data-act="aUntag" data-id="${esc(a.id)}" data-eid="${esc(t.id)}">✕</button></div></div><div class="meta"><a href="#/interviews/${esc(t.e.interviewId)}">${esc(t.e.interviewId)}</a>${t.e.status !== "Confirmed" ? statusChip(t.e.status) : ""}</div></div>`).join("")}
+      <select data-act="aTag" data-id="${esc(a.id)}" style="max-width:100%"><option value="">Tag a confirmed quote…</option>${confirmedQuotes.filter(e => !(a.evidence||[]).some(t => t.id === e.id)).map(e => opt(e.id, "", `${e.id}: ${e.quote.slice(0, 90)}`)).join("")}</select></div>` : ""}
+  </div>`;
+}
+function assumptionsView(){
+  const r = compassReadout(); const ranked = rankedAssumptions();
+  const seedable = S.problems.length + (idealCustomer() ? 1 : 0) + (S.compass.alternatives||[]).length;
+  return `<h1>Compass</h1><p class="lede">Which of your beliefs would hurt most if wrong, and which do you know least about? Those get tested first. The status of each comes from your interviews, not from a score.</p>
+  ${compassTabs("assumptions")}
+  <div class="card" style="border-color:${r.cls === "ok" ? "#9fd3c2" : r.cls === "bad" ? "#ebb3ab" : "#ead9a0"}"><div class="spread"><div><b>${esc(r.verdict)}</b>
+    <div class="row small" style="margin-top:8px">${["Holding up","Shaky","Untested","Contradicted"].map(k => `${statusChipA(k)} ${r.counts[k]}`).join(" ")}</div></div>
+    ${r.riskiestOpen ? `<div class="small" style="max-width:34ch"><b>Test next:</b> ${esc(r.riskiestOpen.a.text)}</div>` : ""}</div></div>
+  <div class="row" style="margin:4px 0 14px"><button class="btn" data-act="seedAssumptions">${S.assumptions.length ? "Add any new ones from the snapshot" : "Generate assumptions from the snapshot"}</button><button class="btn" data-act="newAssumption">Write one by hand</button><button class="btn" data-act="copyText" data-text="Rank the riskiest assumptions">Copy “Rank the riskiest assumptions” for your AI</button></div>
+  ${!S.assumptions.length ? `<div class="card empty"><b>No assumptions yet.</b><br>${seedable ? "Generate them from your snapshot, then rate each one." : "Fill in the snapshot first: problems, an ideal customer and at least one alternative."}</div>` : ""}
+  ${ranked.filter(x => x.a.status === "Candidate").length ? `<h2>Suggested by your AI</h2>${ranked.filter(x => x.a.status === "Candidate").map(x => assumptionCard(x)).join("")}` : ""}
+  ${ranked.filter(x => x.a.status === "Active").length ? `<h2>Your assumptions, riskiest first</h2>${ranked.filter(x => x.a.status === "Active").map(x => assumptionCard(x)).join("")}` : ""}
+  ${S.assumptions.some(a => a.status === "Retired") ? `<details class="fold"><summary>Retired (${S.assumptions.filter(a => a.status === "Retired").length})</summary>${S.assumptions.filter(a => a.status === "Retired").map(a => `<div class="small" style="margin:6px 0">${esc(a.id)} ${esc(a.text)} <button class="btn link small" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">Restore</button></div>`).join("")}</details>` : ""}`;
 }
 
 /* ---------------- routing + rendering ---------------- */
@@ -721,9 +936,9 @@ document.addEventListener("keydown", ev => { if (ev.key === "Escape" && (ui.draw
 
 function shell(content){
   const m = metrics(); const r = route(); const demo = store.kind === "demo";
-  const link = (h, label, badge) => `<a href="#/${h}" class="${r.page === h.split("/")[0] ? "on" : ""}"><span>${label}</span>${badge || ""}</a>`;
+  const link = (h, label, badge) => { const on = h.includes("/") ? (r.page + "/" + (r.id || "")) === h : r.page === h; return `<a href="#/${h}" class="${on ? "on" : ""}"><span>${label}</span>${badge || ""}</a>`; };
   const group = (key, title, items, pending) => {
-    const closed = !!ui.collapsed[key]; const active = items.some(([h]) => h === r.page);
+    const closed = !!ui.collapsed[key]; const active = items.some(([h]) => h.split("/")[0] === r.page);
     return `<button class="grp ${closed ? "closed" : ""} ${closed && active ? "has-active" : ""}" data-act="toggleGroup" data-grp="${key}" aria-expanded="${!closed}"><span class="chev">▾</span>${esc(title)}${closed && pending ? `<span class="pill">${pending}</span>` : ""}</button>
       ${closed ? "" : items.map(([h, l, b]) => link(h, l, b)).join("")}`;
   };
@@ -734,13 +949,17 @@ function shell(content){
       <div class="brand"><b>${esc(S.config.venture || "Discovery Records")}</b><span>${esc(S.config.founder || "Discovery Records Manager")}</span></div>
       <nav class="nav">
         ${link("home","Home")}
-        ${group("l1", "Level 1: Problem", [
+        ${group("compass", "Compass: what you believe", [
+          ["compass/snapshot","1. Snapshot"], ["compass/statements","2. Statements"],
+          ["compass/assumptions","3. Riskiest assumptions", (() => { const c = compassReadout(); return c.candidates ? `<span class="pill">${c.candidates}</span>` : c.counts.Contradicted ? `<span class="chip bad">${c.counts.Contradicted}</span>` : ""; })()]
+        ], compassReadout().candidates)}
+        ${group("l1", "Validate: Level 1, Problem", [
           ["problems","Problems", `<span class="count">${S.problems.length}</span>`],
           ["interviews","Interviews", `<span class="count">${S.interviews.length}</span>`],
           ["review","Review suggestions", m.candidates ? `<span class="pill">${m.candidates}</span>` : ""],
           ["quotes","All quotes"], ["persona","Customer persona"]
         ], m.candidates)}
-        ${group("l2", "Level 2: Jobs", [["jobs","Jobs"], ["mvp","MVP scope"]])}
+        ${group("l2", "Validate: Level 2, Jobs", [["jobs","Jobs"], ["mvp","MVP scope"]])}
         ${group("ai", "Your AI", [["ask","Ask your AI"], ["notes","AI notes", S.notes.length ? `<span class="count">${S.notes.length}</span>` : ""]])}
         ${group("help", "Help", [["guide","Pain Scale"], ["report","Coach report"], ["settings","Settings"]])}
       </nav>
@@ -755,7 +974,7 @@ function render(){
   if (!store){ root.innerHTML = welcomeView(); return; }
   if (store.needsSetup){ root.innerHTML = setupView(); return; }
   const r = route();
-  const views = {home:dashView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : problemsView, persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, notes:notesView, guide:guideView, report:reportView, settings:settingsView};
+  const views = {home:dashView, compass:compassView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : problemsView, persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, notes:notesView, guide:guideView, report:reportView, settings:settingsView};
   const scrollEl = document.querySelector(".main"); const keep = scrollEl && root.dataset.page === location.hash ? scrollEl.scrollTop : 0;
   root.innerHTML = shell((views[r.page] || dashView)(r.id)) + (ui.drawer ? drawerView() : "") + (ui.askFor ? askPanel() : "");
   root.dataset.page = location.hash;
@@ -880,7 +1099,9 @@ function setupView(){
 /* ---------------- home ---------------- */
 function checklist(m){
   const items = [
-    ["Write down the problem you believe exists", S.problems.length > 0, "problems", "A guess your interviews will test."],
+    ["Fill in your Compass snapshot", S.problems.length > 0 && !!idealCustomer() && (S.compass.alternatives||[]).length > 0, "compass/snapshot", "Solution, problems, customers, alternatives. Hunches welcome."],
+    ["Write your problem statement and value proposition", !!S.compass.problemStatement.problem && !!S.compass.valueProp.why, "compass/statements", "Two sentences you'll keep rewriting."],
+    ["Rate your riskiest assumptions", S.assumptions.some(a => assumptionPriority(a)), "compass/assumptions", "Impact times uncertainty. Your AI rates them too."],
     ["Connect your AI to this folder", aiReady !== false && (S.notes.length > 0 || S.evidence.some(e => e.foundBy && e.foundBy !== "Founder")), "ask", "So it can review interviews and write suggestions straight into your DRM."],
     ["Log your first interview and paste the transcript", S.interviews.length > 0, "interviews", "Lead with their past, not your idea."],
     ["Review the suggestions and confirm what's real", S.evidence.some(e => e.status !== "Candidate"), "review", "Only confirmed quotes count."],
@@ -900,7 +1121,9 @@ function problemProgress(p){
     <div class="row small" style="margin-top:8px"><span>${s.n} of ${minN} confirmed interviews${left ? `, ${left} to go` : ""}</span>${TIERS.filter(t => s.counts[t]).map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}<span class="muted">${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}</span></div></div></div>`;
 }
 function nextStep(m){
-  if (!S.problems.length) return ["Write down the problem you think exists.", "problems", "Add a problem"];
+  if (!S.problems.length || !idealCustomer()) return ["Fill in your Compass snapshot: the problem you believe exists and who you'd bet has it.", "compass/snapshot", "Open the Compass"];
+  if (!S.assumptions.length) return ["Turn your snapshot into assumptions and rate them.", "compass/assumptions", "Open assumptions"];
+  { const c = compassReadout(); if (c.riskiestOpen && !S.interviews.length) return [`Your riskiest untested assumption: ${c.riskiestOpen.a.text}. Interviews will test it.`, "interviews", "Log an interview"]; }
   if (!S.interviews.length) return ["Log your first customer interview and paste the transcript.", "interviews", "Log an interview"];
   if (m.candidates) return [`Review ${m.candidates} suggestion${m.candidates>1?"s":""} from your AI. Only confirmed items count.`, "review", "Review now"];
   const noRubric = S.interviews.find(i => !i.rubricRun);
@@ -915,6 +1138,7 @@ function dashView(){
   return `<h1>${esc(S.config.venture || "Home")}</h1><p class="lede">${esc(S.config.founder || "")}${S.config.coach ? ", coached by " + esc(S.config.coach) : ""}</p>
   ${checklist(m)}
   <div class="card" style="background:var(--green-bg);border-color:#bfe0d6"><div class="spread"><div><b>Next:</b> ${esc(msg)}</div><a class="btn pri sm" href="#/${h}">${esc(btn)}</a></div></div>
+  ${S.assumptions.length ? (() => { const c = compassReadout(); return `<div class="card"><div class="spread"><div><h3 style="margin:0 0 4px">Compass</h3><div>${esc(c.verdict)}</div><div class="row small" style="margin-top:8px">${["Holding up","Shaky","Untested","Contradicted"].map(k => `${statusChipA(k)} ${c.counts[k]}`).join(" ")}</div></div><a class="btn sm" href="#/compass/assumptions">Open the map</a></div></div>`; })() : ""}
   ${S.unreadable.length ? `<div class="notice bad" style="margin-bottom:12px">${S.unreadable.length} file${S.unreadable.length > 1 ? "s" : ""} in your folder couldn't be read and ${S.unreadable.length > 1 ? "were" : "was"} skipped: ${S.unreadable.map(esc).join(", ")}</div>` : ""}
   <div class="spread"><h2>Problems</h2><a href="#/problems" class="small">All problems</a></div>
   ${S.problems.length ? sortById([...S.problems]).map(problemProgress).join("") : `<div class="card empty"><b>Start with a problem.</b> <a href="#/problems">Write down the one you believe exists.</a></div>`}
@@ -943,8 +1167,8 @@ function dashView(){
 function interviewsView(){
   const rows = sortById([...S.interviews]).reverse();
   return `<div class="spread"><div><h1>Interviews</h1><p class="lede">One row per customer conversation. Open one to read the transcript and its quotes.</p></div><button class="btn pri" data-act="newInterview">New interview</button></div>
-  <div class="card flat">${rows.length ? `<table><tr><th>ID</th><th>Date</th><th>Who</th><th>Found via</th><th>Interviewing</th><th>Top confirmed tier</th><th>AI review</th></tr>
-  ${rows.map(i => { const h = hygieneIssues(i); return `<tr class="click" data-href="interviews/${esc(i.id)}"><td class="mono">${esc(i.id)}</td><td>${esc(i.date||"")}</td><td><b>${esc(i.interviewee||"")}</b><div class="hint">${esc(i.role||"")}</div></td><td>${i.source === "Friend or family" ? `<span class="chip warn">Friend or family</span>` : esc(i.source||"")}</td><td>${h ? `<span class="chip bad">${h} issue${h>1?"s":""}</span>` : i.rubricRun ? `<span class="chip ok">Clean</span>` : ""}</td><td>${tierChip(topTier(i.id))}</td><td>${i.rubricRun ? `<span class="chip ok">Done</span>` : `<span class="chip gray">Not yet</span>`}</td></tr>`; }).join("")}</table>` : `<p class="empty"><b>No interviews yet.</b><br>After your first conversation, click New interview and paste the transcript.</p>`}</div>`;
+  <div class="card flat">${rows.length ? `<table><tr><th>ID</th><th>Date</th><th>Who</th><th>Segment</th><th>Found via</th><th>Interviewing</th><th>Top confirmed tier</th><th>AI review</th></tr>
+  ${rows.map(i => { const h = hygieneIssues(i); return `<tr class="click" data-href="interviews/${esc(i.id)}"><td class="mono">${esc(i.id)}</td><td>${esc(i.date||"")}</td><td><b>${esc(i.interviewee||"")}</b><div class="hint">${esc(i.role||"")}</div></td><td>${(() => { const c = byId(S.compass.customers||[], i.customerId); return c ? esc(c.text) : `<span class="chip warn">No segment</span>`; })()}</td><td>${i.source === "Friend or family" ? `<span class="chip warn">Friend or family</span>` : esc(i.source||"")}</td><td>${h ? `<span class="chip bad">${h} issue${h>1?"s":""}</span>` : i.rubricRun ? `<span class="chip ok">Clean</span>` : ""}</td><td>${tierChip(topTier(i.id))}</td><td>${i.rubricRun ? `<span class="chip ok">Done</span>` : `<span class="chip gray">Not yet</span>`}</td></tr>`; }).join("")}</table>` : `<p class="empty"><b>No interviews yet.</b><br>After your first conversation, click New interview and paste the transcript.</p>`}</div>`;
 }
 function hygieneSeg(iv, field){
   const v = iv[field] || "";
@@ -970,6 +1194,7 @@ function interviewView(id){
       <div class="grid g2"><label class="f">Date<input type="date" name="date" value="${esc(iv.date||"")}"></label><label class="f">Interviewer<input type="text" name="interviewer" value="${esc(iv.interviewer||"")}"></label></div>
       <label class="f">Interviewee (first name or alias)<input type="text" name="interviewee" value="${esc(iv.interviewee||"")}"></label>
       <label class="f">Role or segment<input type="text" name="role" value="${esc(iv.role||"")}"></label>
+      <label class="f">Which customer segment (from your Compass)<select name="customerId"><option value="">Not sure yet</option>${(S.compass.customers||[]).map(c => opt(c.id, iv.customerId, c.text + (c.ideal ? " (ideal)" : ""))).join("")}</select></label>
       <label class="f">How you found them<select name="source"><option value=""></option>${SOURCES.map(s => opt(s, iv.source)).join("")}</select></label>
       <label class="f">Notes<textarea name="notes">${esc(iv.notes||"")}</textarea></label></form></div>
       <div class="card"><h3>How the interview went ${h ? `<span class="chip bad">${h} issue${h>1?"s":""}</span>` : ""}</h3>
@@ -1008,6 +1233,7 @@ function addQuoteForm(iv){
 function aiCommands(iv){
   return [
     [`Review interview ${iv ? iv.id : "INT-001"}`, "Pulls out every quote word for word, checks how the interview was run, scores the pain for each problem, and writes a short note. Everything arrives here as a suggestion for you to confirm."],
+    ["Rank the riskiest assumptions", "Rates each Compass assumption for impact and uncertainty, explains why, and suggests any you've missed."],
     ["Happy ears check", "Points out where you may be hearing what you want to hear."],
     ["Audit the persona", "Checks that every persona line is backed by a confirmed quote."],
     ["Rank the jobs", "Checks each job's qualifiers and suggests the wedge and the say-no list."],
@@ -1220,7 +1446,7 @@ document.addEventListener("click", async ev => {
   else if (a === "hideChecklist"){ ui.hideChecklist = true; localStorage.setItem("drm-hide-checklist", "1"); render(); }
   else if (a === "showChecklist"){ ui.hideChecklist = false; localStorage.removeItem("drm-hide-checklist"); go("home"); }
   else if (a === "toggleGroup"){ const k = el.dataset.grp; ui.collapsed[k] = !ui.collapsed[k]; try { localStorage.setItem("drm-collapsed", JSON.stringify(ui.collapsed)); } catch(e){} render(); }
-  else if (a === "newInterview"){ const id = nextId("INT-", S.interviews, 3); upsert("interviews", {id, date:today(), interviewee:"", role:"", source:"", interviewer:S.config.founder || "", recentInstance:"", leading:"", pitched:"", demoed:"", closing:"", rubricRun:false, notes:"", coachingNote:""}); ui.tab[id] = "quotes"; go("interviews/" + id); }
+  else if (a === "newInterview"){ const id = nextId("INT-", S.interviews, 3); upsert("interviews", {id, date:today(), interviewee:"", role:"", customerId:"", source:"", interviewer:S.config.founder || "", recentInstance:"", leading:"", pitched:"", demoed:"", closing:"", rubricRun:false, notes:"", coachingNote:""}); ui.tab[id] = "quotes"; go("interviews/" + id); }
   else if (a === "tab"){ ui.tab[r.id] = el.dataset.tab; ui.editTranscript = false; render(); }
   else if (a === "seg"){ const iv = byId(S.interviews, r.id); upsert("interviews", {...iv, [el.dataset.field]: iv[el.dataset.field] === el.dataset.val ? "" : el.dataset.val}); render(); }
   else if (a === "editTranscript"){ ui.editTranscript = true; render(); }
@@ -1252,13 +1478,24 @@ document.addEventListener("click", async ev => {
     removeRec("interviews", id); delete S.transcripts[id]; store.remove(`drm/transcripts/${id}.md`); go("interviews"); }
   else if (a === "deleteProblem"){ removeRec("problems", el.dataset.id); go("problems"); }
   else if (a === "personaUnlink"){ const f = S.persona.fields[el.dataset.key]; f.evidence = f.evidence.filter(x => x !== el.dataset.id); persist("persona"); render(); }
+  else if (a === "go") go(el.dataset.href);
+  else if (a === "cAdd"){ const k = el.dataset.kind; const list = S.compass[k] = S.compass[k] || []; const id = nextId(k === "customers" ? "C-" : "ALT-", list, 2); list.push(k === "customers" ? {id, text:"", why:"", ideal:!list.some(c => c.ideal)} : {id, name:"", what:"", gap:""}); persist("compass"); render(); }
+  else if (a === "cRemove"){ const k = el.dataset.kind; S.compass[k] = (S.compass[k]||[]).filter(x => x.id !== el.dataset.id); persist("compass"); render(); }
+  else if (a === "seedAssumptions"){ const n = seedAssumptions(); render(); toast(n ? `Added ${n} assumption${n > 1 ? "s" : ""} from your snapshot. Now rate each one.` : "Nothing new to add. Everything in the snapshot already has an assumption."); }
+  else if (a === "newAssumption"){ const id = nextId("A-", S.assumptions, 2); upsert("assumptions", {id, seed:"", kind:"solution", text:"", problemId:"", customerId:"", alternativeId:"", impact:"", uncertainty:"", aiImpact:"", aiUncertainty:"", aiReason:"", evidence:[], note:"", status:"Active", foundBy:"Founder"}); render(); }
+  else if (a === "aScale"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, [el.dataset.field]: Number(el.dataset.val)}); render(); }
+  else if (a === "aStatus"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, status: el.dataset.val}); render(); }
+  else if (a === "aStance"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).map(t => t.id === el.dataset.eid ? {...t, stance:el.dataset.val} : t)}); render(); }
+  else if (a === "aUntag"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).filter(t => t.id !== el.dataset.eid)}); render(); }
   else if (a === "newJob"){ const id = nextId("JB-", S.jobs, 2); upsert("jobs", {id, statement:"", type:"", problemId:S.persona.problemId || "", workaround:"", moment:"", frequency:"", consequence:"", decision:"Undecided", why:""}); render(); }
   else if (a === "exportJson"){ const blob = new Blob([JSON.stringify(S, null, 2)], {type:"application/json"}); const u = URL.createObjectURL(blob); const l = document.createElement("a"); l.href = u; l.download = `drm-backup-${today()}.json`; l.click(); URL.revokeObjectURL(u); }
 });
 
 document.addEventListener("change", ev => {
   const el = ev.target; const a = el.dataset.act; const r = route();
-  if (a === "evField"){ const e = byId(S.evidence, el.dataset.id); upsert("evidence", {...e, [el.dataset.field]: el.value}); render(); }
+  if (a === "cIdeal"){ for (const c of S.compass.customers) c.ideal = c.id === el.dataset.id; persist("compass"); render(); }
+  else if (a === "aTag"){ if (!el.value) return; const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:[...(x.evidence||[]), {id:el.value, stance:"supports"}]}); render(); }
+  else if (a === "evField"){ const e = byId(S.evidence, el.dataset.id); upsert("evidence", {...e, [el.dataset.field]: el.value}); render(); }
   else if (a === "filter"){ ui.filters[el.dataset.key] = el.value; render(); }
   else if (a === "personaProblem"){ S.persona.problemId = el.value; persist("persona"); render(); }
   else if (a === "personaLink"){ if (!el.value) return; const f = S.persona.fields[el.dataset.key]; f.evidence = [...(f.evidence||[]), el.value]; persist("persona"); render(); }
@@ -1270,7 +1507,12 @@ document.addEventListener("change", ev => {
 const typeTimers = new WeakMap();
 function saveTextField(el){
   const a = el.dataset.act; const form = el.closest("form[data-form]"); const r = route();
-  if (a === "personaText"){ S.persona.fields[el.dataset.key].text = el.value; persist("persona"); }
+  if (a === "cField"){ S.compass[el.dataset.field] = el.value; persist("compass"); }
+  else if (a === "cItem"){ const it = byId(S.compass[el.dataset.kind]||[], el.dataset.id); if (it){ it[el.dataset.field] = el.value; persist("compass"); } }
+  else if (a === "cStmt"){ S.compass[el.dataset.stmt][el.dataset.field] = el.value; persist("compass"); }
+  else if (a === "aText"){ const x = byId(S.assumptions, el.dataset.id); if (x) upsert("assumptions", {...x, text:el.value}); }
+  else if (a === "pField"){ const p = byId(S.problems, el.dataset.id); if (p) upsert("problems", {...p, [el.dataset.field]: el.value}); }
+  else if (a === "personaText"){ S.persona.fields[el.dataset.key].text = el.value; persist("persona"); }
   else if (a === "jobText"){ const j = byId(S.jobs, el.dataset.id); if (j) upsert("jobs", {...j, [el.dataset.field]: el.value}); }
   else if (a === "painDisagree"){ const p = byId(S.pains, el.dataset.id); if (p) upsert("pains", {...p, disagree: el.value}); }
   else if (form && form.dataset.form === "interview"){ const iv = byId(S.interviews, r.id); if (iv) upsert("interviews", {...iv, ...Object.fromEntries(new FormData(form))}); }
@@ -1288,7 +1530,7 @@ document.addEventListener("input", ev => {
 document.addEventListener("change", ev => {
   const el = ev.target; if (!isTextField(el) || el.dataset.field === "leading" || el.id === "transcriptBox" || el.id === "rubricBox") return;
   clearTimeout(typeTimers.get(el)); saveTextField(el);
-  if (el.dataset.act === "personaText" || el.dataset.act === "jobText" || el.closest("form[data-form=problem],form[data-form=config]")) setTimeout(render, 0);
+  if (["personaText","jobText","cStmt","cField","cItem","aText"].includes(el.dataset.act) || el.closest("form[data-form=problem],form[data-form=config]")) setTimeout(render, 0);
 }, true);
 
 document.addEventListener("submit", async ev => {
@@ -1297,6 +1539,7 @@ document.addEventListener("submit", async ev => {
     S = emptyState(); S.config = {founder:d.founder, venture:d.venture, coach:d.coach, minInterviews:5, strongShare:0.5, createdAt:new Date().toISOString()};
     await persist("config"); await persist("persona");
     if ((d.problem || "").trim()) upsert("problems", {id:"PR-01", text:d.problem.trim(), who:(d.who || "").trim()});
+    if ((d.who || "").trim()){ S.compass.customers = [{id:"C-01", text:d.who.trim(), why:"", ideal:true}]; await persist("compass"); }
     await store.write("drm/README.md", "This folder holds your Discovery Records Manager data. Edit it with the DRM app or ask your AI assistant; see CLAUDE.md at the top of the repository.\n");
     store.needsSetup = false; store.stamps = await store.scan(); startWatching(); go("home"); render();
   } else if (f.dataset.form === "addProblem"){ upsert("problems", {id:nextId("PR-", S.problems, 2), text:d.text.trim(), who:(d.who||"").trim()}); f.reset(); render(); }

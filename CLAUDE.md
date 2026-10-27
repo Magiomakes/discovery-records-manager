@@ -16,11 +16,19 @@ This folder is a founder's customer-discovery evidence ledger. The founder opens
 - IDs must be unique. Before creating a file, list the folder and use the next unused number.
 - Keep JSON valid and keep every field listed below, even when empty (`""`, `[]`).
 
+## The Compass: what the founder believes
+
+Before any interviews, the founder writes down hunches in the Compass: the solution they imagine, the problems they suspect, every customer segment and which one is the ideal first customer, the competitors and alternatives people use today, a problem statement and a value proposition. Those hunches become **assumptions**, each rated for impact (how much breaks if it's wrong) and uncertainty (how little is known), 1 to 5. Priority is impact × uncertainty.
+
+Each assumption's status (Untested, Shaky, Holding up, Contradicted) is computed by the app from discovery evidence, never from a score: problem assumptions from confirmed pain scores, the customer assumption by comparing pain across segments, and alternative/solution/value assumptions from confirmed quotes the founder tags as for or against. Your job on assumptions is to rate, explain and spot what's missing, and to point interviews at the riskiest untested ones.
+
 ## Folder layout
 
 ```
 drm/
   config.json          founder, venture, coach, minInterviews, strongShare
+  compass.json         solution, customers[], alternatives[], problemStatement, valueProp (read-only for you)
+  assumptions/A-01.json   one per assumption
   problems/PR-01.json  the problems the founder believes exist
   interviews/INT-001.json
   transcripts/INT-001.md   the full transcript, read-only for you
@@ -52,6 +60,13 @@ Pain score `drm/pain-scores/INT-001__PR-01.json`
 ```json
 {"id":"INT-001__PR-01","interviewId":"INT-001","problemId":"PR-01","tier":"Hair on Fire","evidenceIds":["INT-001-Q01","INT-001-Q02"],"scoredBy":"Claude Code","status":"Candidate","disagree":""}
 ```
+
+Assumption `drm/assumptions/A-01.json`
+```json
+{"id":"A-01","seed":"problem:PR-01","kind":"problem","text":"Student club treasurers have this problem: chasing members for receipts","problemId":"PR-01","customerId":"","alternativeId":"",
+ "impact":5,"uncertainty":3,"aiImpact":5,"aiUncertainty":4,"aiReason":"Everything rests on this and there is one strong interview so far.","evidence":[{"id":"INT-001-Q03","stance":"supports"}],"note":"","status":"Active","foundBy":"Founder"}
+```
+`kind` is one of `problem`, `customer`, `alternative`, `solution`, `value`. You may set `aiImpact`, `aiUncertainty` (1 to 5) and `aiReason` on any assumption. Never change `impact`, `uncertainty`, `text`, `evidence` or `status` on a founder's assumption. To propose a new assumption, write a file with `"status":"Candidate"` and `"foundBy"` set to your tool name; the founder accepts or dismisses it. Interviews carry a `customerId` (a segment from compass.json) so pain can be compared across segments; if it's empty, say so in your note rather than guessing.
 
 Problem `drm/problems/PR-02.json`
 ```json
@@ -85,6 +100,8 @@ Classify by what they did, not how they talk. Strong language supports a score b
 4. Pain scores: write one `drm/pain-scores/` file per problem the interviewee talked about, citing the evidence IDs that justify the tier. If a confirmed score already exists for that pair, don't overwrite it; mention your view in the note instead.
 5. Write `drm/notes/YYYY-MM-DD-review-INT-00x.md`: the hygiene findings with the leading questions quoted, which problem looks strongest and why, and two or three questions to ask next time to get past opinions to behavior. Put the same two or three sentences in the interview's `coachingNote`.
 6. Tell the founder what you wrote and remind them to confirm or reject each suggestion in the app.
+
+**Rank the riskiest assumptions**: read `drm/compass.json`, every file in `drm/assumptions/`, the confirmed evidence and pain scores. For each active assumption set `aiImpact`, `aiUncertainty` and a one-sentence `aiReason` that cites evidence IDs where there are any. Where the founder's rating and yours differ by 2 or more, say why in the note. Propose assumptions the snapshot implies but the founder hasn't written (a buyer who isn't the user, a channel, a switching cost) as Candidate files. Finish with a note in `drm/notes/` that names the single riskiest untested assumption and the two interview questions that would test it.
 
 **Audit the persona**: read `drm/persona.json` and the confirmed evidence. For each line, say whether the linked quotes actually support it, which lines are guesses, and which confirmed quotes they could cite. Write the result to `drm/notes/`. Don't edit persona.json.
 

@@ -56,9 +56,15 @@ Done. Next time, open the bookmark and click **Reopen**.
 
 ---
 
-## Start with your problems
+## Start with the Compass
 
-Discovery starts with a guess about a problem, not an idea for a product. Add each problem you believe exists under **Problems**. The dashboard shows how many confirmed interviews each one has and how many it still needs.
+Discovery starts with what you believe, written down so it can be tested.
+
+1. **Snapshot:** your solution as you imagine it, the problems you suspect, every customer segment (tick the one you'd bet on first), and the competitors and alternatives people use today, with the gap you think each leaves.
+2. **Statements:** fill in the problem statement and the value proposition.
+3. **Riskiest assumptions:** generate them from the snapshot, then rate each one: how much breaks if it's wrong, and how sure you are. Ask your AI to **Rank the riskiest assumptions**; it rates them too and explains.
+
+From then on, every interview updates the map. An assumption's status (Untested, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score you type. The home page tells you which assumption to test next.
 
 ## Connect your AI
 
