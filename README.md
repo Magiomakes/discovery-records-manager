@@ -4,6 +4,13 @@ A free, private evidence log for customer discovery. Founders record what custom
 
 **[Open the app](https://magiomakes.github.io/discovery-records-manager/)** · **[Try the demo](https://magiomakes.github.io/discovery-records-manager/?demo=1)** · **[Founder setup guide](SETUP.md)**
 
+## What's in it
+
+- **Compass:** the Ideas Lab Week 1 toolkit as living documents: Leaner Canvas, Value Proposition, Problem Statement, Assumptions Map (drag sticky notes onto a 2×2), Leads List.
+- **Evidence:** interviews with transcripts, a review queue for AI-suggested quotes and pain scores, every quote checked word for word.
+- **Validate:** each assumption's status read from the evidence, by focus area (Problem, Solution, Customers and alternatives).
+- **AI guardrails:** ratings must cite the quotes they rest on or they're stamped as guesses; pain tiers are checked against the quotes they cite; `tools/check.js` runs the same checks for the AI after every task.
+
 ## How it works
 
 - Each founder makes a **private** copy of this repository with **Use this template** (not Fork, since forks of this repo are public).

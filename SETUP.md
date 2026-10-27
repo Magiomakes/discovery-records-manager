@@ -58,13 +58,14 @@ Done. Next time, open the bookmark and click **Reopen**.
 
 ## Start with the Compass
 
-Discovery starts with what you believe, written down so it can be tested.
+It's the Week 1 toolkit, as working documents you keep editing all program. Click any grey "Type here" and type.
 
-1. **Snapshot:** your solution as you imagine it, the problems you suspect, every customer segment (tick the one you'd bet on first), and the competitors and alternatives people use today, with the gap you think each leaves.
-2. **Statements:** fill in the problem statement and the value proposition.
-3. **Riskiest assumptions:** generate them from the snapshot, then rate each one: how much breaks if it's wrong, and how sure you are. Ask your AI to **Rank the riskiest assumptions**; it rates them too and explains.
+1. **01 Leaner Canvas:** your top 1 to 3 problems, a possible solution for each, every possible customer with your ideal customer labelled 1, and how the problems are solved today.
+2. **02 Value Proposition** and **03 Problem Statement:** fill in the blanks. The sheet shows the finished sentence and the first discovery question it gives you.
+3. **04 Assumptions Map:** make sticky notes from your canvas and drag them onto the map. Up means catastrophic if wrong; left means likely wrong. Top-left gets tested first. Ask your AI to **Rank the riskiest assumptions**: it shows where it would put each note and what evidence that rests on. A note it rates with no evidence is stamped as a guess.
+4. **05 Leads List:** who you could talk to. Log an interview straight from a row.
 
-From then on, every interview updates the map. An assumption's status (Untested, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score you type. The home page tells you which assumption to test next.
+From then on, every interview updates the map. A note's status (No evidence yet, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score anyone types. **Validate** shows the picture by focus area: Problem, Solution, Customers and alternatives.
 
 ## Connect your AI
 
@@ -85,7 +86,7 @@ No AI tool that can read your folder? Every interview page has a fallback where 
 4. Read the AI's note under **AI notes**. It will tell you what to ask next time.
 5. Level 1: fill in **Customer persona**, linking a confirmed quote to every line. Level 2: add **Jobs**, mark one as the wedge, and check **MVP scope**.
 
-Other things to ask your AI, any time: **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**.
+Other things to ask your AI, any time: **Rank the riskiest assumptions**, **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
 
 The two rules: **quotes, not summaries** and **behavior, not interpretation.** Your AI knows them too, and it never confirms anything on your behalf.
 
