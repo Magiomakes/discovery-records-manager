@@ -50,6 +50,8 @@ a{color:var(--teal)}
 .sidefoot b{color:#fff;font-weight:600}
 .sidefoot .err{color:#ffb3ac}
 .main{overflow:auto;min-width:0}
+.main.bare{overflow:hidden;display:flex;flex-direction:column}
+.app.nosb{grid-template-columns:1fr} .app.nosb .side{display:none}
 .page{max-width:1160px;margin:0 auto;padding:26px 32px 90px}
 .crumbs{font-size:12.5px;color:var(--ink-3);margin-bottom:6px}
 .crumbs a{color:var(--ink-3);text-decoration:none}
@@ -231,6 +233,21 @@ mark.focus-mark,mark.focus{outline:2px solid var(--navy);outline-offset:1px}
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px}
 .mapwrap.sel{grid-template-columns:270px minmax(0,1fr) 290px}
 @media (max-width:1000px){.mapwrap,.mapwrap.sel{grid-template-columns:1fr}}
+.mapfull{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
+.tabstrip{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 10px 4px 14px;background:var(--paper);border-bottom:1px solid var(--line);flex-shrink:0}
+.tabstrip .tabs button{padding:7px 10px;font-size:13px}
+.counts{display:inline-flex;gap:8px;align-items:center;font-size:12px;color:var(--ink-2);margin-right:6px}
+.counts .cnt{display:inline-flex;align-items:center;gap:3px}
+.counts .dotp{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--navy);background:#fff}
+.counts .dotp.s-ok{background:var(--teal)} .counts .dotp.s-warn{background:var(--yellow)} .counts .dotp.s-bad{background:var(--coral)}
+.vp.full{flex:1;height:auto;border:none;border-radius:0;min-height:0}
+.ov{position:absolute;z-index:5;background:rgba(255,255,255,.97);border:2px solid var(--line-2);border-radius:10px;padding:14px 16px;box-shadow:0 10px 34px rgba(0,51,82,.16);cursor:default}
+.ov.ov-l{left:14px;top:14px;width:280px;max-height:calc(100% - 70px);overflow:auto}
+.ov.ov-r{right:14px;top:14px;width:300px;max-height:calc(100% - 70px);overflow:auto}
+.ov.ov-t{left:50%;transform:translateX(-50%);top:14px;width:min(620px,calc(100% - 660px));min-width:380px;max-height:45%;overflow:auto;border-color:var(--navy);padding:12px 16px}
+.ov.shelfpanel{right:14px;top:14px;bottom:52px;width:330px;overflow:auto}
+.ov h4{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--navy)}
+.ov.panel{padding:14px 16px}
 .vp{position:relative;height:640px;border:2px solid var(--navy);border-radius:8px;overflow:hidden;background-color:#e4eef3;background-image:radial-gradient(circle,#b9cfda 1px,transparent 1.3px);background-size:22px 22px;cursor:grab;user-select:none;touch-action:none}
 .vp.panning{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;--ik:1}
@@ -252,20 +269,26 @@ mark.focus-mark,mark.focus{outline:2px solid var(--navy);outline-offset:1px}
 .pt .dotp{position:absolute;left:-8px;top:-8px;width:16px;height:16px;border-radius:50%;border:2px solid var(--navy);background:#fff;box-shadow:0 1px 3px rgba(0,51,82,.3)}
 .pt .dotp.s-ok{background:var(--teal)} .pt .dotp.s-warn{background:var(--yellow)} .pt .dotp.s-bad{background:var(--coral)} .pt .dotp.s-none{background:#fff}
 .pt.cand .dotp{border-style:dashed;border-color:var(--teal)}
-.pt .lbl{position:absolute;left:13px;top:-11px;white-space:nowrap;font-size:12px;line-height:18px;color:var(--navy);background:rgba(255,255,255,.94);padding:1px 7px;border-radius:4px;border:1px solid var(--line);max-width:230px;overflow:hidden;text-overflow:ellipsis}
-.pt .lbl b{color:var(--ink-3);font-weight:700;font-size:10.5px;margin-right:2px}
-.pt.parked .lbl{color:var(--ink-2);border-style:dashed}
 .pt.sel .dotp{box-shadow:0 0 0 4px var(--pale),0 1px 3px rgba(0,51,82,.3)}
-.pt.sel .lbl{border-color:var(--navy);font-weight:600}
 .pt.dragging{z-index:9}
+.lbx{position:absolute;transform:translate(0,-50%) scale(var(--ik));transform-origin:0 50%;width:max-content;max-width:240px;min-width:40px;min-height:22px;font-size:12.5px;line-height:1.35;color:var(--navy);background:rgba(255,255,255,.96);padding:3px 8px 3px 24px;border-radius:5px;border:1px solid var(--line-2);box-shadow:0 1px 3px rgba(0,51,82,.12);cursor:grab;white-space:pre-wrap;outline:none;margin:0}
+.lbx:before{content:attr(data-k);position:absolute;left:7px;top:4px;font-size:10px;font-weight:800;color:var(--ink-3);letter-spacing:.02em}
+.lbx:empty:before{content:attr(data-k)}
+.lbx[data-ph]:empty:after{content:attr(data-ph);color:var(--ink-3);font-style:italic}
+.lbx.sel{border-color:var(--navy);box-shadow:0 0 0 2px var(--pale)}
+.lbx.cand{border-style:dashed;color:var(--ink-2)}
+.lbx:focus{cursor:text;background:#fffbe8;border-color:var(--yellow);box-shadow:0 0 0 2px var(--yellow);user-select:text;-webkit-user-select:text}
+.lbx.dragging{z-index:9;opacity:.9}
+.pt.ai .lbl{position:absolute;left:10px;top:-9px;font-size:10.5px;line-height:15px;color:var(--coral);border:1px solid var(--coral-bg);background:rgba(255,255,255,.85);padding:0 5px;border-radius:4px}
 .pt.ai{pointer-events:none}
 .pt.ai .dotp{left:-6px;top:-6px;width:12px;height:12px;border:2px dashed var(--coral);background:transparent;box-shadow:none}
 .pt.ai.sel .dotp{box-shadow:0 0 0 4px var(--coral-bg)}
-.pt.ai .lbl{left:10px;top:-9px;font-size:10.5px;line-height:15px;color:var(--coral);border-color:var(--coral-bg);background:rgba(255,255,255,.85)}
-.vp .hud{position:absolute;right:10px;bottom:8px;display:flex;gap:6px;z-index:3}
+.vp .hud{position:absolute;right:14px;bottom:10px;display:flex;gap:6px;z-index:3}
 .vp .hud .btn{padding:3px 9px;font-size:13px}
-.vp .legend{position:absolute;left:10px;bottom:8px;margin:0;display:flex;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.9);padding:4px 8px;border-radius:6px;font-size:11.5px}
+.vp .legend{position:absolute;left:14px;top:12px;margin:0;display:flex;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.9);padding:4px 8px;border-radius:6px;font-size:11.5px}
 .vp .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--navy);vertical-align:-1px;margin-right:4px}
+.vp .hint2{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;font-size:11.5px;color:var(--ink-3);background:rgba(255,255,255,.9);padding:3px 10px;border-radius:6px;white-space:nowrap;z-index:3}
+@media (max-width:1250px){.vp .hint2{display:none}}
 .panel{background:var(--paper);border:2px solid var(--line-2);border-radius:10px;padding:14px 16px;align-self:start}
 .panel.p-you{border-color:var(--navy)}
 .panel.p-ai{border-color:var(--coral)}
@@ -1123,7 +1146,8 @@ function compassNav(cur){
 }
 function compassView(step){
   step = step || "canvas";
-  const views = {canvas:canvasSheet, value:valueSheet, problem:problemSheet, map:mapSheet, leads:leadsSheet};
+  if (step === "map") return mapView();
+  const views = {canvas:canvasSheet, value:valueSheet, problem:problemSheet, leads:leadsSheet};
   return compassNav(step) + (views[step] || canvasSheet)();
 }
 const stepNav = (back, backLabel, next, nextLabel) => `<div class="row" style="justify-content:space-between;max-width:1120px;margin:0 auto">${back ? `<a class="btn" href="#/${back}">${backLabel}</a>` : "<span></span>"}${next ? `<a class="btn pri" href="#/${next}">${nextLabel}</a>` : ""}</div>`;
@@ -1184,14 +1208,17 @@ function problemSheet(){
   ${stepNav("compass/value", "Back", "compass/map", "Next: assumptions map")}`;
 }
 
-/* 04 Assumptions Map: an infinite canvas of points. The grid is the toolkit's 2x2; points outside it carry no rating. */
+/* 04 Assumptions Map: the whole screen is the canvas. Left click adds a point, drag a point to rate it,
+   drag its label to tidy up, right-drag to pan, scroll to zoom. The grid's edge is as far as a point goes. */
 const statusDot = s => s === "Holding up" ? "ok" : s === "Shaky" ? "warn" : s === "Contradicted" ? "bad" : "none";
+const LABEL_DEFAULT = {dx:18, dy:0};
+function labelOf(a){ const l = a.label && typeof a.label === "object" ? a.label : LABEL_DEFAULT; return {dx:Number(l.dx) || 0, dy:Number(l.dy) || 0}; }
 function pointHtml(x, w, extra){
-  const a = x.a, k = ASSUMPTION_KINDS[a.kind] || {short:"?"};
-  const label = (a.text || "").trim() || "untitled point";
-  return `<div class="pt ${extra || ""} ${ui.selNote === a.id ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""}" data-pt="${esc(a.id)}" style="left:${w.x}px;top:${w.y}px" title="${esc(a.text)}"><span class="dotp s-${statusDot(x.s.status)}"></span><span class="lbl"><b>${esc(k.short)}</b> ${esc(label.length > 38 ? label.slice(0, 36) + "…" : label)}</span></div>`;
+  const a = x.a; const sel = ui.selNote === a.id; const l = labelOf(a); const k = ASSUMPTION_KINDS[a.kind] || {short:"?"};
+  return `<div class="pt ${extra || ""} ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""}" data-pt="${esc(a.id)}" style="left:${w.x}px;top:${w.y}px"><span class="dotp s-${statusDot(x.s.status)}"></span></div>
+  <div class="lbx ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""}" data-lab="${esc(a.id)}" data-act="aText" data-id="${esc(a.id)}" contenteditable="plaintext-only" data-ph="Type the assumption" data-k="${esc(k.short)}" style="left:${w.x + l.dx}px;top:${w.y + l.dy}px">${esc(a.text)}</div>`;
 }
-function mapSheet(){
+function mapView(){
   const r = compassReadout(); const ranked = rankedAssumptions();
   const active = ranked.filter(x => x.a.status === "Active"), cands = ranked.filter(x => x.a.status === "Candidate");
   const placed = active.filter(x => inGrid(x.a.pos));
@@ -1200,53 +1227,63 @@ function mapSheet(){
   const h = MAP.size / 2;
   const ai = active.filter(x => x.a.aiImpact && x.a.aiConfidence).map(x => ({x, w:worldOf({x:(Number(x.a.aiConfidence) - 1) / 4, y:(Number(x.a.aiImpact) - 1) / 4})}));
   const lab = (x, y, cls, text) => `<div class="wlab ${cls || ""}" style="left:${x}px;top:${y}px"><span>${text}</span></div>`;
-  const vp = `<div class="vp" id="vp">
-    <div class="hud"><button class="btn" data-act="seedAssumptions" title="Make a point for each item on your canvas">${S.assumptions.length ? "Points from canvas" : "Make points from my canvas"}</button><button class="btn" data-act="newAssumption">+ Point</button><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
-    <div class="world" id="world">
-      <div class="bounds" style="left:${WORLD.x0}px;top:${WORLD.y0}px;width:${WORLD.x1 - WORLD.x0}px;height:${WORLD.y1 - WORLD.y0}px"></div>
-      <div class="quad" style="left:${-h}px;top:${-h}px;width:${h}px;height:${h}px"></div>
-      <div class="region grid" style="left:${-h}px;top:${-h}px;width:${MAP.size}px;height:${MAP.size}px"></div>
-      <div class="axis h" style="left:${-h}px;top:-1px;width:${MAP.size}px"></div><div class="axis v" style="top:${-h}px;left:-1px;height:${MAP.size}px"></div>
-      ${lab(0, -h - 16, "", "Catastrophic")}${lab(0, h + 16, "", "Inconvenient")}${lab(-h - 14, 0, "l", "Likely wrong")}${lab(h + 14, 0, "r", "Likely right")}
-      ${lab(-h + 14, -h + 16, "risk", "Riskiest<small>test these first</small>")}
-      <div class="region shelf" style="left:${-h}px;top:${MAP.shelfTop}px;width:${MAP.size}px;height:${Math.max(MAP.shelfH, 76 + Math.ceil(shelf.length / 4) * 36)}px"></div>
-      ${lab(-h + 14, MAP.shelfTop + 18, "shelf", shelf.length ? "Not placed yet · drag into the grid to rate" : "Nothing waiting · double-click anywhere to add a point")}
-      <svg class="links">${ai.filter(g => inGrid(g.x.a.pos)).map(g => { const w = worldOf(g.x.a.pos); return `<line x1="${w.x}" y1="${w.y}" x2="${g.w.x}" y2="${g.w.y}" stroke="#f25d4f" stroke-dasharray="4 3" stroke-width="1.2"/>`; }).join("")}</svg>
-      ${ai.map(g => `<div class="pt ai ${ui.selNote === g.x.a.id ? "sel" : ""}" style="left:${g.w.x}px;top:${g.w.y}px"><span class="dotp"></span><span class="lbl">AI · ${esc(g.x.a.id)}</span></div>`).join("")}
-      ${shelf.map((x, i) => pointHtml(x, shelfWorld(i), "parked")).join("")}
-      ${placed.map(x => pointHtml(x, worldOf(x.a.pos))).join("")}
+  const worldPos = x => inGrid(x.a.pos) ? worldOf(x.a.pos) : shelfWorld(shelf.indexOf(x));
+  const leaders = active.concat(cands).map(x => { const w = worldPos(x); const l = labelOf(x.a); return `<line x1="${w.x}" y1="${w.y}" x2="${w.x + l.dx}" y2="${w.y + l.dy}" stroke="#afc6d1" stroke-width="1.2"/>`; }).join("");
+  const steps = [["canvas","01 Leaner Canvas"],["value","02 Value Proposition"],["problem","03 Problem Statement"],["map","04 Assumptions Map"],["leads","05 Leads List"]];
+  const counts = ["Holding up","Shaky","Untested","Contradicted"].map(k => `<span class="cnt" title="${k === "Untested" ? "No evidence yet" : k}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
+  return `<div class="mapfull">
+    <div class="tabstrip"><div class="tabs" style="margin:0;border:none">${steps.map(([k, l]) => `<button class="${k === "map" ? "on" : ""}" data-act="go" data-href="compass/${k}">${l}</button>`).join("")}</div>
+      <div class="row" style="gap:6px"><span class="counts">${counts}</span>
+        <button class="btn sm" data-act="seedAssumptions" title="Make a point for each item on your canvas">${S.assumptions.length ? "Points from canvas" : "Make points from my canvas"}</button>
+        <button class="btn sm ${ui.mapShelf ? "pri" : ""}" data-act="toggleShelf" title="My riskiest assumption, how I'll get evidence, ask your AI">Notes</button>
+        <button class="btn sm" data-act="toggleFull" title="${ui.mapFull ? "Show the sidebar" : "Hide the sidebar"}">${ui.mapFull ? "⤡" : "⤢"}</button></div></div>
+    <div class="vp full" id="vp">
+      <div class="world" id="world">
+        <div class="bounds" style="left:${WORLD.x0}px;top:${WORLD.y0}px;width:${WORLD.x1 - WORLD.x0}px;height:${WORLD.y1 - WORLD.y0}px"></div>
+        <div class="quad" style="left:${-h}px;top:${-h}px;width:${h}px;height:${h}px"></div>
+        <div class="region grid" style="left:${-h}px;top:${-h}px;width:${MAP.size}px;height:${MAP.size}px"></div>
+        <div class="axis h" style="left:${-h}px;top:-1px;width:${MAP.size}px"></div><div class="axis v" style="top:${-h}px;left:-1px;height:${MAP.size}px"></div>
+        ${lab(0, -h - 16, "", "Catastrophic")}${lab(0, h + 16, "", "Inconvenient")}${lab(-h - 14, 0, "l", "Likely wrong")}${lab(h + 14, 0, "r", "Likely right")}
+        ${lab(-h + 14, -h + 16, "risk", "Riskiest<small>test these first</small>")}
+        <div class="region shelf" style="left:${-h}px;top:${MAP.shelfTop}px;width:${MAP.size}px;height:${Math.max(MAP.shelfH, 76 + Math.ceil(shelf.length / 4) * 36)}px"></div>
+        ${lab(-h + 14, MAP.shelfTop + 18, "shelf", shelf.length ? "Not rated yet · drag into the grid" : "Nothing waiting · click anywhere to add a point")}
+        <svg class="links">${leaders}${ai.filter(g => inGrid(g.x.a.pos)).map(g => { const w = worldOf(g.x.a.pos); return `<line x1="${w.x}" y1="${w.y}" x2="${g.w.x}" y2="${g.w.y}" stroke="#f25d4f" stroke-dasharray="4 3" stroke-width="1.2"/>`; }).join("")}</svg>
+        ${ai.map(g => `<div class="pt ai ${ui.selNote === g.x.a.id ? "sel" : ""}" style="left:${g.w.x}px;top:${g.w.y}px"><span class="dotp"></span><span class="lbl">AI</span></div>`).join("")}
+        ${shelf.map((x, i) => pointHtml(x, shelfWorld(i), "parked")).join("")}
+        ${placed.map(x => pointHtml(x, worldOf(x.a.pos))).join("")}
+      </div>
+      <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
+      <div class="legend"><span><i style="background:var(--teal)"></i>Holding up</span><span><i style="background:var(--yellow)"></i>Shaky</span><span><i style="background:var(--coral)"></i>Contradicted</span><span><i style="background:#fff"></i>No evidence yet</span><span><i style="border:1.5px dashed var(--coral)"></i>AI's placement</span></div>
+      <div class="hint2">Click to add a point · drag a point to rate it · drag its label to tidy · right-drag to pan · scroll to zoom</div>
+      ${sel ? selCard(sel) + youPanel(sel) + aiPanel(sel) : ""}
+      ${ui.mapShelf && !sel ? notesShelf(r) : ""}
     </div>
-    <div class="legend"><span><i style="background:var(--teal)"></i>Holding up</span><span><i style="background:var(--yellow)"></i>Shaky</span><span><i style="background:var(--coral)"></i>Contradicted</span><span><i style="background:#fff"></i>No evidence yet</span><span><i style="border:1.5px dashed var(--coral)"></i>AI's placement</span></div>
-  </div>
-  <p class="hint" style="margin:6px 0 0">Drag a point into the grid to rate it; the grid's edge is as far as it goes. Drop it outside to put it back on the shelf. Drag the background to pan, ⌘/Ctrl + scroll to zoom, double-click empty space to add a point. Dashed coral points are where your AI would put them.</p>`;
-  const verdict = `<div class="notice ${r.cls === "ok" ? "ok" : r.cls === "bad" ? "bad" : r.cls === "gray" ? "plain" : "warn"}" style="margin-top:10px"><b>${esc(r.verdict)}</b> <span class="small">${["Holding up","Shaky","Untested","Contradicted"].map(k => `${k === "Untested" ? "No evidence yet" : k} ${r.counts[k]}`).join(" · ")}</span></div>`;
-  const side = `<div>
+  </div>`;
+}
+/* Pop-out shelf: the toolkit's two boxes and the AI ask, off the canvas until wanted. */
+function notesShelf(r){
+  return `<div class="ov shelfpanel"><div class="spread"><h4 style="margin:0">Notes</h4><button class="btn icon" data-act="toggleShelf" title="Close">✕</button></div>
+    <div class="notice ${r.cls === "ok" ? "ok" : r.cls === "bad" ? "bad" : r.cls === "gray" ? "plain" : "warn"}" style="margin:10px 0 14px"><b>${esc(r.verdict)}</b></div>
     <div class="sidebox"><h4>My riskiest assumption</h4>${ed("cField", `data-field="riskiest"`, S.compass.riskiest, "Type here")}${r.riskiestOpen && !S.compass.riskiest ? `<button class="btn link small" data-act="cSet" data-field="riskiest" data-val="${esc(r.riskiestOpen.a.text)}">Use the top of the map: ${esc(r.riskiestOpen.a.id)}</button>` : ""}</div>
     <div class="sidebox"><h4>How I'll get evidence this week</h4>${ed("cField", `data-field="evidencePlan"`, S.compass.evidencePlan, "Type here")}</div>
     <div class="sidebox"><h4>Ask your AI</h4><div class="small">Say <span class="kbd">Rank the riskiest assumptions</span>. It places each point, says what it based that on, and flags any it rated with no evidence.</div><button class="btn sm" style="margin-top:6px" data-act="copyText" data-text="Rank the riskiest assumptions">Copy</button></div>
     ${r.candidates ? `<div class="notice warn">${r.candidates} point${r.candidates > 1 ? "s" : ""} suggested by your AI ${r.candidates > 1 ? "are" : "is"} waiting below the grid. Click one to accept or dismiss it.</div>` : ""}
   </div>`;
-  return `<div class="sheet">${sheetHead("04", "Assumptions Map", null, false)}
-  ${sel ? selBar(sel) : ""}
-  <div class="mapwrap ${sel ? "sel" : ""}">${sel ? youPanel(sel) : ""}<div>${vp}${verdict}</div>${sel ? aiPanel(sel) : side}</div>
-  ${sheetFoot("04")}</div>
-  ${stepNav("compass/problem", "Back", "compass/leads", "Next: leads list")}`;
 }
-/* The selected point: the bet itself and what the evidence says about it. Neither yours nor the AI's: the data's. */
-function selBar(a){
+/* The selected point: what the evidence says. Neither yours nor the AI's: the data's. Floats at the top of the canvas. */
+function selCard(a){
   const x = {a, p:assumptionPriority(a), s:assumptionStatus(a)}; const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind, test:""};
   const area = areaOf(a);
   const link = a.kind === "problem" && a.problemId ? `<a href="#/problems/${esc(a.problemId)}">Open this problem's evidence</a>` : `<a href="#/insights/${area}">Open ${esc(AREAS[area].title)} insights</a>`;
   const taggable = !((a.kind === "problem" && a.problemId) || ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId));
   const tagged = (a.evidence || []).map(t => ({...t, e:byId(S.evidence, t.id)})).filter(t => t.e);
   const confirmedQuotes = S.evidence.filter(e => e.status === "Confirmed");
-  const where = x.p ? `<span class="chip gray">Priority ${x.p}</span>` : `<span class="chip warn">On the shelf: not rated yet</span>`;
-  return `<div class="selbar">
-    <div class="spread"><div class="row"><span class="mono muted">${esc(a.id)}</span><span class="chip blue">${esc(k.label)}</span>${where}${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
+  const where = x.p ? `<span class="chip gray">Priority ${x.p}</span>` : `<span class="chip warn">Not rated yet</span>`;
+  return `<div class="ov ov-t selbar">
+    <div class="spread"><div class="row" style="gap:6px"><span class="mono muted">${esc(a.id)}</span><span class="chip blue">${esc(k.label)}</span>${where}${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
       <div class="row">${a.status === "Candidate" ? `<button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Dismiss</button><button class="btn pri sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">Accept</button>` : ""}<button class="btn icon" data-act="closeNote" title="Close (Esc)">✕</button></div></div>
-    ${ed("aText", `data-id="${esc(a.id)}"`, a.text, "Type your assumption")}
     <div class="notice ${x.s.status === "Holding up" ? "ok" : x.s.status === "Contradicted" ? "bad" : x.s.status === "Shaky" ? "warn" : "plain"}" style="margin-top:8px"><b>${esc(x.s.status === "Untested" ? "No evidence yet" : x.s.status)}.</b> ${esc(x.s.why)}. <span class="muted">Read from ${esc(k.test)}.</span> ${link}</div>
-    ${taggable ? `<details class="fold" style="margin-top:8px"><summary>Quotes for and against (${tagged.length})</summary>
+    ${taggable ? `<details class="fold" style="margin-top:8px;padding:6px 12px"><summary>Quotes for and against (${tagged.length})</summary>
       ${tagged.map(t => `<div class="q compact s-${esc(t.e.status)}" style="margin:8px 0 6px"><div class="spread"><span class="words">${esc(t.e.quote)}</span><div class="row"><span class="seg"><button class="${t.stance === "supports" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="supports">For</button><button class="${t.stance === "contradicts" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="contradicts">Against</button></span><button class="btn icon no" title="Untag" data-act="aUntag" data-id="${esc(a.id)}" data-eid="${esc(t.id)}">✕</button></div></div><div class="meta"><a href="#/interviews/${esc(t.e.interviewId)}">${esc(t.e.interviewId)}</a>${t.e.status !== "Confirmed" ? statusChip(t.e.status) : ""}</div></div>`).join("")}
       <select data-act="aTag" data-id="${esc(a.id)}" style="max-width:100%;margin-top:6px"><option value="">Tag a confirmed quote…</option>${confirmedQuotes.filter(e => !(a.evidence||[]).some(t => t.id === e.id)).map(e => opt(e.id, "", `${e.id}: ${e.quote.slice(0, 90)}`)).join("")}</select></details>` : ""}
   </div>`;
@@ -1256,7 +1293,7 @@ function bar5(val, cls){ const v = Number(val) || 0; return `<div class="rate">$
 /* Your side of the page. */
 function youPanel(a){
   const p = assumptionPriority(a);
-  return `<div class="panel p-you"><h4>You</h4>
+  return `<div class="ov ov-l panel p-you"><h4>You</h4>
     <div class="lab">Impact if wrong</div>${scale5("impact", a.id, a.impact)}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
     <div class="lab">Likely right?</div>${scale5("confidence", a.id, a.confidence)}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
     <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b> <span class="small muted">impact × (6 − confidence)</span>` : `<span class="small muted">Pick numbers above or drag the point into the grid.</span>`}</div>
@@ -1270,8 +1307,8 @@ function youPanel(a){
 /* The AI's side of the page. Always says what the rating rests on. */
 function aiPanel(a){
   const basis = aiBasis(a); const p = aiPriority(a); const dis = disagreement(a);
-  if (basis.kind === "none") return `<div class="panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Rank the riskiest assumptions</pre><button class="btn sm" data-act="copyText" data-text="Rank the riskiest assumptions">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on, and is told to say so when it has none.</p></div>`;
-  return `<div class="panel p-ai"><h4>Your AI</h4>
+  if (basis.kind === "none") return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Rank the riskiest assumptions</pre><button class="btn sm" data-act="copyText" data-text="Rank the riskiest assumptions">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on, and is told to say so when it has none.</p></div>`;
+  return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4>
     <div style="margin-bottom:12px">${basis.kind === "evidence" ? `<span class="stamp ok">${esc(basis.label)}</span>` : `<span class="stamp">${esc(basis.label)}</span>`}</div>
     <div class="lab">Impact if wrong <span class="muted">${esc(a.aiImpact || "?")}</span></div>${bar5(a.aiImpact, "ai")}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
     <div class="lab">Likely right? <span class="muted">${esc(a.aiConfidence || "?")}</span></div>${bar5(a.aiConfidence, "ai")}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
@@ -1413,10 +1450,10 @@ function route(){
 }
 function go(h){ location.hash = "#/" + h; }
 function dropSub(){ const r = route(); if (r.sub) history.replaceState(null, "", "#/" + r.page + "/" + r.id); }
-window.addEventListener("hashchange", () => { const r = route(); ui.drawer = null; ui.askFor = null; ui.selNote = (r.page === "compass" && r.id === "map" && r.sub) ? r.sub : null; ui.editQuote = null; render(); });
-document.addEventListener("keydown", ev => { if (ev.key === "Escape" && (ui.drawer || ui.askFor || ui.selNote)){ ui.drawer = null; ui.askFor = null; ui.selNote = null; dropSub(); render(); } });
+window.addEventListener("hashchange", () => { const r = route(); const prev = ui.selNote; ui.drawer = null; ui.askFor = null; ui.selNote = (r.page === "compass" && r.id === "map" && r.sub) ? r.sub : null; if (prev !== ui.selNote) cleanupEmpty(prev); ui.editQuote = null; render(); });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && (ui.drawer || ui.askFor || ui.selNote || ui.mapShelf)){ if (ev.target.isContentEditable && !ev.target.classList.contains("lbx")){ ev.target.blur(); return; } if (ev.target.isContentEditable) ev.target.blur(); ui.drawer = null; ui.askFor = null; ui.mapShelf = false; deselect(); render(); } });
 
-function shell(content){
+function shell(content, bare){
   const m = metrics(); const r = route(); const demo = store.kind === "demo";
   const link = (h, label, badge) => { const on = h.includes("/") ? (r.page + "/" + (r.id || "")) === h : r.page === h; return `<a href="#/${h}" class="${on ? "on" : ""}"><span>${label}</span>${badge || ""}</a>`; };
   const group = (key, title, items, pending) => {
@@ -1427,7 +1464,7 @@ function shell(content){
   const c = compassReadout();
   const foot = demo ? "Demo data. Nothing is saved." : `Folder <b>${esc(store.name)}</b><br>${saveErr ? `<span class="err">Save failed: ${esc(saveErr)}</span>` : savedAt ? "Saved " + ago(savedAt) : "Changes save automatically"}<br>${lastPush ? "Pushed " + ago(lastPush) : "Not pushed yet"}${aiReady === false ? `<br><span class="err">CLAUDE.md missing: your AI won't know the rules</span>` : ""}`;
   return `${demo ? `<div class="banner"><b>Demo.</b> A fictional founder's DRM. Nothing is saved. <button class="btn link" data-act="leave">Open your own folder</button></div>` : ""}
-  <div class="app" style="${demo ? "height:calc(100vh - 37px)" : ""}">
+  <div class="app ${bare && ui.mapFull ? "nosb" : ""}" style="${demo ? "height:calc(100vh - 37px)" : ""}">
     <aside class="side">
       <div class="brand"><b>${esc(S.config.venture || "Discovery Records")}</b><span>${esc(S.config.founder || "Discovery Records Manager")}</span></div>
       <nav class="nav">
@@ -1448,7 +1485,7 @@ function shell(content){
       </nav>
       <div class="sidefoot">${foot}</div>
     </aside>
-    <main class="main"><div class="page">${content}</div></main>
+    <main class="main ${bare ? "bare" : ""}">${bare ? content : `<div class="page">${content}</div>`}</main>
   </div>`;
 }
 
@@ -1460,7 +1497,8 @@ function render(){
   if (r.page === "compass" && r.id === "map" && r.sub && !ui.selNote) ui.selNote = r.sub;
   const views = {home:dashView, compass:compassView, insights:insightsView, ledger:ledgerView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : () => insightsView("problem"), persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, notes:notesView, guide:guideView, report:reportView, settings:settingsView};
   const scrollEl = document.querySelector(".main"); const keep = scrollEl && root.dataset.page === location.hash ? scrollEl.scrollTop : 0;
-  root.innerHTML = shell((views[r.page] || dashView)(r.id)) + (ui.drawer ? drawerView() : "") + (ui.askFor ? askPanel() : "");
+  const bare = r.page === "compass" && r.id === "map";
+  root.innerHTML = shell((views[r.page] || dashView)(r.id), bare) + (ui.drawer ? drawerView() : "") + (ui.askFor ? askPanel() : "");
   root.dataset.page = location.hash;
   const m2 = document.querySelector(".main"); if (m2) m2.scrollTop = keep;
   if (ui.drawer && ui.drawerScroll){ const f = document.querySelector(".drawer .focus-mark, .drawer .near"); if (f) f.scrollIntoView({block:"center"}); ui.drawerScroll = false; }
@@ -1996,9 +2034,11 @@ document.addEventListener("click", async ev => {
     upsert("interviews", {id, date:today(), interviewee:l.name || "", role:l.org || "", customerId:(idealCustomer()||{}).id || "", source:"", interviewer:S.config.founder || "", recentInstance:"", leading:"", pitched:"", demoed:"", closing:"", rubricRun:false, notes:l.why ? "From leads list: " + l.why : "", coachingNote:""});
     l.done = true; l.interviewId = id; persist("compass"); ui.tab[id] = "quotes"; go("interviews/" + id); }
   else if (a === "seedAssumptions"){ const n = seedAssumptions(); render(); toast(n ? `Added ${n} point${n > 1 ? "s" : ""} from your canvas. Drag them into the grid to rate them.` : "Nothing new. Everything on the canvas already has a point."); }
-  else if (a === "newAssumption"){ const id = nextId("A-", S.assumptions, 2); upsert("assumptions", blankAssumption(id)); ui.selNote = id; render(); focusLast('.selbar [data-act="aText"]'); }
-  else if (a === "selNote"){ ui.selNote = el.dataset.id; render(); }
-  else if (a === "closeNote"){ ui.selNote = null; dropSub(); render(); }
+  else if (a === "newAssumption"){ const id = nextId("A-", S.assumptions, 2); upsert("assumptions", blankAssumption(id)); selectPoint(id); ui.focusLab = id; render(); }
+  else if (a === "selNote"){ selectPoint(el.dataset.id); render(); }
+  else if (a === "closeNote"){ deselect(); render(); }
+  else if (a === "toggleShelf"){ ui.mapShelf = !ui.mapShelf; if (ui.mapShelf) deselect(); render(); }
+  else if (a === "toggleFull"){ ui.mapFull = !ui.mapFull; render(); }
   else if (a === "aScale"){ const x = byId(S.assumptions, el.dataset.id); const nx = {...x, [el.dataset.field]: Number(el.dataset.val)}; if (nx.impact && nx.confidence) nx.pos = {x:(nx.confidence - 1) / 4, y:(nx.impact - 1) / 4}; upsert("assumptions", nx); render(); }
   else if (a === "aStatus"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, status: el.dataset.val}); if (el.dataset.val === "Retired"){ ui.selNote = null; dropSub(); } render(); }
   else if (a === "aStance"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).map(t => t.id === el.dataset.eid ? {...t, stance:el.dataset.val} : t)}); render(); }
@@ -2050,7 +2090,7 @@ document.addEventListener("focusout", ev => {
   // Delay the refresh so a click that caused the blur lands on the element the person aimed at.
   setTimeout(() => { if (!document.activeElement || !document.activeElement.isContentEditable) render(); }, 160);
 });
-document.addEventListener("keydown", ev => { if (ev.key === "Enter" && ev.target.isContentEditable && ev.target.classList.contains("ed")){ ev.preventDefault(); ev.target.blur(); } });
+document.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && ev.target.isContentEditable && (ev.target.classList.contains("ed") || ev.target.classList.contains("lbx"))){ ev.preventDefault(); ev.target.blur(); } });
 document.addEventListener("input", ev => {
   const el = ev.target;
   if (el.id === "transcriptBox"){ ui.drafts.transcript[el.dataset.iv] = el.value; return; }
@@ -2086,6 +2126,7 @@ function mountMap(){
   const w = vp.getBoundingClientRect().width;
   if (!ui.view) fitMap(vp); else if (ui.viewW && Math.abs(w - ui.viewW) > 2) ui.view.x += (w - ui.viewW) / 2;   // layout changed: keep the view centred
   ui.viewW = w; applyView();
+  if (ui.focusLab){ const el = vp.querySelector(`.lbx[data-lab="${CSS.escape(ui.focusLab)}"]`); ui.focusLab = null; if (el){ el.focus(); const s = window.getSelection(), rg = document.createRange(); rg.selectNodeContents(el); rg.collapse(false); s.removeAllRanges(); s.addRange(rg); } }
 }
 function fitK(vp){ const r = vp.getBoundingClientRect(); const pad = 12; return Math.max(0.15, Math.min((r.width - pad * 2) / (WORLD.x1 - WORLD.x0), (r.height - pad * 2) / (WORLD.y1 - WORLD.y0))); }
 function fitMap(vp){ const r = vp.getBoundingClientRect(); const k = fitK(vp); ui.view = {k, x:r.width / 2 - k * (WORLD.x0 + WORLD.x1) / 2, y:r.height / 2 - k * (WORLD.y0 + WORLD.y1) / 2}; }
@@ -2102,16 +2143,30 @@ function clampView(vp){
 function applyView(){ const w = document.getElementById("world"), vp = document.getElementById("vp"); if (!w || !vp || !ui.view) return; clampView(vp); w.style.transform = `translate(${ui.view.x}px,${ui.view.y}px) scale(${ui.view.k})`; w.style.setProperty("--ik", 1 / ui.view.k); }
 function zoomAt(cx, cy, f){ const v = ui.view; if (!v) return; const k2 = Math.min(4, v.k * f); const wx = (cx - v.x) / v.k, wy = (cy - v.y) / v.k; v.k = k2; v.x = cx - wx * k2; v.y = cy - wy * k2; applyView(); }
 function worldAt(vp, clientX, clientY){ const r = vp.getBoundingClientRect(); const v = ui.view; return {x:(clientX - r.left - v.x) / v.k, y:(clientY - r.top - v.y) / v.k}; }
-let drag = null, pan = null;
+/* A point with nothing written on it disappears when you click away. */
+function cleanupEmpty(id){ const a = id && byId(S.assumptions, id); if (a && a.status === "Active" && !a.seed && !(a.text || "").trim() && !a.aiImpact && !a.aiReason && !(a.evidence || []).length && !(a.note || "").trim()) removeRec("assumptions", a.id); }
+function deselect(){ const prev = ui.selNote; ui.selNote = null; dropSub(); cleanupEmpty(prev); }
+function selectPoint(id){ if (ui.selNote === id) return; const prev = ui.selNote; ui.selNote = id; dropSub(); cleanupEmpty(prev); }
+let drag = null, dragLab = null, pan = null;
+document.addEventListener("contextmenu", ev => { if (ev.target.closest && ev.target.closest("#vp")) ev.preventDefault(); });
 document.addEventListener("pointerdown", ev => {
-  if (ev.button !== 0) return;
   const vp = ev.target.closest("#vp"); if (!vp || !ui.view) return;
-  if (ev.target.closest(".hud,.legend,.hint2,button,select,input,[contenteditable]")) return;
-  const pt = ev.target.closest(".pt[data-pt]");
-  if (pt){ const a = byId(S.assumptions, pt.dataset.pt); if (!a) return;
-    drag = {id:a.id, el:pt, startX:ev.clientX, startY:ev.clientY, moved:false, locked:a.status === "Candidate", wx:parseFloat(pt.style.left), wy:parseFloat(pt.style.top)};
-    pt.setPointerCapture(ev.pointerId); return; }
-  pan = {startX:ev.clientX, startY:ev.clientY, vx:ui.view.x, vy:ui.view.y, moved:false, vp};
+  if (ev.target.closest(".hud,.legend,.hint2,.ov,button,select,input")) return;
+  if (ev.button === 0){
+    const pt = ev.target.closest(".pt[data-pt]");
+    if (pt){ const a = byId(S.assumptions, pt.dataset.pt); if (!a) return;
+      drag = {id:a.id, el:pt, lab:vp.querySelector(`.lbx[data-lab="${CSS.escape(a.id)}"]`), startX:ev.clientX, startY:ev.clientY, moved:false, locked:a.status === "Candidate", wx:parseFloat(pt.style.left), wy:parseFloat(pt.style.top)};
+      pt.setPointerCapture(ev.pointerId); return; }
+    const lab = ev.target.closest(".lbx[data-lab]");
+    if (lab){ if (document.activeElement === lab) return;           // already editing: let the mouse select text
+      ev.preventDefault();
+      dragLab = {id:lab.dataset.lab, el:lab, startX:ev.clientX, startY:ev.clientY, moved:false, wx:parseFloat(lab.style.left), wy:parseFloat(lab.style.top)};
+      lab.setPointerCapture(ev.pointerId); return; }
+    if (ev.target.closest("[contenteditable]")) return;
+  }
+  if (ev.button > 2) return;
+  ev.preventDefault();
+  pan = {button:ev.button, startX:ev.clientX, startY:ev.clientY, vx:ui.view.x, vy:ui.view.y, moved:false, vp};
   vp.setPointerCapture(ev.pointerId);
 });
 document.addEventListener("pointermove", ev => {
@@ -2120,8 +2175,18 @@ document.addEventListener("pointermove", ev => {
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     if (drag.locked) return;
     if (!drag.moved){ drag.moved = true; ui.dragging = true; drag.el.classList.add("dragging"); }
-    drag.w = clampWorld({x:drag.wx + dx / ui.view.k, y:drag.wy + dy / ui.view.k});
-    drag.el.style.left = drag.w.x + "px"; drag.el.style.top = drag.w.y + "px"; return;
+    const w0 = {x:drag.wx + dx / ui.view.k, y:drag.wy + dy / ui.view.k}; const raw = posOf(w0);
+    drag.w = inGrid(raw) ? worldOf(clampPos(raw)) : clampWorld(w0);            // inside the grid the edge is the limit
+    drag.el.style.left = drag.w.x + "px"; drag.el.style.top = drag.w.y + "px";
+    if (drag.lab){ const l = labelOf(byId(S.assumptions, drag.id)); drag.lab.style.left = (drag.w.x + l.dx) + "px"; drag.lab.style.top = (drag.w.y + l.dy) + "px"; }
+    return;
+  }
+  if (dragLab){
+    const dx = ev.clientX - dragLab.startX, dy = ev.clientY - dragLab.startY;
+    if (!dragLab.moved && Math.hypot(dx, dy) < 4) return;
+    if (!dragLab.moved){ dragLab.moved = true; ui.dragging = true; dragLab.el.classList.add("dragging"); }
+    dragLab.w = clampWorld({x:dragLab.wx + dx / ui.view.k, y:dragLab.wy + dy / ui.view.k});
+    dragLab.el.style.left = dragLab.w.x + "px"; dragLab.el.style.top = dragLab.w.y + "px"; return;
   }
   if (pan){
     const dx = ev.clientX - pan.startX, dy = ev.clientY - pan.startY;
@@ -2133,24 +2198,32 @@ document.addEventListener("pointermove", ev => {
 document.addEventListener("pointerup", ev => {
   if (drag){
     const d = drag; drag = null; ui.dragging = false;
-    if (!d.moved){ if (ui.selNote !== d.id){ ui.selNote = d.id; dropSub(); render(); } return; }
+    if (!d.moved){ selectPoint(d.id); render(); return; }
     const a = byId(S.assumptions, d.id); if (!a) return;
-    const raw = posOf(d.w); const pos = inGrid(raw) ? clampPos(raw) : null;   // in the grid: rated, edge is the limit; outside: back on the shelf
+    const raw = posOf(d.w); const pos = inGrid(raw) ? clampPos(raw) : null;   // in the grid: rated; outside: back on the shelf
     upsert("assumptions", {...a, pos, ...(pos ? ratingOf(pos) : {impact:"", confidence:""})}); render(); return;
   }
-  if (pan){ const p = pan; pan = null; ui.dragging = false; p.vp.classList.remove("panning"); if (!p.moved && ui.selNote){ ui.selNote = null; dropSub(); render(); } }
-});
-document.addEventListener("dblclick", ev => {
-  const vp = ev.target.closest("#vp"); if (!vp || !ui.view || ev.target.closest(".pt,.hud,.legend,.hint2")) return;
-  const raw = posOf(worldAt(vp, ev.clientX, ev.clientY)); const pos = inGrid(raw) ? clampPos(raw) : null; const id = nextId("A-", S.assumptions, 2);
-  upsert("assumptions", {...blankAssumption(id), pos, ...(pos ? ratingOf(pos) : {})}); ui.selNote = id; render(); focusLast('.selbar [data-act="aText"]');
+  if (dragLab){
+    const d = dragLab; dragLab = null; ui.dragging = false;
+    const a = byId(S.assumptions, d.id); if (!a) return;
+    if (!d.moved){ selectPoint(d.id); ui.focusLab = d.id; render(); return; }   // a click on the label: edit it
+    const pt = document.querySelector(`#vp .pt[data-pt="${CSS.escape(d.id)}"]`); const px = parseFloat(pt.style.left), py = parseFloat(pt.style.top);
+    upsert("assumptions", {...a, label:{dx:Math.round(d.w.x - px), dy:Math.round(d.w.y - py)}}); render(); return;
+  }
+  if (pan){
+    const p = pan; pan = null; ui.dragging = false; p.vp.classList.remove("panning");
+    if (p.moved || p.button !== 0) return;
+    // a plain left click on empty canvas adds a point there
+    const raw = posOf(clampWorld(worldAt(p.vp, ev.clientX, ev.clientY))); const pos = inGrid(raw) ? clampPos(raw) : null; const id = nextId("A-", S.assumptions, 2);
+    const prev = ui.selNote; upsert("assumptions", {...blankAssumption(id), pos, ...(pos ? ratingOf(pos) : {})}); ui.selNote = id; dropSub(); cleanupEmpty(prev); ui.focusLab = id; render();
+  }
 });
 document.addEventListener("wheel", ev => {
   const vp = ev.target.closest && ev.target.closest("#vp"); if (!vp || !ui.view) return;
+  if (ev.target.closest(".ov")) return;                                          // panels scroll normally
   ev.preventDefault();
   const r = vp.getBoundingClientRect();
-  if (ev.ctrlKey || ev.metaKey) zoomAt(ev.clientX - r.left, ev.clientY - r.top, Math.exp(-ev.deltaY * 0.0025));
-  else { ui.view.x -= ev.deltaX; ui.view.y -= ev.deltaY; applyView(); }
+  zoomAt(ev.clientX - r.left, ev.clientY - r.top, Math.exp(-ev.deltaY * (ev.ctrlKey || ev.metaKey ? 0.01 : 0.0018)));
 }, {passive:false});
 
 /* ---------------- folder handling + watching for AI writes ---------------- */
