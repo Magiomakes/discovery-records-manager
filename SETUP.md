@@ -45,7 +45,7 @@ Skip this if you already have one.
 ## Step 5. Open the DRM app
 
 1. In **Chrome or Edge**, go to **[magiomakes.github.io/discovery-records-manager](https://magiomakes.github.io/discovery-records-manager/)**. Bookmark it.
-2. Click **Open my DRM folder** and choose the `my-drm` folder from Step 4. Pick the folder itself, not a file inside it.
+2. Click **Open my DRM repository** and choose the `my-drm` folder from Step 4: the folder GitHub Desktop made, the one that contains `index.html` and `CLAUDE.md`. Pick that folder itself, not a file inside it, and not the `drm` folder inside it: that is where the app keeps your data, and if you open it the app will tell you to go up one level.
 3. When the browser asks whether the site can edit files, click **Edit files** (or **Allow**).
 4. Type your name, your idea and your coach's name.
 5. Write down **the problem you believe exists**, the way a customer would say it (not your solution). It's a guess for now, and your interviews will test it. Then click **Create my DRM**.
@@ -104,7 +104,7 @@ Your coach opens your repository on GitHub and sees your **coach report** on the
 
 ## Good to know
 
-- **Where your data is:** everything is in the `drm` folder inside your repository, as plain text files. Use the app or your AI to change them rather than editing by hand.
+- **Where your data is:** everything is in the `drm` folder inside your repository, as plain text files. Use the app or your AI to change them rather than editing by hand. The app and your AI both open the repository folder (the one above `drm`), never the `drm` folder itself.
 - **Back it up by pushing.** If you don't push and lose your laptop, your notes are gone. Pushing weekly is a good habit even without a meeting.
 - **Using another computer:** clone the repository there too (Step 4). Before you start, click **Fetch origin** then **Pull** in GitHub Desktop. When you're done, commit and push. Don't edit on two computers at the same time.
 - **Interviewee names:** use first names or aliases like "Treasurer A". Ask people before you record or transcribe them.

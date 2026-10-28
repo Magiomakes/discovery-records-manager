@@ -460,6 +460,7 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .welcome{max-width:760px;margin:0;padding:64px 48px 96px}
 .welcome h1{font-size:64px;font-weight:var(--wb);letter-spacing:-.03em;line-height:.98;margin:0;max-width:12ch}
 .welcome .sub{font-family:var(--serif);font-weight:300;font-size:28px;line-height:1.25;margin:20px 0 36px;max-width:30ch;font-variation-settings:"opsz" 72}
+.welcome h1 .mono,.welcome .sub .mono{font-size:.8em;font-weight:400}
 .welcome .card{border-top:2px solid var(--ink);padding:18px 0 0;margin-bottom:28px}
 .welcome .card hr{border:none;border-top:1px solid var(--hair);margin:18px 0}
 .welcome .hint{max-width:62ch}
@@ -598,6 +599,14 @@ class FolderStore {
   async isInitialized(){ return (await this.read("drm/config.json")) !== null; }
   async hasGit(){ try { await this.root.getDirectoryHandle(".git"); return true; } catch(e){ return false; } }
   async hasAiInstructions(){ return (await this.read("CLAUDE.md")) !== null; }
+  /* The commonest setup mistake: picking the drm/ data folder inside the repository instead of the
+     repository itself. The app can't look at the parent, so it goes by what's inside: a ledger's own
+     files at the top (config.json), or a folder called drm with none of the repository's files. */
+  async looksLikeDataFolder(){
+    if ((await this.read("config.json")) !== null && (await this.read("index.html")) === null) return "data";
+    if (/^drm$/i.test(this.name) && (await this.read("index.html")) === null && (await this.read("CLAUDE.md")) === null && !(await this.hasGit())) return "named";
+    return "";
+  }
   async lastPush(){
     try {
       const g = await this.root.getDirectoryHandle(".git");
@@ -1863,7 +1872,7 @@ function shell(content, bare){
       ${closed ? "" : items.map(([h, l, b]) => link(h, l, b)).join("")}`;
   };
   const c = compassReadout();
-  const foot = demo ? "Demo data. Nothing is saved." : `Folder <b>${esc(store.name)}</b><br>${saveErr ? `<span class="err">Save failed: ${esc(saveErr)}</span>` : savedAt ? "Saved " + ago(savedAt) : "Changes save automatically"}<br>${lastPush ? "Pushed " + ago(lastPush) : "Not pushed yet"}${aiReady === false ? `<br><span class="err">CLAUDE.md missing: your AI won't know the rules</span>` : ""}`;
+  const foot = demo ? "Demo data. Nothing is saved." : `Folder <b>${esc(store.name)}</b><br>${saveErr ? `<span class="err">Save failed: ${esc(saveErr)}</span>` : savedAt ? "Saved " + ago(savedAt) : "Changes save automatically"}<br>${lastPush ? "Pushed " + ago(lastPush) : "Not pushed yet"}${aiReady === false ? `<br><span class="err">CLAUDE.md missing: your AI won't know the rules. Did you open the drm folder instead of the repository? Switch folder under Settings.</span>` : ""}`;
   return `${demo ? `<div class="banner"><b>Demo.</b> A fictional founder's DRM. Nothing is saved. <button class="btn link" data-act="leave">Open your own folder</button></div>` : ""}
   <div class="app ${bare && ui.mapFull ? "nosb" : ""}" style="${demo ? "height:calc(100vh - 37px)" : ""}">
     <aside class="side">
@@ -1894,6 +1903,7 @@ function shell(content, bare){
 function render(){
   const root = $("#root");
   if (!store){ root.innerHTML = welcomeView(); return; }
+  if (store.wrongFolder){ root.innerHTML = wrongFolderView(); return; }
   if (store.needsSetup){ root.innerHTML = setupView(); return; }
   const r = route();
   if (r.page === "compass" && r.id === "map" && r.sub && !ui.selNote) ui.selNote = r.sub;
@@ -2003,14 +2013,25 @@ function welcomeView(){
     <div class="card">
       ${supported ? `
         ${ui.savedHandle ? `<button class="btn pri" data-act="reopen" style="margin-bottom:10px">Reopen “${esc(ui.savedHandle.name)}”</button><br>` : ""}
-        <button class="btn ${ui.savedHandle ? "" : "pri"}" data-act="open">Open my DRM folder</button>
-        <p class="hint" style="margin-top:10px">Choose the folder GitHub Desktop put your DRM repository in. First time? Follow the <a href="${SETUP_URL}" target="_blank" rel="noopener">setup guide</a>.</p>`
+        <button class="btn ${ui.savedHandle ? "" : "pri"}" data-act="open">Open my DRM repository</button>
+        <p class="hint" style="margin-top:10px">Choose the repository folder GitHub Desktop made, such as <span class="mono">my-drm</span>: the one with <span class="mono">index.html</span> and <span class="mono">CLAUDE.md</span> in it. Not the <span class="mono">drm</span> folder inside it; that's where the app keeps your data. First time? Follow the <a href="${SETUP_URL}" target="_blank" rel="noopener">setup guide</a>.</p>`
       : `<div class="notice warn">This browser can't save to a folder on your computer. Open this page in Google Chrome or Microsoft Edge to use your own DRM. The demo works here.</div>`}
       <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
       <button class="btn" data-act="demo">Look at the demo</button> <span class="hint">A fictional founder's DRM. Nothing is saved.</span>
     </div>
     <p class="hint">Your files stay on your computer and in your own private repository. This page sends nothing anywhere. Method adapted from Darren Yee's <a href="https://darrenyee.substack.com/p/the-discovery-ladder" target="_blank" rel="noopener">The Discovery Ladder</a>.</p>
   </div>`;
+}
+function wrongFolderView(){
+  const data = store.wrongFolder === "data";
+  return `<div class="welcome"><div class="card">
+    <h1 style="font-size:40px">That's the <span class="mono">drm</span> folder, not the repository</h1>
+    <p class="sub">${data
+      ? `The folder “${esc(store.name)}” holds a DRM's data files (config.json, problems, interviews). The app wants the folder <b>above</b> it: the repository that GitHub Desktop made, which has <span class="mono">index.html</span>, <span class="mono">CLAUDE.md</span> and this <span class="mono">drm</span> folder inside it.`
+      : `The folder “${esc(store.name)}” has none of the repository's files in it (no <span class="mono">index.html</span>, no <span class="mono">CLAUDE.md</span>). The app wants the folder <b>above</b> it: the repository that GitHub Desktop made, such as <span class="mono">my-drm</span>.`}</p>
+    <div class="notice warn" style="margin:0 0 18px">Opening this folder instead would put your data one level too deep (a <span class="mono">drm</span> inside <span class="mono">drm</span>) and your AI assistant wouldn't find its rules file.</div>
+    <div class="row"><button class="btn pri" data-act="open">Choose the folder above it</button><button class="btn" data-act="useAnyway">Use this folder anyway</button><button class="btn link" data-act="leave">Cancel</button></div>
+  </div></div>`;
 }
 function setupView(){
   return `<div class="welcome"><div class="card" style="padding:22px 24px">
@@ -2224,7 +2245,7 @@ function askView(){
       <li><b>Claude Desktop:</b> start a conversation and add your DRM folder to it, or make a Project with the folder connected.</li>
       <li><b>Cursor, Windsurf, Codex and others:</b> open the DRM folder as the workspace. They read <span class="mono">AGENTS.md</span>.</li>
     </ol>
-    <p class="hint" style="margin:10px 0 0">The rules file tells your AI the three rules, the file format, and that it may only ever suggest: it leans slightly sceptical, so every rating comes with the case against it. ${aiReady === false ? `<span style="font-weight:800">It's missing from this folder. Copy CLAUDE.md and AGENTS.md from the <a href="${TEMPLATE_URL}" target="_blank" rel="noopener">template</a>.</span>` : ""}</p></div>
+    <p class="hint" style="margin:10px 0 0">The rules file tells your AI the three rules, the file format, and that it may only ever suggest: it leans slightly sceptical, so every rating comes with the case against it. ${aiReady === false ? `<span style="font-weight:800">It's missing from this folder. If you opened the <span class="mono">drm</span> folder inside your repository, switch to the repository folder itself (Settings → Switch folder); otherwise copy CLAUDE.md and AGENTS.md from the <a href="${TEMPLATE_URL}" target="_blank" rel="noopener">template</a>.</span>` : ""}</p></div>
   <div class="box soft"><h3>What comes back</h3><ul style="margin:0;padding-left:20px;max-width:66ch">
     <li>Quotes and pain scores appear under <a href="#/review">Suggestions</a> within a few seconds, marked with which tool suggested them. The app checks each quote against the transcript.</li>
     <li>Ratings land on the <a href="#/compass/map">Assumptions Map</a> as the AI's own points, each saying what evidence it rests on.</li>
@@ -2389,6 +2410,7 @@ document.addEventListener("click", async ev => {
   const a = el.dataset.act; const r = route();
   if (a === "demo"){ store = new MemoryStore(); S = demoState(); aiReady = true; go("home"); render(); }
   else if (a === "open") await openFolder(false);
+  else if (a === "useAnyway"){ store.wrongFolder = ""; await enterRoot(); }
   else if (a === "reopen") await openFolder(true);
   else if (a === "leave"){ stopWatching(); store = null; S = emptyState(); ui.view = null; ui.savedHandle = await idb.get("root").catch(() => null); location.hash = ""; render(); }
   else if (a === "undo"){ const u = ui.toast && ui.toast.undo; hideToast(); if (u) u(); render(); }
@@ -2674,9 +2696,13 @@ async function checkFolder(){
   if (cand > beforeCand) toast(`${cand - beforeCand} new suggestion${cand - beforeCand > 1 ? "s" : ""} from your AI. Review them when you're ready.`);
   else if (S.notes.length > beforeNotes) toast("Your AI wrote a new note.");
 }
-async function useRoot(root){
+async function useRoot(root, force){
   store = new FolderStore(root); ui.view = null;
-  await idb.set("root", root).catch(() => {});
+  if (!force){ store.wrongFolder = await store.looksLikeDataFolder(); if (store.wrongFolder){ render(); return; } }
+  await enterRoot();
+}
+async function enterRoot(){
+  await idb.set("root", store.root).catch(() => {});
   aiReady = await store.hasAiInstructions();
   if (!(await store.isInitialized())){ store.needsSetup = true; store.noGit = !(await store.hasGit()); render(); return; }
   S = await store.loadAll();
