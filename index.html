@@ -368,6 +368,9 @@ const TIER_DEF = {
   "Not a Problem":"No sign they have it."
 };
 const EVIDENCE_TYPES = ["Past behavior, irreversible","Past behavior, reversible","Current workaround","Frequency","Cost (time or money)","Strong language","Opinion or future intent"];
+/* A quote is for the problem (shows it, or what they do about it) or against it (shows it's mild, rare, solved or not theirs). Older files have no stance: for. */
+const STANCES = ["for","against"];
+const stanceOf = e => e && e.stance === "against" ? "against" : "for";
 const EVIDENCE_DEF = {
   "Past behavior, irreversible":"Money spent, recurring time, or a workaround they built and keep using.",
   "Past behavior, reversible":"Tried something and dropped it, abandoned free trials.",
@@ -542,6 +545,14 @@ function removeRec(type, id){ S[type] = S[type].filter(r => r.id !== id); unpers
 /* ---------------- calculations ---------------- */
 function confirmedPains(){ return S.pains.filter(p => p.status === "Confirmed"); }
 function hygieneIssues(iv){ return (Number(iv.leading) > 0 ? 1 : 0) + (iv.pitched === "Yes" ? 1 : 0) + (iv.demoed === "Yes" ? 1 : 0); }
+/* An interview that can't carry a bet on its own: a friend or family member, leading questions, a pitch or demo, or no recent instance. It still counts; it just can't be what holds the bet up. */
+function weakInterview(iv){ return !iv || hygieneIssues(iv) > 0 || iv.source === "Friend or family" || iv.recentInstance === "No"; }
+function painShare(ps){
+  const top2 = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier));
+  const weak = top2.filter(p => weakInterview(byId(S.interviews, p.interviewId))).length;
+  const n = ps.length;
+  return {n, top2:top2.length, weak, share:n ? top2.length / n : 0, cleanShare:n ? (top2.length - weak) / n : 0};
+}
 function topTier(ivId){
   const tiers = confirmedPains().filter(p => p.interviewId === ivId).map(p => TIERS.indexOf(p.tier)).filter(i => i >= 0);
   return tiers.length ? TIERS[Math.min(...tiers)] : "";
@@ -553,8 +564,9 @@ function problemStats(pr){
   const share = n ? top2 / n : 0;
   const minN = Number(S.config.minInterviews ?? 5), strong = Number(S.config.strongShare ?? 0.5);
   const signal = n < minN ? "Need more interviews" : share >= strong ? "Strong signal" : "Weak signal";
-  const quotes = S.evidence.filter(e => e.problemId === pr.id && e.status === "Confirmed").length;
-  return {n, counts, share, signal, quotes};
+  const confirmedQuotes = S.evidence.filter(e => e.problemId === pr.id && e.status === "Confirmed");
+  const quotes = confirmedQuotes.length, against = confirmedQuotes.filter(e => stanceOf(e) === "against").length;
+  return {n, counts, share, signal, quotes, against};
 }
 /* Deterministic rubric check: does the cited evidence justify the tier? Same rule the AI is told to follow. */
 function painCheck(p){
@@ -569,6 +581,8 @@ function painCheck(p){
   if (p.tier === "Incremental Improvement" && !types.has("Past behavior, reversible") && !types.has("Current workaround") && !types.has("Past behavior, irreversible")) issues.push("Incremental Improvement needs a quote showing they tried something (reversible effort or a current workaround).");
   const onlyWeak = ev.length && [...types].every(t => ["Opinion or future intent","Strong language"].includes(t));
   if (onlyWeak && strongTiers.includes(p.tier)) issues.push("Every cited quote is opinion or language. Those support a score; they can't decide one.");
+  const against = ev.filter(e => stanceOf(e) === "against").length;
+  if (against && strongTiers.includes(p.tier)) issues.push(`${against} cited quote${against > 1 ? "s say" : " says"} the problem is mild, rare or solved. That lowers a tier; it can't justify a strong one.`);
   const unconfirmed = ev.filter(e => e.status !== "Confirmed").length;
   if (unconfirmed) issues.push(`${unconfirmed} cited quote${unconfirmed > 1 ? "s aren't" : " isn't"} confirmed yet.`);
   const missing = (p.evidenceIds || []).filter(id => !byId(S.evidence, id));
@@ -620,8 +634,9 @@ function rubricPrompt(iv){
 RULES
 1. Quotes, not summaries. Every piece of evidence must be copied word for word from the transcript. Do not paraphrase, shorten, combine or fix grammar. If you can't find the exact words, leave it out.
 2. Behavior, not interpretation. What the person has already done counts more than what they feel or say they would do.
-3. Mark everything you produce as Candidate. The founder confirms or rejects each item.
-4. Use only the exact labels listed below for types, tiers and Yes/No fields.
+3. Argue against it. Look as hard for words that show the problem is mild, rare, already solved or not this person's as for words that show it. When two readings are possible, take the weaker one; the founder can push back.
+4. Mark everything you produce as Candidate. The founder confirms or rejects each item.
+5. Use only the exact labels listed below for types, tiers, stances and Yes/No fields.
 
 PART 1: INTERVIEW HYGIENE
 Check the interviewer, not the interviewee:
@@ -635,15 +650,16 @@ Specific recent instance|Leading questions (number)|Pitched or sold|Demoed|Closi
 Then list the leading questions you counted, quoted.
 
 PART 2: EVIDENCE
-Pull out every quote that shows the problem, what they do about it, how often, what it costs, or how strongly they feel. One quote per row.
+Pull out every quote that shows the problem, what they do about it, how often, what it costs, or how strongly they feel. Also pull out every quote that shows the problem is mild, rare, already solved, or not this person's. One quote per row.
 Output in a code block, one row per quote, separated by | , with no header row:
-Evidence ID|Interview ID|Problem ID|Job ID|Verbatim quote|Where in transcript|Evidence type|Found by|Status
+Evidence ID|Interview ID|Problem ID|Job ID|Verbatim quote|Where in transcript|Evidence type|Stance|Found by|Status
 - Evidence ID: the Interview ID plus -Q01, -Q02 and so on (example: ${iv ? iv.id : "INT-003"}-Q01).
 - Problem ID: the matching ID from the problem list. If the quote shows a problem not on the list, write NEW: and a five-word description.
 - Job ID: the matching ID from the job list if one was given, otherwise leave it empty.
 - Where in transcript: the timestamp, or the first few words of the line if there are no timestamps.
 - Evidence type, exactly one of: ${EVIDENCE_TYPES.join(" / ")}
   (Past behavior, irreversible = money spent, recurring time, or a workaround they built and keep using. Past behavior, reversible = tried something and dropped it, free trials. Opinion or future intent = "I would", "I'd probably", "that sounds useful".)
+- Stance: for if the quote shows the problem or what they do about it; against if it shows the problem is mild, rare, already solved, or not theirs.
 - Found by: AI candidate
 - Status: Candidate
 Because | separates columns, replace any | inside a quote with /.
@@ -659,7 +675,7 @@ Interview ID|Problem ID|Pain tier|Supporting evidence IDs|Scored by|Status
 - Status: Candidate
 
 PART 4: COACHING NOTE
-In two or three plain sentences: what the founder should ask next time to get past opinions to behavior, and which problem looks strongest so far and why.
+In three or four plain sentences: which problem looks strongest and which weakest so far, and why; the single strongest reason this interview should not count (who the person is to the founder, leading questions, a pitch, no specific recent instance); and what the founder should ask next time to get past opinions to behavior. Do not use the words validated, proven or strong signal.
 
 MY INPUTS
 Interview ID: ${iv ? iv.id : "[for example INT-003]"}
@@ -694,8 +710,9 @@ function parseRubric(text){
     } else if (parts.length === 6 && matchLabel(parts[2], TIERS)){
       out.pains.push({aiInterview:parts[0], problemRef:parts[1], tier:matchLabel(parts[2], TIERS), evidenceIds:parts[3].split(/[,;\s]+/).filter(Boolean)});
     } else if (parts.length >= 9){
-      const tail = parts.slice(-4); const quote = parts.slice(4, parts.length - 4).join("/");
-      out.evidence.push({aiId:parts[0], problemRef:parts[2], jobRef:parts[3], quote:quote.replace(/^["“]|["”]$/g,"").trim(), where:tail[0], typeRaw:tail[1], type:matchLabel(tail[1], EVIDENCE_TYPES)});
+      const hasStance = parts.length >= 10 && STANCES.includes(String(parts[parts.length - 3]).trim().toLowerCase());   // replies to the older prompt have no stance column
+      const tail = parts.slice(hasStance ? -5 : -4); const quote = parts.slice(4, parts.length - tail.length).join("/");
+      out.evidence.push({aiId:parts[0], problemRef:parts[2], jobRef:parts[3], quote:quote.replace(/^["“]|["”]$/g,"").trim(), where:tail[0], typeRaw:tail[1], type:matchLabel(tail[1], EVIDENCE_TYPES), stance:hasStance ? tail[2].trim().toLowerCase() : "for"});
     } else out.skipped.push(raw);
   }
   return out;
@@ -722,7 +739,7 @@ function planImport(iv, parsed){
     let id = e.aiId && /^[A-Za-z0-9_-]+$/.test(e.aiId) && e.aiId.startsWith(iv.id) && !byId(evList, e.aiId) ? e.aiId : null;
     if (!id) id = nextId(iv.id + "-Q", evList.filter(x => x.id.startsWith(iv.id + "-Q")), 2);
     idMap[e.aiId] = id;
-    const rec = {id, interviewId:iv.id, problemId:resolveProblem(e.problemRef), jobId:byId(S.jobs, e.jobRef) ? e.jobRef : "", quote:e.quote, where:e.where, type:e.type || "", foundBy:"Claude Code", status:"Candidate", note: e.type ? "" : `AI type: ${e.typeRaw}`};
+    const rec = {id, interviewId:iv.id, problemId:resolveProblem(e.problemRef), jobId:byId(S.jobs, e.jobRef) ? e.jobRef : "", quote:e.quote, where:e.where, type:e.type || "", stance:e.stance || "for", foundBy:"Claude Code", status:"Candidate", note: e.type ? "" : `AI type: ${e.typeRaw}`};
     evList.push(rec);
     rec._verbatim = !!findInTranscript(rec.quote, transcript);
     return rec;
@@ -864,7 +881,7 @@ function demoState(){
     {id:"INT-001-Q03", interviewId:"INT-001", problemId:"PR-01", jobId:"", quote:"We tried a free expense app for a month but nobody uploaded to it, so we went back to the group chat.", where:"18:30", type:"Past behavior, reversible", foundBy:"Claude Code", status:"Confirmed", note:""},
     {id:"INT-001-Q04", interviewId:"INT-001", problemId:"PR-01", jobId:"", quote:"Honestly it drives me up the wall.", where:"19:10", type:"Strong language", foundBy:"Claude Code", status:"Candidate", note:""},
     {id:"INT-002-Q01", interviewId:"INT-002", problemId:"PR-01", jobId:"", quote:"Yeah, I'd probably use something like that if it was free.", where:"08:15", type:"Opinion or future intent", foundBy:"Claude Code", status:"Confirmed", note:"Answer to our pitch, so weak."},
-    {id:"INT-002-Q02", interviewId:"INT-002", problemId:"PR-01", jobId:"", quote:"It only comes up at the end of term, it's not a big deal.", where:"10:02", type:"Frequency", foundBy:"Claude Code", status:"Candidate", note:""}
+    {id:"INT-002-Q02", interviewId:"INT-002", problemId:"PR-01", jobId:"", quote:"It only comes up at the end of term, it's not a big deal.", where:"10:02", type:"Frequency", stance:"against", foundBy:"Claude Code", status:"Candidate", note:""}
   ];
   D.pains = [
     {id:"INT-001__PR-01", interviewId:"INT-001", problemId:"PR-01", tier:"Hair on Fire", evidenceIds:["INT-001-Q01","INT-001-Q02"], scoredBy:"Claude Code", status:"Confirmed", disagree:""},
@@ -906,9 +923,9 @@ Nice to Have at most. She hasn't done anything about it.
     {id:"PL-02", name:"LinkedIn: \"treasurer\" + \"student association\" at your university", kind:"LinkedIn search", url:"", how:"Search people with the title treasurer and the university name; message the ones who held it in the last two years.", who:"Student club treasurers", customerId:"C-01", why:"No interviewee mentioned LinkedIn. This is a guess from the segment description.", evidenceIds:[], verified:"", foundBy:"Claude Code", status:"Candidate", note:""}
   ];
   D.assumptions = [
-    {id:"A-01", seed:"problem:PR-01", kind:"problem", problemId:"PR-01", customerId:"", alternativeId:"", text:"Student club treasurers have this problem: chasing members for receipts before reimbursing them", impact:5, confidence:3, pos:{x:0.55, y:0.95}, aiImpact:5, aiConfidence:2, aiEvidence:["INT-001-Q01","INT-001-Q02"], aiReason:"Everything rests on this. Two confirmed quotes from one treasurer show real cost and a workaround she keeps; the second interview was a pitch, so it adds nothing. One person is not a pattern yet.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-01", seed:"problem:PR-01", kind:"problem", problemId:"PR-01", customerId:"", alternativeId:"", text:"Student club treasurers have this problem: chasing members for receipts before reimbursing them", impact:5, confidence:3, pos:{x:0.55, y:0.95}, aiImpact:5, aiConfidence:2, aiEvidence:["INT-001-Q01","INT-001-Q02"], aiReason:"Everything rests on this. Two confirmed quotes from one treasurer show real cost and a workaround she keeps; the second interview was a pitch, so it adds nothing. One person is not a pattern yet.", aiAgainst:"Both quotes come from one treasurer who chose to answer a poll about receipts; the only other treasurer, a friend, said it isn't a big deal (INT-002-Q02).", aiWouldChange:"Three more treasurers from cold outreach who each describe a recent instance and a workaround they keep.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
     {id:"A-02", seed:"customer:C-01", kind:"early-adopters", customerId:"C-01", problemId:"", alternativeId:"", text:"Student club treasurers feel this more than presidents or finance staff and are the right first customer", impact:4, confidence:2, pos:{x:0.25, y:0.72}, aiImpact:4, aiConfidence:2, aiEvidence:[], aiReason:"No interviews with presidents or finance staff yet, so there is nothing to compare against.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
-    {id:"A-03", seed:"alt:ALT-02", kind:"alternatives", alternativeId:"ALT-02", problemId:"", customerId:"", text:"Free expense apps don't solve it: members won't install another app", impact:3, confidence:4, pos:{x:0.78, y:0.45}, aiImpact:3, aiConfidence:3, aiEvidence:["INT-001-Q03"], aiReason:"One confirmed quote: her club tried an app for a month and nobody uploaded. One club's experience, so I'd be less sure than you are.", evidence:[{id:"INT-001-Q03", stance:"supports"}], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-03", seed:"alt:ALT-02", kind:"alternatives", alternativeId:"ALT-02", problemId:"", customerId:"", text:"Free expense apps don't solve it: members won't install another app", impact:3, confidence:4, pos:{x:0.78, y:0.45}, aiImpact:3, aiConfidence:3, aiEvidence:["INT-001-Q03"], aiReason:"One confirmed quote: her club tried an app for a month and nobody uploaded. One club's experience, so I'd be less sure than you are.", aiAgainst:"Nobody uploaded to the free app for a month, which may say the problem isn't worth a new habit, not that the app was wrong (INT-001-Q03).", aiWouldChange:"A club that tried an app and kept using it, or one that dropped it for a reason other than members not bothering.", evidence:[{id:"INT-001-Q03", stance:"supports"}], note:"", status:"Active", foundBy:"Founder"},
     {id:"A-04", seed:"solution:PR-01", kind:"solution", problemId:"PR-01", customerId:"", alternativeId:"", text:"Treasurers would switch from the group chat to an app where members snap receipts", impact:4, confidence:1, pos:{x:0.12, y:0.78}, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"Nobody has been asked about switching. The solution hasn't come up in any interview.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
     {id:"A-05", seed:"", kind:"other", problemId:"", customerId:"C-03", alternativeId:"", text:"Student union finance staff would pay for this on behalf of clubs", impact:4, confidence:"", pos:null, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"A buyer assumption hiding in the value proposition. The treasurer isn't the one with budget. Worth one conversation.", evidence:[], note:"", status:"Candidate", foundBy:"Claude Code"}
   ];
@@ -978,7 +995,7 @@ function idealCustomer(){ return (S.compass.customers || []).find(c => c.ideal) 
 function valuePropText(){ const v = S.compass.valueProp; return VP_PARTS.map(([k, lead]) => lead + " " + (v[k] || "[" + VP_PARTS.find(p => p[0] === k)[2].replace("Type your ", "").replace(" here", "") + "]")).join(" ") + "."; }
 function problemStatementText(){ const p = S.compass.problemStatement; return PS_PARTS.map(([k, lead]) => lead + " " + (p[k] || "[" + k + "]")).join(" ") + "."; }
 function firstQuestion(){ const p = S.compass.problemStatement; return `Have you experienced ${p.context || "[context]"} / ${p.complication || "[complication]"}?`; }
-function blankAssumption(id){ return {id, seed:"", kind:"other", text:"", problemId:"", customerId:"", alternativeId:"", impact:"", confidence:"", pos:null, aiImpact:"", aiConfidence:"", aiEvidence:[], aiReason:"", evidence:[], note:"", status:"Active", foundBy:"Founder"}; }
+function blankAssumption(id){ return {id, seed:"", kind:"other", text:"", problemId:"", customerId:"", alternativeId:"", impact:"", confidence:"", pos:null, aiImpact:"", aiConfidence:"", aiEvidence:[], aiReason:"", aiAgainst:"", aiWouldChange:"", evidence:[], note:"", status:"Active", foundBy:"Founder"}; }
 
 /* Seed points from the canvas. Idempotent: each seed has a key; existing ones are kept. */
 function seedAssumptions(){
@@ -1020,11 +1037,13 @@ function assumptionStatus(a){
   const confirmed = confirmedPains();
   if (a.kind === "problem" && a.problemId){
     const ps = confirmed.filter(p => p.problemId === a.problemId);
-    const n = ps.length; const top2 = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)).length; const share = n ? top2 / n : 0;
+    const {n, top2, weak, share, cleanShare} = painShare(ps);
     const shaky = ps.filter(p => !painCheck(p).ok).length;
     const q = shaky ? ` (${shaky} of those fail the rubric check)` : "";
+    const w = weak ? `; ${weak} of those ${weak === 1 ? "is" : "are"} from a friend, a leading interview, a pitch or no recent instance` : "";
     if (n < minN) return {status:"Untested", why:`${n} of ${minN} confirmed interviews scored on this problem${q}`, n, share};
-    if (share >= strong) return {status:"Holding up", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${Math.round(share*100)}%)${q}`, n, share};
+    if (share >= strong && cleanShare < strong) return {status:"Shaky", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${Math.round(share*100)}%)${w}, so only interviews that can't carry it clear your bar${q}`, n, share};
+    if (share >= strong) return {status:"Holding up", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${Math.round(share*100)}%)${w}${q}`, n, share};
     if (share <= 0.2) return {status:"Contradicted", why:`Only ${top2} of ${n} interviews show real pain (${Math.round(share*100)}%)${q}`, n, share};
     return {status:"Shaky", why:`${top2} of ${n} interviews show real pain (${Math.round(share*100)}%), below your ${Math.round(strong*100)}% bar${q}`, n, share};
   }
@@ -1033,9 +1052,11 @@ function assumptionStatus(a){
     for (const p of confirmed){ const iv = byId(S.interviews, p.interviewId); const seg = iv && iv.customerId ? iv.customerId : "?"; (bySeg[seg] = bySeg[seg] || []).push(p); }
     const mine = bySeg[a.customerId] || []; const untagged = (bySeg["?"] || []).length;
     if (mine.length < 3) return {status:"Untested", why:`${mine.length} of 3 confirmed scores from this segment${untagged ? ` (${untagged} interviews have no segment set)` : ""}`, n:mine.length};
-    const s = segShare(mine);
+    const ms = painShare(mine); const s = ms.share;
+    const w = ms.weak ? `, ${ms.weak} of them from friends, leading interviews, pitches or no recent instance` : "";
+    if (s >= strong && ms.cleanShare < strong) return {status:"Shaky", why:`${Math.round(s*100)}% of this segment's scores show real pain${w}, so only interviews that can't carry it clear your bar`, n:mine.length, share:s};
     if (a.kind === "customers"){
-      if (s >= strong) return {status:"Holding up", why:`${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
+      if (s >= strong) return {status:"Holding up", why:`${Math.round(s*100)}% of this segment's scores show real pain${w}`, n:mine.length, share:s};
       if (s <= 0.2) return {status:"Contradicted", why:`Only ${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
       return {status:"Shaky", why:`${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
     }
@@ -1084,7 +1105,7 @@ function compassReadout(){
   if (!active.length) verdict = "No points on the map yet.", cls = "gray";
   else if (!rated.length) verdict = "Drag your points into the grid to find the riskiest.", cls = "gray";
   else if (top.some(x => x.s.status === "Contradicted")) verdict = "One of your riskiest assumptions is contradicted by your interviews. Time to rethink that part.", cls = "bad";
-  else if (top.every(x => x.s.status === "Holding up")) verdict = "Your three riskiest assumptions are holding up. Keep testing the next ones.", cls = "ok";
+  else if (top.every(x => x.s.status === "Holding up")) verdict = "Your three riskiest assumptions are holding up so far. Before you lean on them, ask your AI to poke holes.", cls = "ok";
   else if (top.some(x => x.s.status === "Shaky")) verdict = "One of your riskiest assumptions is shaky. More interviews with the right people will settle it.", cls = "warn";
   else verdict = "Your riskiest assumptions are still untested. That's where the next interviews go.", cls = "warn";
   return {counts, top, riskiestOpen, verdict, cls, total:active.length, rated:rated.length, candidates:S.assumptions.filter(a => a.status === "Candidate").length};
@@ -1116,6 +1137,7 @@ function ledgerChecks(){
     const b = aiBasis(a);
     if (b.kind === "missing") push("bad", a.id, "compass/map/" + a.id, "AI cites quotes that don't exist in this folder.");
     if (b.kind === "guess") push("info", a.id, "compass/map/" + a.id, "AI rated this with no evidence. Treat it as a second opinion, not a finding.");
+    if (b.kind !== "none" && !a.aiAgainst) push("info", a.id, "compass/map/" + a.id, "AI rated this without a case against it. Ask it to poke holes.");
     if (a.status === "Active" && !assumptionPriority(a)) push("info", a.id, "compass/map/" + a.id, "Not placed in the grid yet, so it has no priority.");
   }
   for (const iv of S.interviews){
@@ -1310,6 +1332,8 @@ function aiPanel(a){
   if (basis.kind === "none") return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Rank the riskiest assumptions</pre><button class="btn sm" data-act="copyText" data-text="Rank the riskiest assumptions">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on, and is told to say so when it has none.</p></div>`;
   return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4>
     <div style="margin-bottom:12px">${basis.kind === "evidence" ? `<span class="stamp ok">${esc(basis.label)}</span>` : `<span class="stamp">${esc(basis.label)}</span>`}</div>
+    <div class="lab">The case against</div><p class="small" style="margin:0 0 10px">${a.aiAgainst ? esc(a.aiAgainst) : `<span class="muted">No objection written yet. In your AI assistant, say <b>Poke holes</b>.</span>`}</p>
+    ${a.aiWouldChange ? `<div class="lab">What would change its mind</div><p class="small" style="margin:0 0 10px">${esc(a.aiWouldChange)}</p>` : ""}
     <div class="lab">Impact if wrong <span class="muted">${esc(a.aiImpact || "?")}</span></div>${bar5(a.aiImpact, "ai")}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
     <div class="lab">Likely right? <span class="muted">${esc(a.aiConfidence || "?")}</span></div>${bar5(a.aiConfidence, "ai")}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
     <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b>` : `<span class="small muted">Incomplete rating</span>`}</div>
@@ -1378,7 +1402,7 @@ function problemsTiles(){
   return `<div class="boxes g2">${sortById([...S.problems]).map(p => { const s = problemStats(p); const pct = Math.min(100, s.n / minN * 100);
     return `<div class="tile click" data-href="problems/${esc(p.id)}"><div class="spread"><div class="belief" style="font-size:14.5px"><span class="mono muted" style="font-size:12px">${esc(p.id)}</span> ${esc(p.text)}</div>${signalChip(s.signal)}</div>
       <div class="bar" style="margin:10px 0 6px"><div style="width:${pct}%;background:${s.signal === "Strong signal" ? "var(--teal)" : "var(--sky)"}"></div></div>
-      <div class="row small" style="gap:6px"><span>${s.n} of ${minN} confirmed interviews</span>${TIERS.filter(t => s.counts[t]).map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}<span class="muted">${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}</span></div></div>`; }).join("")}</div>
+      <div class="row small" style="gap:6px"><span>${s.n} of ${minN} confirmed interviews</span>${TIERS.filter(t => s.counts[t]).map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}<span class="muted">${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}</span>${s.against ? `<span class="chip bad">${s.against} against</span>` : ""}</div></div>`; }).join("")}</div>
   <p class="hint">Strong signal: at least ${esc(minN)} confirmed interviews score it and ${Math.round((S.config.strongShare ?? .5)*100)}% or more land in Hair on Fire or Incremental Improvement. Change this in Settings.</p>`;
 }
 function personaSummary(){
@@ -1526,7 +1550,7 @@ function quoteCard(e, transcript, opts = {}){
       ${opts.showInterview ? `<a href="#/interviews/${esc(e.interviewId)}"><b>${esc(e.interviewId)}</b>${who ? " · " + esc(who) : ""}</a>${sep}` : ""}
       ${statusChip(e.status)}${e.status === "Candidate" ? sourceChip(e.foundBy) : ""}
       ${found === false ? `<span class="chip bad" title="The exact words aren't in the transcript. Check before confirming.">Not in transcript</span>` : found === true && e.status === "Candidate" ? `<span class="chip ok">Word for word</span>` : ""}
-      ${e.type ? `<span>${esc(e.type)}</span>` : `<span class="chip warn">No type</span>`}${e.type === "Opinion or future intent" ? `<span class="chip warn">Weak</span>` : ""}
+      ${e.type ? `<span>${esc(e.type)}</span>` : `<span class="chip warn">No type</span>`}${e.type === "Opinion or future intent" ? `<span class="chip warn">Weak</span>` : ""}${stanceOf(e) === "against" ? `<span class="chip bad" title="Shows the problem is mild, rare, already solved or not theirs">Against</span>` : ""}
       ${pr ? `${sep}<span title="${esc(pr.text)}">${esc(pr.id)}</span>` : `${sep}<span class="muted">no problem</span>`}
       ${e.where ? `${sep}<span>at ${esc(e.where)}</span>` : ""}
       ${transcript ? `${sep}${opts.inInterview ? `<button class="btn link small" data-act="jump" data-id="${esc(e.id)}">Find in transcript</button>` : `<button class="btn link small" data-act="openDrawer" data-id="${esc(e.id)}">Read in transcript</button>`}` : ""}
@@ -1534,6 +1558,7 @@ function quoteCard(e, transcript, opts = {}){
     </div>
     ${editing ? `<div class="meta" style="margin-top:6px">
       <select class="inline" data-act="evField" data-id="${esc(e.id)}" data-field="type"><option value="">Type?</option>${EVIDENCE_TYPES.map(t => opt(t, e.type)).join("")}</select>
+      <select class="inline" data-act="evField" data-id="${esc(e.id)}" data-field="stance">${STANCES.map(s => opt(s, stanceOf(e), s === "for" ? "For the problem" : "Against the problem")).join("")}</select>
       <select class="inline" data-act="evField" data-id="${esc(e.id)}" data-field="problemId"><option value="">No problem</option>${S.problems.map(p => opt(p.id, e.problemId, p.id + ": " + p.text.slice(0, 40))).join("")}</select>
       ${S.jobs.length ? `<select class="inline" data-act="evField" data-id="${esc(e.id)}" data-field="jobId"><option value="">No job</option>${S.jobs.map(j => opt(j.id, e.jobId, j.id)).join("")}</select>` : ""}
       ${e.status === "Rejected" ? `<button class="btn link small" data-act="setStatus" data-kind="evidence" data-id="${esc(e.id)}" data-val="Candidate">Back to suggested</button>` : ""}</div>` : ""}
@@ -1652,6 +1677,8 @@ function nextStep(m){
   if (m.candidates) return [`Review ${m.candidates} suggestion${m.candidates>1?"s":""} from your AI. Only confirmed items count.`, "review", "Review now"];
   const noRubric = S.interviews.find(i => !i.rubricRun);
   if (noRubric) return [`${noRubric.id} hasn't been reviewed by your AI yet.`, "interviews/" + noRubric.id, "Open " + noRubric.id];
+  const reviewed = S.interviews.filter(i => i.rubricRun).length, holes = S.notes.filter(n => /poke-holes/i.test(n.name)).length;
+  if (reviewed >= 2 && holes < Math.floor(reviewed / 2)) return ["Two more interviews are in. Ask your AI to poke holes in your riskiest assumptions before the next ones.", "ask", "See how"];
   if (c.counts.Contradicted) return ["An assumption is contradicted. Decide what changes on the canvas.", "compass/map", "Open the map"];
   if (c.riskiestOpen) return [`Still untested: ${c.riskiestOpen.a.text}. Point the next interviews at it.`, "compass/map", "Open the map"];
   if (!S.persona.fields.who.text) return ["Start your customer persona, with a quote behind every line.", "persona", "Open persona"];
@@ -1763,6 +1790,7 @@ function aiCommands(iv){
   return [
     [`Review interview ${iv ? iv.id : "INT-001"}`, "Pulls out every quote word for word, checks how the interview was run, scores the pain for each problem, and writes a short note. Everything arrives here as a suggestion for you to confirm."],
     ["Rank the riskiest assumptions", "Rates each point on your map for impact and confidence, says which confirmed quotes it relied on, flags any it rated with no evidence, and suggests bets you've missed."],
+    ["Poke holes", "For your three riskiest assumptions: the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. Run it after every two interviews."],
     ["Happy ears check", "Points out where you may be hearing what you want to hear."],
     ["Audit the persona", "Checks that every persona line is backed by a confirmed quote."],
     ["Prepare for a coach meeting", "A one-page brief of where you stand and what your coach will push on."],
@@ -1814,7 +1842,7 @@ function askView(){
       <li><b>Claude Desktop:</b> start a conversation and add your DRM folder to it, or make a Project with the folder connected.</li>
       <li><b>Cursor, Windsurf, Codex and others:</b> open the DRM folder as the workspace. They read <span class="mono">AGENTS.md</span>.</li>
     </ol>
-    <p class="hint" style="margin:10px 0 0">The rules file tells your AI the two rules, the file format, and that it may only ever suggest. ${aiReady === false ? `<span style="color:var(--red)">It's missing from this folder. Copy CLAUDE.md and AGENTS.md from the <a href="${TEMPLATE_URL}" target="_blank" rel="noopener">template</a>.</span>` : ""}</p></div>
+    <p class="hint" style="margin:10px 0 0">The rules file tells your AI the three rules, the file format, and that it may only ever suggest: it leans slightly sceptical, so every rating comes with the case against it. ${aiReady === false ? `<span style="color:var(--red)">It's missing from this folder. Copy CLAUDE.md and AGENTS.md from the <a href="${TEMPLATE_URL}" target="_blank" rel="noopener">template</a>.</span>` : ""}</p></div>
   <div class="box soft"><h3>What comes back</h3><ul style="margin:0;padding-left:20px;max-width:66ch">
     <li>Quotes and pain scores appear under <a href="#/review">Suggestions</a> within a few seconds, marked with which tool suggested them. The app checks each quote against the transcript.</li>
     <li>Ratings land on the <a href="#/compass/map">Assumptions Map</a> as the AI's own points, each saying what evidence it rests on.</li>
@@ -1862,7 +1890,7 @@ function problemView(id){
   const pains = S.pains.filter(x => x.problemId === id);
   return `<div class="sheet">${docHead("Insights · Problem", `${esc(p.text)} <span class="muted mono" style="font-size:14px;font-weight:400">${esc(p.id)}</span>`, "", `<div class="row">${signalChip(s.signal)}<button class="btn sm" data-act="newInterview">Log an interview</button></div>`, `<a href="#/insights/problem">Insights: Problem</a>`)}
   <div class="boxes g2"><div class="box soft"><h3>The problem</h3><form data-form="problem"><label class="f">In the customer's words<input type="text" name="text" value="${esc(p.text)}"></label><label class="f">Who has it<input type="text" name="who" value="${esc(p.who||"")}"></label></form></div>
-  <div class="box soft"><h3>Confirmed pain</h3><div class="bar" style="margin:4px 0 8px"><div style="width:${Math.min(100, s.n / minN * 100)}%;background:${s.signal === "Strong signal" ? "var(--teal)" : "var(--sky)"}"></div></div><div class="row small" style="gap:6px">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}</div><p class="hint" style="margin:8px 0 0">${s.n} of ${minN} confirmed interviews scored on this problem.</p></div></div>
+  <div class="box soft"><h3>Confirmed pain</h3><div class="bar" style="margin:4px 0 8px"><div style="width:${Math.min(100, s.n / minN * 100)}%;background:${s.signal === "Strong signal" ? "var(--teal)" : "var(--sky)"}"></div></div><div class="row small" style="gap:6px">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}</div><p class="hint" style="margin:8px 0 0">${s.n} of ${minN} confirmed interviews scored on this problem. ${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}${s.against ? `, <b>${s.against} against the problem</b>` : ""}.</p></div></div>
   <div class="split"><div><h2>Quotes (${quotes.length})</h2>${quotes.length ? sortById(quotes).map(e => quoteCard(e, S.transcripts[e.interviewId] ?? null, {showInterview:true})).join("") : `<div class="empty">No quotes linked yet.</div>`}</div>
   <div><h2>Pain scores (${pains.length})</h2>${pains.length ? pains.map(x => `<div class="q compact spread" style="align-items:center"><a href="#/interviews/${esc(x.interviewId)}">${esc(x.interviewId)}</a>${tierChip(x.tier)}${statusChip(x.status)}</div>`).join("") : `<div class="empty">None yet.</div>`}
   ${!quotes.length && !pains.length ? `<button class="btn sm" data-act="deleteProblem" data-id="${esc(p.id)}">Delete this problem</button>` : ""}</div></div>

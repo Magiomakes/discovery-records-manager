@@ -69,7 +69,7 @@ From then on, every interview updates the map. A note's status (No evidence yet,
 
 ## Connect your AI
 
-The DRM app is where you enter evidence and judge it. The reviewing is done by your own AI assistant, working directly on the same folder. The repository includes a rules file (`CLAUDE.md`, with a copy as `AGENTS.md`) that teaches it the format, the two rules, and that it may only ever suggest.
+The DRM app is where you enter evidence and judge it. The reviewing is done by your own AI assistant, working directly on the same folder. The repository includes a rules file (`CLAUDE.md`, with a copy as `AGENTS.md`) that teaches it the format, the three rules, and that it may only ever suggest.
 
 Pick whichever you use:
 - **Claude Code:** open a terminal in your DRM folder and run `claude`. Done. It reads the rules automatically. You also get shortcuts like `/review-interview INT-001`.
@@ -88,7 +88,7 @@ No AI tool that can read your folder? Every interview page has a fallback where 
 
 Other things to ask your AI, any time: **Rank the riskiest assumptions**, **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
 
-The two rules: **quotes, not summaries** and **behavior, not interpretation.** Your AI knows them too, and it never confirms anything on your behalf.
+The three rules: **quotes, not summaries**, **behavior, not interpretation**, and **argue against it**: your AI leans slightly sceptical, so every rating comes with the strongest case against it and you dismiss the objection on purpose. It never confirms anything on your behalf.
 
 ## Before every coach meeting: push
 

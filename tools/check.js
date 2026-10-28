@@ -23,6 +23,7 @@ for (const e of evidence) {
   if (!byId(interviews, e.interviewId)) bad(e.file, `interviewId ${e.interviewId} doesn't exist`);
   if (e.problemId && !byId(problems, e.problemId) && !/^NEW/i.test(e.problemId)) warn(e.file, `problemId ${e.problemId} doesn't exist`);
   if (!TYPES.includes(e.type)) warn(e.file, `type "${e.type}" isn't one of the seven evidence types`);
+  if (e.stance !== undefined && !["for","against"].includes(e.stance)) warn(e.file, `stance "${e.stance}" must be for or against`);
   const t = transcripts[e.interviewId];
   if (!t) warn(e.file, "No transcript to check the quote against");
   else { const re = quoteRegex(e.quote); if (!re || !re.test(t)) bad(e.file, "Quote is not in the transcript word for word. Fix it or delete it; a paraphrase is not evidence."); }
@@ -40,6 +41,8 @@ for (const p of pains) {
   if (p.tier === "Hair on Fire" && !types.has("Past behavior, irreversible")) warn(p.file, "Hair on Fire needs a cited quote of type 'Past behavior, irreversible'.");
   if (p.tier === "Incremental Improvement" && !types.has("Past behavior, reversible") && !types.has("Current workaround") && !types.has("Past behavior, irreversible")) warn(p.file, "Incremental Improvement needs a cited quote showing they tried something.");
   if (ev.filter(Boolean).length && [...types].every(t => ["Opinion or future intent","Strong language"].includes(t)) && ["Hair on Fire","Incremental Improvement"].includes(p.tier)) warn(p.file, "Every cited quote is opinion or language; those can't decide a tier.");
+  const against = ev.filter(e => e && e.stance === "against").length;
+  if (against && ["Hair on Fire","Incremental Improvement"].includes(p.tier)) warn(p.file, `Cites ${against} quote(s) tagged against the problem. An against quote lowers a tier; it can't justify a strong one.`);
 }
 for (const a of assumptions) {
   if (a._unreadable || !a.id) continue;
@@ -54,6 +57,8 @@ for (const a of assumptions) {
     const missing = ids.filter(id => !byId(evidence, id)); if (missing.length) bad(a.file, "aiEvidence cites quotes that don't exist: " + missing.join(", "));
     for (const k of ["aiImpact","aiConfidence"]) if (a[k] !== "" && !(Number(a[k]) >= 1 && Number(a[k]) <= 5)) bad(a.file, `${k} must be 1 to 5`);
     if (!a.aiReason) warn(a.file, "AI rating has no aiReason");
+    if (!a.aiAgainst) warn(a.file, "AI rating has no aiAgainst: say the strongest case this is wrong, or that nothing has tested it yet.");
+    if (!a.aiWouldChange) note(a.file, "AI rating has no aiWouldChange: say what evidence would move it.");
   }
 }
 for (const p of places) {
@@ -69,6 +74,12 @@ for (const p of places) {
   if (p.url && !/^https?:\/\//.test(p.url)) warn(p.file, "url should be a full http(s) address you actually opened, or empty");
 }
 for (const iv of interviews) { if (iv._unreadable || !iv.id) continue; if (!transcripts[iv.id]) warn(iv.file, "No transcript saved"); if (iv.rubricRun && !["Yes","No"].includes(iv.recentInstance)) warn(iv.file, "Reviewed but recentInstance isn't Yes or No"); }
+/* Notes: no verdict words, and every note says what would overturn it. */
+const ndir = path.join(root, "notes"); if (fs.existsSync(ndir)) for (const f of fs.readdirSync(ndir)) if (f.endsWith(".md")) {
+  const t = fs.readFileSync(path.join(ndir, f), "utf8"); const m = t.match(/\b(validated|proven|strong signal)\b/gi);
+  if (m) warn("notes/" + f, `Uses ${[...new Set(m.map(x => x.toLowerCase()))].map(x => `"${x}"`).join(", ")}. Say what the evidence shows instead.`);
+  if (!/what would make this wrong/i.test(t)) note("notes/" + f, "No 'What would make this wrong' section.");
+}
 const counts = {PROBLEM:0, warning:0, note:0}; for (const [s] of out) counts[s]++;
 for (const [s, w, m] of out.sort((x, y) => ["PROBLEM","warning","note"].indexOf(x[0]) - ["PROBLEM","warning","note"].indexOf(y[0]))) console.log(`${s.padEnd(8)} ${w}: ${m}`);
 console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions, ${places.length} places.`);
