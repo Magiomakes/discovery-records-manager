@@ -434,7 +434,7 @@ const idb = {
   async set(k, v){ const db = await this.open(); return new Promise(res => { const t = db.transaction("kv","readwrite").objectStore("kv").put(v, k); t.onsuccess = () => res(); t.onerror = () => res(); }); }
 };
 
-const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs", assumptions:"assumptions", places:"places"};
+const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs", assumptions:"assumptions", places:"places", leads:"leads"};
 
 class FolderStore {
   constructor(root){ this.root = root; this.kind = "folder"; this.name = root.name; this.stamps = null; }
@@ -507,7 +507,7 @@ class MemoryStore {
 }
 
 function emptyState(){
-  return {config:{}, interviews:[], evidence:[], pains:[], problems:[], jobs:[], assumptions:[], places:[], compass:emptyCompass(), transcripts:{}, notes:[], unreadable:[],
+  return {config:{}, interviews:[], evidence:[], pains:[], problems:[], jobs:[], assumptions:[], places:[], leads:[], compass:emptyCompass(), transcripts:{}, notes:[], unreadable:[],
           persona:{problemId:"", fields:Object.fromEntries(PERSONA_FIELDS.map(([k]) => [k, {text:"", evidence:[]}]))}};
 }
 
@@ -552,6 +552,14 @@ function painShare(ps){
   const weak = top2.filter(p => weakInterview(byId(S.interviews, p.interviewId))).length;
   const n = ps.length;
   return {n, top2:top2.length, weak, share:n ? top2.length / n : 0, cleanShare:n ? (top2.length - weak) / n : 0};
+}
+/* Pain yield per place: of the interviews that came from a place, how many scored (confirmed) Hair on Fire or Incremental. Only confirmed scores count; a strong score from a weak interview is flagged. */
+function placeYield(pl){
+  const ivs = S.interviews.filter(i => i.placeId === pl.id);
+  const strong = ivs.filter(i => ["Hair on Fire","Incremental Improvement"].includes(topTier(i.id)));
+  const scored = ivs.filter(i => topTier(i.id));
+  const weak = strong.filter(i => weakInterview(i));
+  return {n:ivs.length, scored:scored.length, strong:strong.length, weak:weak.length, share: ivs.length ? strong.length / ivs.length : 0, allWeak: strong.length > 0 && weak.length === strong.length};
 }
 function topTier(ivId){
   const tiers = confirmedPains().filter(p => p.interviewId === ivId).map(p => TIERS.indexOf(p.tier)).filter(i => i >= 0);
@@ -616,7 +624,7 @@ function metrics(){
     rubric: iv.filter(i => i.rubricRun).length,
     confirmed: S.evidence.filter(e => e.status === "Confirmed").length,
     opinion: S.evidence.filter(e => e.status === "Confirmed" && e.type === "Opinion or future intent").length,
-    candidates: S.evidence.filter(e => e.status === "Candidate").length + S.pains.filter(p => p.status === "Candidate").length + (S.places || []).filter(p => p.status === "Candidate").length,
+    candidates: S.evidence.filter(e => e.status === "Candidate").length + S.pains.filter(p => p.status === "Candidate").length + (S.places || []).filter(p => p.status === "Candidate").length + (S.leads || []).filter(l => l.status === "Candidate").length,
     rejected: S.evidence.filter(e => e.status === "Rejected").length,
     hof: iv.filter(i => topTier(i.id) === "Hair on Fire").length,
     painIssues: S.pains.filter(p => p.status !== "Rejected" && !painCheck(p).ok).length,
@@ -918,9 +926,14 @@ Nice to Have at most. She hasn't done anything about it.
     riskiest:"That treasurers actually lose a weekend to this, and not just the one I talked to.", evidencePlan:"Five treasurer interviews by Sunday, starting with the ones who answered the Instagram poll.",
     leads:[{id:"L-01", name:"Treasurer A", org:"Business club", why:"Ran reimbursements last year", how:"Instagram DM", done:true},{id:"L-02", name:"Priya", org:"Hiking club", why:"New treasurer this term", how:"Intro from Treasurer A", done:false},{id:"L-03", name:"Club presidents' Discord", org:"Student union", why:"Hear the complaints", how:"Post in channel", done:false}]};
   D.interviews[0].customerId = "C-01"; D.interviews[1].customerId = "C-01";
+  D.interviews[0].placeId = "PL-01";
   D.places = [
-    {id:"PL-01", name:"Student union club-executive training", kind:"Event or meetup", url:"", how:"Ask the student union for the treasurer-training date and go. Every treasurer in the room has just taken over the books.", who:"Student club treasurers", customerId:"C-01", why:"Treasurer A learned the job at this training and still uses the sheet she built after it.", evidenceIds:["INT-001-Q02"], verified:"", foundBy:"Claude Code", status:"Candidate", note:""},
-    {id:"PL-02", name:"LinkedIn: \"treasurer\" + \"student association\" at your university", kind:"LinkedIn search", url:"", how:"Search people with the title treasurer and the university name; message the ones who held it in the last two years.", who:"Student club treasurers", customerId:"C-01", why:"No interviewee mentioned LinkedIn. This is a guess from the segment description.", evidenceIds:[], verified:"", foundBy:"Claude Code", status:"Candidate", note:""}
+    {id:"PL-01", name:"Student union club-executive training", kind:"Event or meetup", url:"", how:"Ask the student union for the treasurer-training date and go. Every treasurer in the room has just taken over the books.", who:"Student club treasurers", customerId:"C-01", why:"Treasurer A learned the job at this training and still uses the sheet she built after it.", evidenceIds:["INT-001-Q02"], opener:"You've just taken over the books. When was the last time you sat down to pay members back, and what did you do first?", verified:"", foundBy:"Claude Code", status:"Candidate", note:""},
+    {id:"PL-02", name:"LinkedIn: \"treasurer\" + \"student association\" at your university", kind:"LinkedIn search", url:"", how:"Search people with the title treasurer and the university name; message the ones who held it in the last two years.", who:"Student club treasurers", customerId:"C-01", why:"No interviewee mentioned LinkedIn. This is a guess from the segment description.", evidenceIds:[], opener:"", verified:"", foundBy:"Claude Code", status:"Candidate", note:""}
+  ];
+  D.leads = [
+    {id:"LD-01", name:"", role:"Treasurer who took over a club's books this term", customerId:"C-01", placeId:"PL-01", url:"", howFound:"Ask the student union who ran this term's club-executive training and for an intro to the treasurers who attended.", why:"Resembles Treasurer A (INT-001), who learned the job at this training and built a sheet she still updates every week.", evidenceIds:["INT-001-Q02"], opener:"", verified:"", foundBy:"Claude Code", status:"Candidate", note:""},
+    {id:"LD-02", name:"", role:"Finance officer at the student union who signs off club reimbursements", customerId:"C-03", placeId:"", url:"", howFound:"Student union website, staff directory; email the finance office and ask who handles club reimbursements.", why:"A guess from the segment description. No interviewee has mentioned the finance office, and no interview has reached this segment.", evidenceIds:[], opener:"", verified:"", foundBy:"Claude Code", status:"Candidate", note:""}
   ];
   D.assumptions = [
     {id:"A-01", seed:"problem:PR-01", kind:"problem", problemId:"PR-01", customerId:"", alternativeId:"", text:"Student club treasurers have this problem: chasing members for receipts before reimbursing them", impact:5, confidence:3, pos:{x:0.55, y:0.95}, aiImpact:5, aiConfidence:2, aiEvidence:["INT-001-Q01","INT-001-Q02"], aiReason:"Everything rests on this. Two confirmed quotes from one treasurer show real cost and a workaround she keeps; the second interview was a pitch, so it adds nothing. One person is not a pattern yet.", aiAgainst:"Both quotes come from one treasurer who chose to answer a poll about receipts; the only other treasurer, a friend, said it isn't a big deal (INT-002-Q02).", aiWouldChange:"Three more treasurers from cold outreach who each describe a recent instance and a workaround they keep.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
@@ -1140,7 +1153,20 @@ function ledgerChecks(){
     if (b.kind !== "none" && !a.aiAgainst) push("info", a.id, "compass/map/" + a.id, "AI rated this without a case against it. Ask it to poke holes.");
     if (a.status === "Active" && !assumptionPriority(a)) push("info", a.id, "compass/map/" + a.id, "Not placed in the grid yet, so it has no priority.");
   }
+  for (const l of S.leads || []){
+    if (!["Candidate","Accepted","Dismissed"].includes(l.status)) push("bad", l.id, "compass/leads", `Lead has a bad status "${l.status}".`);
+    if (l.status === "Dismissed") continue;
+    if (!l.name && !l.role) push("warn", l.id, "compass/leads", "Lead has no name and no role description.");
+    if (!l.why) push("warn", l.id, "compass/leads", "Lead has no `why`: say which interview or quote it resembles, or that it's a guess.");
+    const b = placeBasis(l);
+    if (b.kind === "missing") push("bad", l.id, "compass/leads", "Lead cites quotes that don't exist in this folder.");
+    if (b.kind === "guess") push("info", l.id, "compass/leads", "Lead has no quote behind it. Allowed, but it's a guess from the segment description.");
+    if (l.url && !/^https?:\/\//.test(l.url)) push("warn", l.id, "compass/leads", "Lead url should be a full http(s) address the AI actually opened, or empty.");
+    if (l.customerId && !byId(S.compass.customers || [], l.customerId)) push("warn", l.id, "compass/leads", `Lead customerId ${l.customerId} isn't a segment on the canvas.`);
+    if (l.placeId && !byId(S.places, l.placeId)) push("warn", l.id, "compass/leads", `Lead placeId ${l.placeId} doesn't exist.`);
+  }
   for (const iv of S.interviews){
+    if (iv.placeId && !byId(S.places, iv.placeId)) push("warn", iv.id, "interviews/" + iv.id, `placeId ${iv.placeId} doesn't exist.`);
     if (!iv.customerId && S.compass.customers.length) push("info", iv.id, "interviews/" + iv.id, "No customer segment set, so it can't count toward the early-adopter bet.");
     if (!S.transcripts[iv.id]) push("warn", iv.id, "interviews/" + iv.id, "No transcript saved.");
   }
@@ -1351,8 +1377,34 @@ function leadsSheet(){
   <table><tr><th style="width:30px"></th><th>Name<div class="hint" style="font-weight:400">Who could you talk to?</div></th><th>Organisation<div class="hint" style="font-weight:400">Work, club, community</div></th><th>Why?<div class="hint" style="font-weight:400">What do they know about the problem?</div></th><th>How?<div class="hint" style="font-weight:400">Intro, DM, email, event</div></th><th>Done</th></tr>
   ${Array.from({length: rows}, (_, i) => { const l = leads[i]; if (!l) return `<tr><td class="muted">${i+1}</td><td colspan="5"><button class="add" data-act="cAdd" data-kind="leads">+ Add a lead</button></td></tr>`;
     return `<tr><td class="muted">${i+1}</td>${["name","org","why","how"].map(f => `<td>${ed("cItem", `data-kind="leads" data-id="${esc(l.id)}" data-field="${f}"`, l[f], "", "sans")}</td>`).join("")}<td><div class="row" style="flex-wrap:nowrap"><input type="checkbox" data-act="leadDone" data-id="${esc(l.id)}" ${l.done ? "checked" : ""} title="Done">${l.interviewId ? `<a class="small" href="#/interviews/${esc(l.interviewId)}">${esc(l.interviewId)}</a>` : `<button class="btn sm" data-act="leadInterview" data-id="${esc(l.id)}">Log interview</button>`}<button class="btn icon no" title="Remove" data-act="cRemove" data-kind="leads" data-id="${esc(l.id)}">✕</button></div></td></tr>`; }).join("")}</table>
+  ${suggestedLeads()}
   ${sheetFoot("05")}</div>
   ${stepNav("compass/map", "Back", "interviews", "Next: interviews")}`;
+}
+/* Leads proposed by the AI (drm/leads/). The AI never writes to the list above; the founder accepts a lead into it or dismisses it. */
+function openerRow(kind, rec){
+  const text = (rec.opener || "").trim() || firstQuestion();
+  return `<div class="row" style="margin-top:8px;flex-wrap:nowrap;align-items:flex-start"><span class="small muted" style="white-space:nowrap;padding-top:2px">Opener:</span><div style="flex:1;min-width:0">${ed("recField", `data-kind="${kind}" data-id="${esc(rec.id)}" data-field="opener"`, rec.opener, firstQuestion(), "sans")}</div><button class="btn sm" data-act="copyText" data-text="${esc(text)}">Copy</button></div>`;
+}
+function leadCard(ld){
+  const b = placeBasis(ld); const seg = byId(S.compass.customers || [], ld.customerId); const pl = byId(S.places, ld.placeId);
+  const title = ld.name || ld.role || "Unnamed lead";
+  return `<div class="tile" style="border-left:4px solid var(--yellow)">
+    <div class="spread"><div><b style="font-size:15px">${ld.url ? `<a href="${esc(ld.url)}" target="_blank" rel="noopener" style="color:inherit">${esc(title)}</a>` : esc(title)}</b><div class="h">${ld.name && ld.role ? esc(ld.role) : ""}${seg ? (ld.name && ld.role ? " · " : "") + esc(seg.text) : ""}${pl ? ` · via <a href="#/insights/customers">${esc(pl.name)}</a>` : ""}</div></div>
+      <div class="acts"><button class="btn icon no" title="Dismiss" data-act="leadDismiss" data-id="${esc(ld.id)}">✕</button><button class="btn icon yes" title="Accept into your leads list" data-act="leadAccept" data-id="${esc(ld.id)}">✓</button></div></div>
+    ${ld.howFound ? `<p class="small" style="margin:8px 0 0">${esc(ld.howFound)}</p>` : ""}
+    <div class="row small" style="margin-top:8px;gap:6px">${sourceChip(ld.foundBy)}${b.kind === "evidence" ? `<span class="chip ok">${esc(b.label)}</span>` : b.kind === "guess" ? `<span class="stamp" style="transform:none;font-size:10.5px">${esc(b.label)}</span>` : `<span class="chip ${b.kind === "missing" ? "bad" : "warn"}">${esc(b.label)}</span>`}${ld.verified ? `<span class="chip blue" title="${esc(ld.verified)}">Checked by AI</span>` : `<span class="chip gray">Not checked</span>`}</div>
+    ${ld.why ? `<div class="h" style="margin-top:6px">${esc(ld.why)}${b.ids.length ? " " + b.ids.map(id => { const e = byId(S.evidence, id); return e ? `<a href="#/interviews/${esc(e.interviewId)}" class="mono" style="font-size:11px">${esc(id)}</a>` : `<span class="chip bad">${esc(id)}</span>`; }).join(" ") : ""}</div>` : ""}
+    ${ld.verified ? `<div class="h" style="margin-top:4px"><span class="muted">What the AI saw:</span> ${esc(ld.verified)}</div>` : ""}
+    ${openerRow("leads", ld)}
+  </div>`;
+}
+function suggestedLeads(){
+  const list = sortById((S.leads || []).filter(l => l.status === "Candidate"));
+  const ask = `<div class="box soft" style="margin-top:14px"><h3>Ask your AI</h3><p class="ins">Say <span class="kbd">Find leads</span>. It proposes people to talk to for your ideal segment and one other, each with where to find them and the interview or quote they resemble. A lead with no quote behind it is a guess. Names only when it actually saw them on a page it opened.</p><button class="btn sm" data-act="copyText" data-text="Find leads">Copy</button></div>`;
+  if (!list.length) return ask;
+  return `<h2 style="margin-top:18px">Suggested by your AI</h2><p class="ins">Accept a lead to add it to your list above, or dismiss it. Your AI never edits the list itself.</p>
+  <div class="boxes g2" style="margin-bottom:0">${list.map(leadCard).join("")}</div>${ask}`;
 }
 
 /* ---------------- Insights: one page per focus area ---------------- */
@@ -1383,7 +1435,7 @@ function insightsView(area){
   const tabs = `<div class="tabs" style="margin-top:0">${Object.entries(AREAS).map(([k, v]) => `<button class="${area === k ? "on" : ""}" data-act="go" data-href="insights/${k}">${v.title}</button>`).join("")}</div>`;
   let evidence = "";
   if (area === "problem") evidence = `<h2>Pain per problem</h2>${problemsTiles()}`;
-  else if (area === "customers") evidence = `<h2>Who feels it most</h2>${segmentTable()}<h2>Where your interviews came from</h2>${sourceTiles()}<h2>Where to look next</h2>${placesList()}<h2>Customer persona</h2>${personaSummary()}`;
+  else if (area === "customers") evidence = `<h2>Who feels it most</h2>${segmentTable()}<h2>Where your interviews came from</h2>${sourceTiles()}${placeYieldTable()}<h2>Where to look next</h2>${placesList()}<h2>Customer persona</h2>${personaSummary()}`;
   else if (area === "solution") evidence = `<h2>What they do today</h2><p class="lede">Solution bets are tested by tagging confirmed quotes for or against them. Workarounds and past behavior are the best place to look.</p>${quoteList(S.evidence.filter(e => e.status === "Confirmed" && ["Current workaround","Past behavior, irreversible","Past behavior, reversible"].includes(e.type)))}
     <details class="fold"><summary>Later: jobs to be done and MVP scope</summary><p class="small">Kept for when the problem holds up. A job is the progress a customer is trying to make at a specific moment. <a href="#/jobs">Jobs</a> · <a href="#/mvp">MVP scope</a></p></details>`;
   else evidence = `<h2>Alternatives, one by one</h2>${alternativesTable()}`;
@@ -1433,8 +1485,20 @@ function placeCard(pl){
     <div class="row small" style="margin-top:8px;gap:6px">${statusChip(pl.status)}${pl.status === "Candidate" ? sourceChip(pl.foundBy) : ""}${b.kind === "evidence" ? `<span class="chip ok">${esc(b.label)}</span>` : b.kind === "guess" ? `<span class="stamp" style="transform:none;font-size:10.5px">${esc(b.label)}</span>` : `<span class="chip ${b.kind === "missing" ? "bad" : "warn"}">${esc(b.label)}</span>`}${pl.verified ? `<span class="chip blue" title="${esc(pl.verified)}">Checked by AI</span>` : `<span class="chip gray">Not checked</span>`}</div>
     ${pl.why ? `<div class="h" style="margin-top:6px">${esc(pl.why)}${b.ids.length ? " " + b.ids.map(id => { const e = byId(S.evidence, id); return e ? `<a href="#/interviews/${esc(e.interviewId)}" class="mono" style="font-size:11px">${esc(id)}</a>` : `<span class="chip bad">${esc(id)}</span>`; }).join(" ") : ""}</div>` : ""}
     ${pl.verified ? `<div class="h" style="margin-top:4px"><span class="muted">What the AI saw:</span> ${esc(pl.verified)}</div>` : ""}
+    ${pl.status !== "Rejected" ? openerRow("places", pl) : ""}
     ${pl.status === "Confirmed" ? `<div style="margin-top:8px"><button class="btn sm" data-act="placeLead" data-id="${esc(pl.id)}">Add a lead from here</button></div>` : ""}
   </div>`;
+}
+/* Which places find real pain: one row per place with interviews, counting only confirmed scores. */
+function placeYieldTable(){
+  const places = sortById([...S.places].filter(p => p.status !== "Rejected"));
+  if (!places.length) return "";
+  const rows = places.map(pl => ({pl, y:placeYield(pl)}));
+  const unplaced = S.interviews.filter(i => !i.placeId || !byId(S.places, i.placeId)).length;
+  return `<h3 style="margin-top:14px">Which places find real pain</h3><div class="box flat soft"><table><tr><th>Place</th><th class="right">Interviews</th><th class="right">Real pain</th><th style="width:30%">Share</th></tr>
+  ${rows.map(({pl, y}) => y.n ? `<tr><td>${esc(pl.name)}</td><td class="right">${y.n}</td><td class="right">${y.strong}</td><td><div class="row" style="flex-wrap:nowrap;gap:8px"><div class="bar" style="flex:1"><div style="width:${Math.round(y.share*100)}%;background:${y.allWeak ? "var(--yellow)" : "var(--teal)"}"></div></div><span class="small" style="width:3.5em;text-align:right">${Math.round(y.share*100)}%</span>${y.allWeak ? `<span class="chip warn" title="Every strong score here comes from an interview with a hygiene issue, a friend, or no recent instance">weak</span>` : ""}</div></td></tr>` : `<tr><td class="muted">${esc(pl.name)}</td><td colspan="3"><span class="hint">no interviews yet</span></td></tr>`).join("")}
+  ${unplaced ? `<tr><td class="muted">Not from a listed place</td><td class="right">${unplaced}</td><td colspan="2"><span class="hint">Set the place on each interview so it counts.</span></td></tr>` : ""}</table></div>
+  <p class="hint">Real pain = interviews from that place whose confirmed score is Hair on Fire or Incremental Improvement. Only confirmed scores count. “Weak” means every strong score there comes from an interview that can't carry a bet on its own. After ten interviews this tells you which channel is worth more of your time.</p>`;
 }
 function placesList(){
   const list = [...S.places].sort((a, b) => ({Confirmed:0, Candidate:1, Rejected:2}[a.status] ?? 1) - ({Confirmed:0, Candidate:1, Rejected:2}[b.status] ?? 1) || a.id.localeCompare(b.id, undefined, {numeric:true}));
@@ -1753,6 +1817,7 @@ function interviewView(id){
       <label class="f">Role<input type="text" name="role" value="${esc(iv.role||"")}"></label>
       <label class="f">Which customer segment (from your canvas)<select name="customerId"><option value="">Not sure yet</option>${(S.compass.customers||[]).map(c => opt(c.id, iv.customerId, c.text + (c.ideal ? " (ideal)" : ""))).join("")}</select></label>
       <label class="f">How you found them<select name="source"><option value=""></option>${SOURCES.map(s => opt(s, iv.source)).join("")}</select></label>
+      <label class="f">Where this person came from<select name="placeId"><option value="">Not from a listed place</option>${sortById(S.places.filter(p => p.status !== "Rejected")).map(p => opt(p.id, iv.placeId, p.name)).join("")}</select><span class="hint">Places are suggested by your AI on the Customers insight. Setting it here shows which places find real pain.</span></label>
       <label class="f">Notes<textarea name="notes">${esc(iv.notes||"")}</textarea></label></form></div>
       <div class="box soft"><h3>How the interview went</h3><p class="ins">Your AI fills these in when it reviews. Change any you disagree with.</p>
       <table>
@@ -1791,6 +1856,9 @@ function aiCommands(iv){
     [`Review interview ${iv ? iv.id : "INT-001"}`, "Pulls out every quote word for word, checks how the interview was run, scores the pain for each problem, and writes a short note. Everything arrives here as a suggestion for you to confirm."],
     ["Rank the riskiest assumptions", "Rates each point on your map for impact and confidence, says which confirmed quotes it relied on, flags any it rated with no evidence, and suggests bets you've missed."],
     ["Poke holes", "For your three riskiest assumptions: the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. Run it after every two interviews."],
+    ["Find where to interview next", "Reads every transcript for where these people gather, checks which places have already produced real pain, and suggests places to look, each with the quote it rests on."],
+    ["Find leads", "Proposes people to talk to for your ideal segment and one other, with where to find them and the interview or quote each one resembles. You accept or dismiss each on the Leads List."],
+    [`Research a segment ${(idealCustomer() || {}).id || "C-01"}`, "Who these people are, what they already use, where they gather and what they call the problem in their own words, every claim linked to a page it opened and dated. Swap in the segment id."],
     ["Happy ears check", "Points out where you may be hearing what you want to hear."],
     ["Audit the persona", "Checks that every persona line is backed by a confirmed quote."],
     ["Prepare for a coach meeting", "A one-page brief of where you stand and what your coach will push on."],
@@ -2043,6 +2111,11 @@ document.addEventListener("click", async ev => {
   else if (a === "personaUnlink"){ const f = S.persona.fields[el.dataset.key]; f.evidence = f.evidence.filter(x => x !== el.dataset.id); persist("persona"); render(); }
   else if (a === "go") go(el.dataset.href);
   else if (a === "openPoint") go("compass/map/" + el.dataset.id);
+  else if (a === "leadAccept"){ const ld = byId(S.leads, el.dataset.id); const pl = byId(S.places, ld.placeId); const list = S.compass.leads = S.compass.leads || [];
+    const how = [ld.howFound, ld.url].filter(Boolean).join(" · ");
+    list.push({id:nextId("L-", list, 2), name:ld.name || ld.role || "", org:ld.name ? (ld.role || (pl ? pl.name : "")) : (pl ? pl.name : ""), why:ld.why || "", how, done:false, leadId:ld.id});
+    persist("compass"); upsert("leads", {...ld, status:"Accepted"}); render(); toast(`Added to your leads list as row ${list.length}.`, () => { S.compass.leads = S.compass.leads.filter(x => x.leadId !== ld.id); persist("compass"); upsert("leads", {...byId(S.leads, ld.id), status:"Candidate"}); }); }
+  else if (a === "leadDismiss"){ const ld = byId(S.leads, el.dataset.id); upsert("leads", {...ld, status:"Dismissed"}); render(); toast(`Dismissed ${ld.id}.`, () => upsert("leads", {...byId(S.leads, ld.id), status:"Candidate"})); }
   else if (a === "placeLead"){ const pl = byId(S.places, el.dataset.id); const list = S.compass.leads = S.compass.leads || []; list.push({id:nextId("L-", list, 2), name:"", org:"", why:pl.who ? `${pl.who}: ${pl.how || ""}`.trim() : (pl.how || ""), how:pl.name, done:false}); persist("compass"); go("compass/leads"); setTimeout(() => focusLast('[data-kind="leads"][data-field="name"]'), 50); }
   else if (a === "editQuote"){ ui.editQuote = ui.editQuote === el.dataset.id ? null : el.dataset.id; render(); }
   else if (a === "setFilter"){ ui.filters[el.dataset.key] = el.dataset.val; render(); }
@@ -2087,6 +2160,7 @@ document.addEventListener("change", ev => {
   else if (a === "personaLink"){ if (!el.value) return; const f = S.persona.fields[el.dataset.key]; f.evidence = [...(f.evidence||[]), el.value]; persist("persona"); render(); }
   else if (a === "jobField"){ const j = byId(S.jobs, el.dataset.id); upsert("jobs", {...j, [el.dataset.field]: el.value}); render(); }
   else if (el.dataset.field === "leading"){ const iv = byId(S.interviews, r.id); upsert("interviews", {...iv, leading: el.value === "" ? "" : Number(el.value)}); render(); }
+  else if (el.tagName === "SELECT" && el.closest("form[data-form=interview]")){ saveTextField(el); render(); }
 });
 
 // Text fields save after a short pause, and immediately when you leave the field. Pasted transcripts and AI replies are kept as drafts until used.
@@ -2105,6 +2179,7 @@ function saveTextField(el){
   else if (a === "personaText"){ S.persona.fields[el.dataset.key].text = el.value; persist("persona"); }
   else if (a === "jobText"){ const j = byId(S.jobs, el.dataset.id); if (j) upsert("jobs", {...j, [el.dataset.field]: el.value}); }
   else if (a === "painDisagree"){ const p = byId(S.pains, el.dataset.id); if (p) upsert("pains", {...p, disagree: v}); }
+  else if (a === "recField"){ const rec = byId(S[el.dataset.kind] || [], el.dataset.id); if (rec) upsert(el.dataset.kind, {...rec, [el.dataset.field]: v}); }
   else if (form && form.dataset.form === "interview"){ const iv = byId(S.interviews, r.id); if (iv) upsert("interviews", {...iv, ...Object.fromEntries(new FormData(form))}); }
   else if (form && form.dataset.form === "problem"){ const p = byId(S.problems, r.id); if (p) upsert("problems", {...p, ...Object.fromEntries(new FormData(form))}); }
   else if (form && form.dataset.form === "config"){ const d = Object.fromEntries(new FormData(form)); S.config = {...S.config, founder:d.founder, venture:d.venture, coach:d.coach, program:d.program, programSub:d.programSub, cohort:d.cohort, minInterviews:Number(d.minInterviews) || 5, strongShare:(Number(d.strongPct) || 50) / 100}; persist("config"); }

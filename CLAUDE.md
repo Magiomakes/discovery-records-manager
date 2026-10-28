@@ -20,6 +20,7 @@ This folder is a founder's customer-discovery evidence ledger. The founder opens
 - Never edit a record whose status is `Confirmed` or `Rejected`. Create a new one instead, or say what you'd change in a note.
 - Never edit `drm/transcripts/*.md`, `drm/config.json`, `drm/persona.json` or `README.md` (the app rebuilds README.md on every save).
 - You may update these fields on an interview file: `recentInstance`, `leading`, `pitched`, `demoed`, `closing`, `rubricRun`, `coachingNote`.
+- Never edit `leads[]` inside `drm/compass.json`: that is the founder's own Leads List. To propose a person, write a Candidate file in `drm/leads/`; the founder accepts it into their list, or dismisses it, in the app.
 - IDs must be unique. Before creating a file, list the folder and use the next unused number.
 - Keep JSON valid and keep every field listed below, even when empty (`""`, `[]`).
 
@@ -47,6 +48,7 @@ drm/
   pain-scores/INT-001__PR-01.json   one per interview-problem pair
   jobs/JB-01.json      jobs to be done (kept for later)
   places/PL-01.json    where to find people to interview, one place per file
+  leads/LD-01.json     people you propose the founder talk to, one per file
   persona.json         the founder's persona draft (read-only for you)
   notes/2026-10-27-review-INT-001.md   your written reviews (Markdown)
 ```
@@ -55,10 +57,10 @@ drm/
 
 Interview `drm/interviews/INT-001.json`
 ```json
-{"id":"INT-001","date":"2026-10-27","interviewee":"Treasurer A","role":"Club treasurer","source":"Online community or follower","interviewer":"Sam",
+{"id":"INT-001","date":"2026-10-27","interviewee":"Treasurer A","role":"Club treasurer","source":"Online community or follower","interviewer":"Sam","customerId":"C-01","placeId":"PL-01",
  "recentInstance":"Yes","leading":0,"pitched":"No","demoed":"No","closing":"Yes","rubricRun":true,"notes":"","coachingNote":""}
 ```
-`source` is one of: `Stranger (cold outreach)`, `Online community or follower`, `Referral from an interviewee`, `Classmate or acquaintance`, `Friend or family`. Yes/No fields are the strings `"Yes"` or `"No"`.
+`source` is one of: `Stranger (cold outreach)`, `Online community or follower`, `Referral from an interviewee`, `Classmate or acquaintance`, `Friend or family`. Yes/No fields are the strings `"Yes"` or `"No"`. `placeId` is the place in `drm/places/` this person came from (`""` if none); the founder sets it, and the app uses it to show which places find real pain.
 
 Evidence `drm/evidence/INT-001-Q01.json`
 ```json
@@ -102,7 +104,14 @@ Place `drm/places/PL-01.json` (where to find people to interview)
 {"id":"PL-01","name":"Student union club-executive training","kind":"Event or meetup","url":"","how":"Ask the student union for the treasurer-training date and go.","who":"Student club treasurers","customerId":"C-01",
  "why":"Treasurer A learned the job at this training and still uses the sheet she built after it.","evidenceIds":["INT-001-Q02"],"verified":"","foundBy":"Claude Code","status":"Candidate","note":""}
 ```
-`kind` is one of: `LinkedIn search`, `Online community`, `Event or meetup`, `Organisation or club`, `Referral`, `Other`. `why` names the interview or quote the place rests on, and `evidenceIds` lists those quotes; with none, write `"evidenceIds":[]` and say in `why` that it's a guess from the segment description: the app stamps it as a guess. `url` only if you actually opened it. `verified` is what you saw there (member count, how active, date you looked); leave it `""` if you couldn't check. `customerId` is a segment from compass.json.
+`kind` is one of: `LinkedIn search`, `Online community`, `Event or meetup`, `Organisation or club`, `Referral`, `Other`. `why` names the interview or quote the place rests on, and `evidenceIds` lists those quotes; with none, write `"evidenceIds":[]` and say in `why` that it's a guess from the segment description: the app stamps it as a guess. `url` only if you actually opened it. `verified` is what you saw there (member count, how active, date you looked); leave it `""` if you couldn't check. `customerId` is a segment from compass.json. `opener` is the one-line first question to use there; leave it `""` and the app shows the one built from the problem statement.
+
+Lead `drm/leads/LD-01.json` (a person the founder could talk to)
+```json
+{"id":"LD-01","name":"","role":"Treasurer who took over a club's books this term","customerId":"C-01","placeId":"PL-01","url":"","howFound":"Ask the student union who ran this term's club-executive training and for an intro to the treasurers who attended.",
+ "why":"Resembles Treasurer A (INT-001), who learned the job at this training and built a sheet she still updates every week.","evidenceIds":["INT-001-Q02"],"opener":"","verified":"","foundBy":"Claude Code","status":"Candidate","note":""}
+```
+`status` is `Candidate` (yours), `Accepted` or `Dismissed` (the founder's, set in the app; never write them). `name` only if you actually saw it on a page you opened, with that page in `url`; otherwise leave `name` empty and describe the person in `role` plus where to find them in `howFound`. `why` names the interview or quote this person resembles, with the IDs in `evidenceIds`; with none, write `"evidenceIds":[]` and say in `why` that it's a guess from the segment description: the app stamps it as a guess. `verified` is what you saw and when. `customerId` is a segment from compass.json and `placeId` a file in `drm/places/`, or `""`. Never invent a name, a URL or a member count.
 
 ## The Pain Scale (score each interview-problem pair, by behavior)
 
@@ -142,10 +151,18 @@ Pass 1, extract. Pass 2, verify: for every evidence file you wrote, search the t
 5. Write `drm/notes/YYYY-MM-DD-assumptions.md`: the riskiest untested assumption, why, and the two interview questions that would test it. Then run `node tools/check.js`.
 
 **Find where to interview next** (the Customers insight): the founder wants a list of places to find more of the right people, built from what the interviews have already shown, not from generic advice.
-1. Read `drm/compass.json` (the ideal customer and the other segments), every interview file (`source`, `role`, `customerId`, `notes`), every transcript and the confirmed evidence. In the transcripts, look for where these people gather and what they already use: communities, group chats, tools, events, training, job titles, who referred them, who they said to talk to.
-2. If your tool can browse the web, do a directed search for each segment: LinkedIn job-title searches, subreddits, Discord and Slack communities, Facebook groups, meetups, campus organisations, conferences, newsletters. List a place only if you actually opened it, and write what you saw in `verified`. If you can't browse, leave `verified` as `""` and write the exact search to run in `how`.
-3. Write up to eight `drm/places/PL-xx.json` files with `"status":"Candidate"`, numbered after the last existing one. Each `why` must name the interview or quote it rests on, with the IDs in `evidenceIds`; a place with no quote behind it says so in `why`. Never invent a URL, a member count or a quote. Don't duplicate a place that already has a file; update your own Candidate files instead.
-4. Write `drm/notes/YYYY-MM-DD-where-to-look.md`: the three best places and why, which segment they reach, the one-line opener to use there, built from the problem statement ("Have you experienced [context] / [complication]?"), and which segments on the compass no interview has reached yet, so the sample's blind spots are on the page. Then run `node tools/check.js`.
+1. Read `drm/compass.json` (the ideal customer and the other segments), every interview file (`source`, `role`, `customerId`, `placeId`, `notes`), every transcript and the confirmed evidence. In the transcripts, look for where these people gather and what they already use: communities, group chats, tools, events, training, job titles, who referred them, who they said to talk to.
+2. Work out the pain yield per place: for each place in `drm/places/`, count the interviews whose `placeId` is that place and how many of those have a **confirmed** pain score of Hair on Fire or Incremental Improvement (the Customers insight shows the same table). A place whose interviews keep scoring Nice to Have is producing the wrong people. Recommend more of what works: say in the note which places have found real pain and which haven't, and discount a place whose only strong scores come from a friend, a pitched interview or one with no recent instance. With no `placeId` set anywhere, say so instead of guessing.
+3. If your tool can browse the web, do a directed search for each segment: LinkedIn job-title searches, subreddits, Discord and Slack communities, Facebook groups, meetups, campus organisations, conferences, newsletters. List a place only if you actually opened it, and write what you saw in `verified`. If you can't browse, leave `verified` as `""` and write the exact search to run in `how`.
+4. Write up to eight `drm/places/PL-xx.json` files with `"status":"Candidate"`, numbered after the last existing one. Each `why` must name the interview or quote it rests on, with the IDs in `evidenceIds`; a place with no quote behind it says so in `why`. Never invent a URL, a member count or a quote. Don't duplicate a place that already has a file; update your own Candidate files instead.
+5. Write `drm/notes/YYYY-MM-DD-where-to-look.md`: the pain yield per place so far; the three best places and why, which segment they reach, the one-line opener to use there, built from the problem statement ("Have you experienced [context] / [complication]?"), and which segments on the compass no interview has reached yet, so the sample's blind spots are on the page. Then run `node tools/check.js`.
+
+**Find leads** (the Leads List sheet): the founder wants people to talk to, not just places. Take the ideal segment and one other segment from `drm/compass.json`.
+1. Read every interview, transcript, confirmed quote and place, and the founder's own `leads[]` in compass.json so you don't repeat a name already there.
+2. Propose up to eight `drm/leads/LD-xx.json` files with `"status":"Candidate"`, numbered after the last existing one. Put a name or handle in `name` only if you actually saw it on a page you opened, with that page in `url`; otherwise leave `name` empty and give a role description in `role` plus where to find that person in `howFound`. Each `why` names the interview or quote this person resembles, with the IDs in `evidenceIds`, or says it's a guess from the segment description. `verified` is what you saw and when; `""` if you couldn't check. Link each lead to a place with `placeId` where one fits. Never invent a name, a URL or a member count. Never write into `leads[]` in compass.json.
+3. Write `drm/notes/YYYY-MM-DD-leads.md`: the leads in order of how closely they resemble the interviews that found real pain, the opener to use with each, and which segments on the compass no interview has reached yet. Then run `node tools/check.js`.
+
+**Research a segment C-0x**: given a segment id from `drm/compass.json`, write `drm/notes/YYYY-MM-DD-research-C-0x.md` with five short sections: who these people are; what they already use; where they gather; what they call the problem in their own words; and the three communities worth joining this week. Every claim links to a page you actually opened, with the date you opened it; anything you couldn't check is labelled a guess. Quote the founder's own interviews where they already answer a question (cite the IDs) and say where the web and the transcripts disagree. You may also propose places and leads from what you find, as Candidate files in `drm/places/` and `drm/leads/` under the rules above. If your tool can't browse, say so at the top and write the exact searches to run. Then run `node tools/check.js`.
 
 **Audit the persona**: read `drm/persona.json` and the confirmed evidence. For each line, say whether the linked quotes actually support it, which lines are guesses, and which confirmed quotes they could cite. Write the result to `drm/notes/`. Don't edit persona.json.
 

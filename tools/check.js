@@ -5,7 +5,8 @@
 const fs = require("fs"), path = require("path");
 const root = path.resolve(__dirname, "..", "drm");
 const read = d => { const dir = path.join(root, d); if (!fs.existsSync(dir)) return []; return fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => { try { return {file: d + "/" + f, ...JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"))}; } catch (e) { return {file: d + "/" + f, _unreadable: e.message}; } }); };
-const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs"), places = read("places");
+const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs"), places = read("places"), leads = read("leads");
+let compass = {}; try { compass = JSON.parse(fs.readFileSync(path.join(root, "compass.json"), "utf8")); } catch (e) {}
 const transcripts = {}; const tdir = path.join(root, "transcripts"); if (fs.existsSync(tdir)) for (const f of fs.readdirSync(tdir)) if (f.endsWith(".md")) transcripts[f.slice(0, -3)] = fs.readFileSync(path.join(tdir, f), "utf8");
 const TYPES = ["Past behavior, irreversible","Past behavior, reversible","Current workaround","Frequency","Cost (time or money)","Strong language","Opinion or future intent"];
 const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent","Not a Problem"];
@@ -14,8 +15,8 @@ const PLACE_KINDS = ["LinkedIn search","Online community","Event or meetup","Org
 const out = []; const bad = (w, m) => out.push(["PROBLEM", w, m]); const warn = (w, m) => out.push(["warning", w, m]); const note = (w, m) => out.push(["note", w, m]);
 function quoteRegex(q){ const t = String(q||"").trim().replace(/^["“”']+|["“”']+$/g, "").trim(); if (t.length < 4) return null; const body = t.split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/['’‘]/g, "['’‘]").replace(/["“”]/g, '["“”]')).join("\\s+"); try { return new RegExp(body, "i"); } catch (e) { return null; } }
 const byId = (list, id) => list.find(r => r.id === id);
-for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places]) { if (r._unreadable) bad(r.file, "Not valid JSON: " + r._unreadable); else if (!r.id) bad(r.file, "Missing id"); else if (r.file.split("/")[1] !== r.id + ".json") warn(r.file, `File name doesn't match id ${r.id}`); }
-const seen = new Set(); for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places]) { if (!r.id) continue; if (seen.has(r.id)) bad(r.file, "Duplicate id " + r.id); seen.add(r.id); }
+for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places, ...leads]) { if (r._unreadable) bad(r.file, "Not valid JSON: " + r._unreadable); else if (!r.id) bad(r.file, "Missing id"); else if (r.file.split("/")[1] !== r.id + ".json") warn(r.file, `File name doesn't match id ${r.id}`); }
+const seen = new Set(); for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places, ...leads]) { if (!r.id) continue; if (seen.has(r.id)) bad(r.file, "Duplicate id " + r.id); seen.add(r.id); }
 for (const e of evidence) {
   if (e._unreadable || !e.id) continue;
   if (!["Candidate","Confirmed","Rejected"].includes(e.status)) bad(e.file, `Bad status "${e.status}"`);
@@ -73,7 +74,21 @@ for (const p of places) {
   if (!p.why) warn(p.file, "Place has no `why`: say which interview or quote it rests on, or that it's a guess.");
   if (p.url && !/^https?:\/\//.test(p.url)) warn(p.file, "url should be a full http(s) address you actually opened, or empty");
 }
-for (const iv of interviews) { if (iv._unreadable || !iv.id) continue; if (!transcripts[iv.id]) warn(iv.file, "No transcript saved"); if (iv.rubricRun && !["Yes","No"].includes(iv.recentInstance)) warn(iv.file, "Reviewed but recentInstance isn't Yes or No"); }
+for (const l of leads) {
+  if (l._unreadable || !l.id) continue;
+  if (!["Candidate","Accepted","Dismissed"].includes(l.status)) bad(l.file, `Bad status "${l.status}" (Candidate, Accepted or Dismissed)`);
+  if (l.status === "Dismissed") continue;
+  if (!l.name && !l.role) bad(l.file, "Lead has no name and no role description");
+  if (!l.why) warn(l.file, "Lead has no `why`: say which interview or quote it resembles, or that it's a guess from the segment description.");
+  const ids = (l.evidenceIds || []).filter(Boolean); const missing = ids.filter(id => !byId(evidence, id));
+  if (missing.length) bad(l.file, "evidenceIds cites quotes that don't exist: " + missing.join(", "));
+  if (!ids.length) note(l.file, "Lead lists no quote behind it. Allowed, but `why` must say it's a guess; the app stamps it as one.");
+  if (l.url && !/^https?:\/\//.test(l.url)) warn(l.file, "url should be a full http(s) address you actually opened, or empty");
+  if (l.name && !l.url) warn(l.file, "Lead has a name but no url. A name is only allowed when you saw it on a page you opened; otherwise give a role description.");
+  if (l.customerId && !((compass.customers || []).some(c => c.id === l.customerId))) warn(l.file, `customerId ${l.customerId} isn't a segment in compass.json`);
+  if (l.placeId && !byId(places, l.placeId)) warn(l.file, `placeId ${l.placeId} doesn't exist`);
+}
+for (const iv of interviews) { if (iv._unreadable || !iv.id) continue; if (!transcripts[iv.id]) warn(iv.file, "No transcript saved"); if (iv.rubricRun && !["Yes","No"].includes(iv.recentInstance)) warn(iv.file, "Reviewed but recentInstance isn't Yes or No"); if (iv.placeId && !byId(places, iv.placeId)) warn(iv.file, `placeId ${iv.placeId} doesn't exist`); }
 /* Notes: no verdict words, and every note says what would overturn it. */
 const ndir = path.join(root, "notes"); if (fs.existsSync(ndir)) for (const f of fs.readdirSync(ndir)) if (f.endsWith(".md")) {
   const t = fs.readFileSync(path.join(ndir, f), "utf8"); const m = t.match(/\b(validated|proven|strong signal)\b/gi);
@@ -82,5 +97,5 @@ const ndir = path.join(root, "notes"); if (fs.existsSync(ndir)) for (const f of 
 }
 const counts = {PROBLEM:0, warning:0, note:0}; for (const [s] of out) counts[s]++;
 for (const [s, w, m] of out.sort((x, y) => ["PROBLEM","warning","note"].indexOf(x[0]) - ["PROBLEM","warning","note"].indexOf(y[0]))) console.log(`${s.padEnd(8)} ${w}: ${m}`);
-console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions, ${places.length} places.`);
+console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions, ${places.length} places, ${leads.length} leads.`);
 process.exit(counts.PROBLEM ? 1 : 0);
