@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- A ledger line with a point on it: navy tile, sky rule, coral dot. Palette from index.html. -->
+  <rect width="512" height="512" rx="96" fill="#003352"/>
+  <rect x="112" y="240" width="288" height="32" rx="16" fill="#79c9e1"/>
+  <circle cx="328" cy="256" r="60" fill="#f25d4f"/>
+</svg>

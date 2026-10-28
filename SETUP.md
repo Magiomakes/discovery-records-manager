@@ -109,6 +109,7 @@ Your coach opens your repository on GitHub and sees your **coach report** on the
 - **Using another computer:** clone the repository there too (Step 4). Before you start, click **Fetch origin** then **Pull** in GitHub Desktop. When you're done, commit and push. Don't edit on two computers at the same time.
 - **Interviewee names:** use first names or aliases like "Treasurer A". Ask people before you record or transcribe them.
 - **Browser says it can't save:** you're in Safari or Firefox. Switch to Chrome or Edge.
+- **Make it an app:** in Chrome or Edge, open **Settings → Install as an app**; it goes in your dock and opens full screen. Nothing about where your data lives changes: it is still the folder you picked.
 - **It asks for permission every visit:** that's normal browser security. Click **Reopen**, then **Allow**.
 
 ## Credit

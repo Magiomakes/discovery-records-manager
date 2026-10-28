@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Discovery Records Manager</title>
+<meta name="theme-color" content="#003352">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <style>
 :root{
   /* Program palette */
@@ -2194,7 +2198,11 @@ function settingsView(){
     <p class="hint">IIE coaching defaults, not from Darren Yee's posts. Agree on them with your coach.</p></form></div>
     <div class="box soft"><h3>Your data</h3><p class="small">${store.kind === "demo" ? "Demo: nothing is saved." : `Saving to <b>${esc(store.name)}</b>. Records live in <span class="mono">drm/</span> as plain files; the coach report is <span class="mono">README.md</span>.`}</p>
     <div class="row"><button class="btn" data-act="exportJson">Download a backup</button><button class="btn" data-act="leave">Switch folder</button></div>
-    <p class="hint" style="margin-top:12px">Show the getting-started checklist again: <button class="btn link small" data-act="showChecklist">show it</button></p></div></div>
+    <p class="hint" style="margin-top:12px">Show the getting-started checklist again: <button class="btn link small" data-act="showChecklist">show it</button></p>
+    <h3 style="margin-top:14px">On your computer</h3>
+    ${installPrompt ? `<p class="small">Put it in the dock and open it full screen. Your data stays in the folder above.</p><div class="row"><button class="btn" data-act="install">Install as an app</button></div>`
+      : matchMedia("(display-mode: standalone)").matches ? `<p class="small">Installed. It opens from your dock; your data stays in the folder above.</p>`
+      : `<p class="small">In Safari: Share → Add to Home Screen. The app itself needs Chrome or Edge to save to your folder; there, this line becomes an Install button.</p>`}</div></div>
   ${sheetFoot("")}</div>`;
 }
 /* ---------------- events ---------------- */
@@ -2219,6 +2227,7 @@ document.addEventListener("click", async ev => {
   else if (a === "reopen") await openFolder(true);
   else if (a === "leave"){ stopWatching(); store = null; S = emptyState(); ui.view = null; ui.savedHandle = await idb.get("root").catch(() => null); location.hash = ""; render(); }
   else if (a === "undo"){ const u = ui.toast && ui.toast.undo; hideToast(); if (u) u(); render(); }
+  else if (a === "install"){ const p = installPrompt; if (!p) return; installPrompt = null; render(); p.prompt(); const r = await p.userChoice.catch(() => null); if (r && r.outcome === "accepted") toast("Installed. Look for DRM in your dock."); }
   else if (a === "hideChecklist"){ ui.hideChecklist = true; localStorage.setItem("drm-hide-checklist", "1"); render(); }
   else if (a === "showChecklist"){ ui.hideChecklist = false; localStorage.removeItem("drm-hide-checklist"); go("home"); }
   else if (a === "toggleGroup"){ const k = el.dataset.grp; ui.collapsed[k] = !ui.collapsed[k]; try { localStorage.setItem("drm-collapsed", JSON.stringify(ui.collapsed)); } catch(e){} render(); }
@@ -2521,10 +2530,24 @@ async function openFolder(reopen){
   } catch(e){ if (e.name !== "AbortError") alert("Couldn't open that folder: " + e.message); }
 }
 
+/* ---------------- installable (PWA) ---------------- */
+/* The browser offers the install prompt once; keep it so the Settings page can show an Install button. */
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", ev => { ev.preventDefault(); installPrompt = ev; if (route().page === "settings") render(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; if (route().page === "settings") render(); });
+function registerWorker(demo){
+  /* Not in the demo, and only where a worker can run: https (GitHub Pages) or localhost. */
+  if (!("serviceWorker" in navigator) || demo || !(location.protocol === "https:" || location.hostname === "localhost")) return;
+  let had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (had) toast("Updated. Reload to get the latest version."); had = true; });
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
 /* ---------------- start ---------------- */
 (async function init(){
   const params = new URLSearchParams(location.search);
   window.__drm = {get S(){ return S; }, get store(){ return store; }, get ui(){ return ui; }, buildReport, parseRubric, checkFolder};
+  registerWorker(params.get("demo") === "1");
   if (params.get("test") === "opfs"){ const root = await navigator.storage.getDirectory(); await useRoot(root); return; }
   if (params.get("demo") === "1"){ store = new MemoryStore(); S = demoState(); aiReady = true; render(); return; }
   ui.savedHandle = ("showDirectoryPicker" in window) ? await idb.get("root").catch(() => null) : null;
