@@ -3,7 +3,7 @@
    never passes through here: it lives in the folder the founder picked (File System
    Access API), which the worker does not touch. Only same-origin GETs are handled.
    Bump CACHE when the shell changes so old copies are dropped on activate. */
-const CACHE = "drm-shell-v1";
+const CACHE = "drm-shell-v2";
 const BASE = new URL("./", self.location).pathname;           /* "/discovery-records-manager/" on Pages, "/" locally */
 const ASSETS = ["index.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-512-maskable.png"];
 

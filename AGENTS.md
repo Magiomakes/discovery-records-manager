@@ -7,6 +7,7 @@ This folder is a founder's customer-discovery evidence ledger. The founder opens
 1. **Suggest, never decide.** Everything you write arrives as a suggestion. The founder confirms, rejects, accepts or places it in the app.
 2. **Say what you based it on.** Every rating or claim you write must list the evidence IDs it rests on. If there are none, say so explicitly: the app shows those as guesses, and that is correct. A guess dressed up as a finding is the one thing this ledger cannot survive.
 3. **Verify, then report.** After every task run `node tools/check.js` from the repository root and fix every PROBLEM and warning it reports before you tell the founder you're done. Paste its last line in your reply.
+4. **UI changes follow `DESIGN.md`.** Before writing or changing anything the founder sees in the app (`index.html`), read `DESIGN.md` at the repository root: it pins the type, the one accent and its boundary, the status glyphs and the motion rule. It overrides instinct; the founder's pick overrides it.
 
 ## The three rules
 
