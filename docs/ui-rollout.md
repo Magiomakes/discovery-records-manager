@@ -89,15 +89,30 @@ registers the worker.
 
 Syntax: `node --check` on the extracted script passes. `node tools/check.js`: 0 problem(s), 0 warning(s).
 
+## Fixed after the merge (2026-10-28)
+
+- The selected point's three panels are no longer overlays on the canvas. "What the evidence says" is a
+  strip under the posture band; You and Your AI are the first and last columns of a three-column stage
+  with the map between them, so no label or axis caption sits under a panel. The map re-fits when the
+  stage changes width (select, close) unless it had been zoomed by hand.
+- The point label at the right edge ("Free expense apps…") was hidden under the AI panel; with the panel
+  in its own column it is in the clear.
+- The gauge was hidden under 1100px; it now stacks under the verdict at full width (a shorter scale
+  under 900px). It is the map's signature element and should not disappear on a laptop.
+- The sidebar group headings follow DESIGN.md's 0.02em tracking (they were at 0.04em) and don't wrap;
+  "Snapshot of your business" fits on one line at 236px.
+- Under 1000px with a point selected, the map page scrolls as a document: band, strip, the map at a fixed
+  height (440px or 55vh), then You and Your AI side by side. Before, the two panels took their 40vh and
+  the map itself collapsed to a sliver.
+- The tab strip at 1440 wrapped its right-hand row (⤢ fell to a second line) and clipped "05 Leads List";
+  the row no longer wraps and the tabs tighten under 1500px.
+- The map legend wraps before it runs under the −/+/Fit buttons.
+
 ## Still open (not cut for convenience; listed so they are not forgotten)
 
-- When a point is selected, the top-left axis label ("Catastrophic if wrong") and "Riskiest, test these
-  first" sit under the selected-point card. They are visible as soon as the card is closed. The card
-  could move to the right of the square when the viewport is wide enough.
-- The sidebar group heading "Snapshot of your business" wraps to two lines at 236px. A shorter heading
-  ("Snapshot") would fix it, but the words are the founder's and were left alone.
-- The map on a phone is usable but cramped with all three overlays open; it was designed for a desk and
-  the proposal did not cover phone widths.
+- On a phone the world labels (axis captions, point labels) scale with 1/zoom, so at the small fit zoom
+  of a 375px map they crowd each other; the map was designed for a desk and the proposal did not cover
+  phone widths.
 - Archivo 300 is used for running UI text at 15px and below (DESIGN.md names this as the one stated
   exception to the two-weight rule). If the founder prefers the stricter 200/800, the body weight is a
   single variable (`--w`).

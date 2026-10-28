@@ -50,7 +50,7 @@ b,strong{font-weight:var(--wb)}
 .nav a:hover{border-left-color:var(--grey)}
 .nav a:active{opacity:.7}
 .nav a.on{font-weight:var(--wb);border-left-color:var(--ink)}
-.nav .grp{display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;cursor:pointer;font-size:11px;font-weight:var(--wb);letter-spacing:.04em;text-transform:uppercase;color:var(--grey);padding:18px 20px 5px;text-align:left}
+.nav .grp{display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;cursor:pointer;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:var(--grey);padding:18px 20px 5px;text-align:left}
 .nav .grp:hover{color:var(--ink)}
 .nav .grp:active{opacity:.7}
 .nav .grp .chev{display:inline-block;width:10px;transition:transform var(--t)}
@@ -345,25 +345,41 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 @media (max-width:1000px){.mapwrap,.mapwrap.sel{grid-template-columns:1fr}}
 .mapfull{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
 .tabstrip{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 16px 0 24px;border-bottom:2px solid var(--ink);flex-shrink:0}
-.tabstrip .tabs{border:none;margin:0;gap:18px}
+.tabstrip .tabs{border:none;margin:0;gap:18px;min-width:0}
+.tabstrip>.row{flex-wrap:nowrap;flex-shrink:0}
+@media (max-width:1500px){.tabstrip{padding-left:20px}.tabstrip .tabs{gap:10px}.tabstrip>.row{gap:4px!important}.tabstrip .counts{gap:8px;margin-right:2px}}
 .tabstrip .tabs button{padding:12px 0}
 .mapband{display:grid;grid-template-columns:minmax(0,7fr) minmax(280px,5fr);column-gap:48px;align-items:end;padding:12px 24px 12px;border-bottom:1px solid var(--ink);flex-shrink:0}
 .mapband .lab{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
-@media (max-width:1100px){.mapband{grid-template-columns:1fr;row-gap:8px}.mapband .gauge{display:none}}
+@media (max-width:1100px){.mapband{grid-template-columns:1fr;row-gap:12px}}
+@media (max-width:900px){.mapband .gauge .scale{height:20px}.mapband .gauge .needle{height:38px;top:-8px}}
 @media (max-width:900px){.tabstrip{flex-wrap:wrap;padding:0 16px}.tabstrip .tabs{width:100%;order:2;gap:14px}.tabstrip>.row{width:100%;padding:8px 0 4px;justify-content:flex-start}.mapband{padding:10px 16px}}
 .counts{display:inline-flex;gap:10px;align-items:center;font-size:12px;margin-right:6px}
 .counts .cnt{display:inline-flex;align-items:center;gap:0;font-weight:var(--wb)}
 .counts .dotp{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);background:transparent;margin-right:5px}
 .counts .dotp.s-ok{background:var(--ink)} .counts .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)} .counts .dotp.s-bad{background:var(--hatch)}
 .vp.full{flex:1;height:auto;border:none;min-height:0}
+/* With a point selected the stage becomes three columns: You | the map | Your AI. Columns, not overlays, so nothing sits on the grid. */
+.mapstage{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.mapstage.sel{grid-template-columns:280px minmax(0,1fr) 300px}
+.mapstage>.panel{position:static;width:auto;max-height:none;min-height:0;overflow:auto;border:none;background:none;padding:16px 20px 20px}
+.mapstage>.p-you{border-right:2px solid var(--ink)}
+.mapstage>.p-ai{border-left:2px dashed var(--grey)}
+/* What the evidence says about the selected point: a strip across the top, under the posture band. */
+.selstrip{flex-shrink:0;max-height:38%;overflow:auto;padding:10px 24px 12px;border-bottom:1px solid var(--ink)}
 .ov{position:absolute;z-index:5;background:rgba(238,238,234,.97);border:2px solid var(--ink);padding:14px 16px;cursor:default}
-.ov.ov-l{left:14px;top:14px;width:280px;max-height:calc(100% - 70px);overflow:auto}
-.ov.ov-r{right:14px;top:14px;width:300px;max-height:calc(100% - 70px);overflow:auto}
-.ov.ov-t{left:50%;transform:translateX(-50%);top:14px;width:min(620px,calc(100% - 660px));min-width:380px;max-height:45%;overflow:auto;padding:12px 16px}
 .ov.shelfpanel{right:14px;top:14px;bottom:52px;width:330px;overflow:auto}
-.ov h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase}
-.ov.panel{padding:14px 16px}
-@media (max-width:1000px){.ov.ov-t{width:calc(100% - 28px);min-width:0;left:14px;transform:none;max-height:40%}.ov.ov-l{top:auto;bottom:52px;width:calc(50% - 20px);max-height:40%}.ov.ov-r{top:auto;bottom:52px;width:calc(50% - 20px);max-height:40%}.ov.shelfpanel{width:calc(100% - 28px)}}
+.ov h4,.panel h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase}
+@media (max-width:1000px){
+  /* Narrow: with a point selected the page scrolls as a document: band, strip, the map at a fixed height, then You and Your AI side by side. */
+  .mapfull:has(.mapstage.sel){overflow:auto}
+  .mapstage.sel{flex:none;grid-template-columns:1fr 1fr;grid-template-rows:min(440px,55vh) auto}
+  .mapstage.sel>.vp{grid-column:1/-1;grid-row:1;flex:none}
+  .mapstage>.panel{max-height:none;border:none;border-top:2px solid var(--ink);padding:12px 16px 16px}
+  .mapstage>.p-ai{border-top-style:dashed;border-top-color:var(--grey);border-left:1px solid var(--hair)}
+  .selstrip{padding:10px 16px 12px}
+  .ov.shelfpanel{width:calc(100% - 28px)}
+}
 .vp{position:relative;height:640px;border:2px solid var(--ink);overflow:hidden;background-color:var(--stone);cursor:grab;user-select:none;touch-action:none}
 .vp.panning{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;--ik:1}
@@ -405,10 +421,10 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .vp .hud{position:absolute;right:14px;bottom:10px;display:flex;gap:4px;z-index:3}
 .vp .hud .btn{padding:3px 9px;font-size:12px;background:var(--stone)}
 .vp .hud .btn:hover{background:var(--ink)}
-.vp .legend{position:absolute;left:14px;bottom:10px;margin:0;display:flex;gap:12px;flex-wrap:wrap;background:rgba(238,238,234,.92);padding:4px 8px;font-size:11px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+.vp .legend{position:absolute;left:14px;bottom:10px;right:150px;margin:0;display:flex;gap:12px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 164px);background:rgba(238,238,234,.92);padding:4px 8px;font-size:11px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
 .vp .legend i{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);vertical-align:-1px;margin-right:5px;background:transparent}
 .vp .hint2{position:absolute;left:50%;transform:translateX(-50%);top:12px;font-size:12px;color:var(--grey);background:rgba(238,238,234,.92);padding:3px 10px;white-space:nowrap;z-index:3}
-.vp:has(.ov) .hint2{display:none}
+.vp:has(.ov) .hint2,.mapstage.sel .hint2{display:none}
 @media (max-width:1250px){.vp .hint2{display:none}}
 .panel{background:rgba(238,238,234,.97);border:2px solid var(--ink);padding:14px 16px;align-self:start}
 .panel.p-you{border-color:var(--ink)}
@@ -422,8 +438,7 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .rate i{flex:1;height:12px;border:1px solid var(--ink);display:block;background:transparent}
 .rate i.you{background:var(--ink)} .rate i.ai{background:var(--hatch)}
 .rate-l{display:flex;justify-content:space-between;font-size:11px;color:var(--grey);margin-top:3px}
-.selbar{border:2px solid var(--ink);padding:12px 16px;margin-bottom:14px}
-.selbar .ed{font-size:18px;margin-top:8px}
+.selstrip .ed{font-size:18px;margin-top:8px}
 .sidebox{border-top:1px solid var(--ink);padding:12px 0 4px;margin-bottom:8px}
 .sidebox h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}
 
@@ -1511,6 +1526,9 @@ function mapView(){
         <button class="btn sm ${ui.mapShelf ? "pri" : ""}" data-act="toggleShelf" title="My riskiest assumption, how I'll get evidence, ask your AI">Notes</button>
         <button class="btn sm" data-act="toggleFull" title="${ui.mapFull ? "Show the sidebar" : "Hide the sidebar"}">${ui.mapFull ? "⤡" : "⤢"}</button></div></div>
     <div class="mapband"><div><div class="lab">Posture · ${active.length} active point${active.length === 1 ? "" : "s"}</div><h1 class="verdict sm">${esc(r.verdict)}</h1></div>${postureGauge(r, false)}</div>
+    ${sel ? selCard(sel) : ""}
+    <div class="mapstage ${sel ? "sel" : ""}">
+    ${sel ? youPanel(sel) : ""}
     <div class="vp full" id="vp">
       <div class="world" id="world">
         <div class="bounds" style="left:${WORLD.x0}px;top:${WORLD.y0}px;width:${WORLD.x1 - WORLD.x0}px;height:${WORLD.y1 - WORLD.y0}px"></div>
@@ -1529,8 +1547,9 @@ function mapView(){
       <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
       <div class="legend"><span><i style="background:var(--ink)"></i>Holding up</span><span><i style="background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)"></i>Shaky</span><span><i style="background:var(--hatch)"></i>Contradicted</span><span><i></i>No evidence yet</span><span><i style="border-style:dashed;border-color:var(--grey)"></i>AI's placement</span><span><i style="box-shadow:0 0 0 2px var(--stone),0 0 0 3px var(--grey);margin-left:3px;margin-right:8px"></i>Pivot in play</span></div>
       <div class="hint2">Click to add a point · drag a point to rate it · drag its label to tidy · right-drag to pan · scroll to zoom</div>
-      ${sel ? selCard(sel) + youPanel(sel) + aiPanel(sel) : ""}
       ${ui.mapShelf && !sel ? notesShelf(r) : ""}
+    </div>
+    ${sel ? aiPanel(sel) : ""}
     </div>
   </div>`;
 }
@@ -1553,7 +1572,7 @@ function selCard(a){
   const tagged = (a.evidence || []).map(t => ({...t, e:byId(S.evidence, t.id)})).filter(t => t.e);
   const confirmedQuotes = S.evidence.filter(e => e.status === "Confirmed");
   const where = x.p ? `<span class="chip gray">Priority ${x.p}</span>` : `<span class="chip warn">Not rated yet</span>`;
-  return `<div class="ov ov-t selbar">
+  return `<div class="selstrip">
     <div class="spread"><div class="row" style="gap:6px"><span class="mono muted">${esc(a.id)}</span><span class="chip blue">${esc(k.label)}</span>${where}${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
       <div class="row">${a.status === "Candidate" ? `<button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Dismiss</button><button class="btn pri sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">Accept</button>` : ""}<button class="btn icon" data-act="closeNote" title="Close (Esc)">✕</button></div></div>
     <div class="notice ${x.s.status === "Holding up" ? "ok" : x.s.status === "Contradicted" ? "bad" : x.s.status === "Shaky" ? "warn" : "plain"}" style="margin-top:8px"><b>${esc(x.s.status === "Untested" ? "No evidence yet" : x.s.status)}.</b> ${esc(x.s.why)}. <span class="muted">Read from ${esc(k.test)}.</span> ${link}</div>
@@ -1588,7 +1607,7 @@ function bar5(val, cls){ const v = Number(val) || 0; return `<div class="rate">$
 /* Your side of the page. */
 function youPanel(a){
   const p = assumptionPriority(a);
-  return `<div class="ov ov-l panel p-you"><h4>You</h4>
+  return `<div class="panel p-you"><h4>You</h4>
     <div class="lab">Impact if wrong</div>${scale5("impact", a.id, a.impact)}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
     <div class="lab">Likely right?</div>${scale5("confidence", a.id, a.confidence)}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
     <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b> <span class="small muted">impact × (6 − confidence)</span>` : `<span class="small muted">Pick numbers above or drag the point into the grid.</span>`}</div>
@@ -1602,8 +1621,8 @@ function youPanel(a){
 /* The AI's side of the page. Always says what the rating rests on. */
 function aiPanel(a){
   const basis = aiBasis(a); const p = aiPriority(a); const dis = disagreement(a);
-  if (basis.kind === "none") return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Diagnose my snapshot</pre><button class="btn sm" data-act="copyText" data-text="Diagnose my snapshot">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on and is told to say so when it has none, flags what's untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</p></div>`;
-  return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4>
+  if (basis.kind === "none") return `<div class="panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Diagnose my snapshot</pre><button class="btn sm" data-act="copyText" data-text="Diagnose my snapshot">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on and is told to say so when it has none, flags what's untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</p></div>`;
+  return `<div class="panel p-ai"><h4>Your AI</h4>
     <div style="margin-bottom:12px">${basis.kind === "evidence" ? `<span class="stamp ok">${esc(basis.label)}</span>` : `<span class="stamp">${esc(basis.label)}</span>`}</div>
     <div class="lab">The case against</div><p class="small" style="margin:0 0 10px">${a.aiAgainst ? esc(a.aiAgainst) : `<span class="muted">No objection written yet. In your AI assistant, say <b>Poke holes</b>.</span>`}</p>
     ${a.aiWouldChange ? `<div class="lab">What would change its mind</div><p class="small" style="margin:0 0 10px">${esc(a.aiWouldChange)}</p>` : ""}
@@ -2529,12 +2548,13 @@ document.addEventListener("submit", async ev => {
 function mountMap(){
   const vp = document.getElementById("vp"); if (!vp) return;
   const w = vp.getBoundingClientRect().width;
-  if (!ui.view) fitMap(vp); else if (ui.viewW && Math.abs(w - ui.viewW) > 2) ui.view.x += (w - ui.viewW) / 2;   // layout changed: keep the view centred
+  if (!ui.view) fitMap(vp);
+  else if (ui.viewW && Math.abs(w - ui.viewW) > 2){ if (ui.view.k === ui.fitK) fitMap(vp); else ui.view.x += (w - ui.viewW) / 2; }   // layout changed (a point selected or not): re-fit if it was fitted, else keep the view centred
   ui.viewW = w; applyView();
   if (ui.focusLab){ const el = vp.querySelector(`.lbx[data-lab="${CSS.escape(ui.focusLab)}"]`); ui.focusLab = null; if (el){ el.focus(); const s = window.getSelection(), rg = document.createRange(); rg.selectNodeContents(el); rg.collapse(false); s.removeAllRanges(); s.addRange(rg); } }
 }
 function fitK(vp){ const r = vp.getBoundingClientRect(); const pad = 12; return Math.max(0.15, Math.min((r.width - pad * 2) / (WORLD.x1 - WORLD.x0), (r.height - pad * 2) / (WORLD.y1 - WORLD.y0))); }
-function fitMap(vp){ const r = vp.getBoundingClientRect(); const k = fitK(vp); ui.view = {k, x:r.width / 2 - k * (WORLD.x0 + WORLD.x1) / 2, y:r.height / 2 - k * (WORLD.y0 + WORLD.y1) / 2}; }
+function fitMap(vp){ const r = vp.getBoundingClientRect(); const k = fitK(vp); ui.fitK = k; ui.view = {k, x:r.width / 2 - k * (WORLD.x0 + WORLD.x1) / 2, y:r.height / 2 - k * (WORLD.y0 + WORLD.y1) / 2}; }
 /* The world has edges: you can't zoom out past the whole map, and you can't pan it off the screen. */
 function clampView(vp){
   const v = ui.view; const r = vp.getBoundingClientRect(); const kmin = fitK(vp);
