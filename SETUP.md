@@ -58,11 +58,11 @@ Done. Next time, open the bookmark and click **Reopen**.
 
 ## Start with the Compass
 
-It's the Week 1 toolkit, as working documents you keep editing all program. Click any grey "Type here" and type.
+After setup the app opens on **Your snapshot, in one sitting**: seven questions in plain words that fill in the five sheets below in one pass, with a "Put these on the map" button at the end. It's the Week 1 toolkit, as working documents you keep editing all program. Click any grey "Type here" and type.
 
 1. **01 Leaner Canvas:** your top 1 to 3 problems, a possible solution for each, every possible customer with your ideal customer labelled 1, and how the problems are solved today.
 2. **02 Value Proposition** and **03 Problem Statement:** fill in the blanks. The sheet shows the finished sentence and the first discovery question it gives you.
-3. **04 Assumptions Map:** the whole screen is the map. Click anywhere to add a point and type its assumption; drag a point into the grid to rate it (up means catastrophic if wrong, left means likely wrong; top-left gets tested first; the grid's edge is as far as a point can go); drag its label to tidy up; right-drag to pan and scroll to zoom. Click a point: your rating floats on the left, your AI's on the right, and what the evidence says across the top. The Notes button pops out "My riskiest assumption" and "How I'll get evidence this week". Ask your AI to **Rank the riskiest assumptions**: it places its own dashed point next to yours and says what evidence that rests on. A point it rates with no evidence is stamped as a guess.
+3. **04 Assumptions Map:** the whole screen is the map. Click anywhere to add a point and type its assumption; drag a point into the grid to rate it (up means catastrophic if wrong, left means likely wrong; top-left gets tested first; the grid's edge is as far as a point can go); drag its label to tidy up; right-drag to pan and scroll to zoom. Click a point: your rating floats on the left, your AI's on the right, and what the evidence says across the top. The Notes button pops out "My riskiest assumption" and "How I'll get evidence this week". Ask your AI to **Diagnose my snapshot**: it places its own dashed point next to yours, says what evidence that rests on, lists what's stated but untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first. A point it rates with no evidence is stamped as a guess.
 4. **05 Leads List:** who you could talk to. Log an interview straight from a row.
 
 From then on, every interview updates the map. A note's status (No evidence yet, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score anyone types. **Insights** shows the picture by focus area: Problem, Customers, Solution, Alternatives and competition.
@@ -86,7 +86,7 @@ No AI tool that can read your folder? Every interview page has a fallback where 
 4. Read the AI's note under **AI notes**. It will tell you what to ask next time.
 5. Level 1: fill in **Customer persona**, linking a confirmed quote to every line. Level 2: add **Jobs**, mark one as the wedge, and check **MVP scope**.
 
-Other things to ask your AI, any time: **Rank the riskiest assumptions**, **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
+Other things to ask your AI, any time: **Diagnose my snapshot**, **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
 
 The three rules: **quotes, not summaries**, **behavior, not interpretation**, and **argue against it**: your AI leans slightly sceptical, so every rating comes with the strongest case against it and you dismiss the objection on purpose. It never confirms anything on your behalf.
 

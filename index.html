@@ -1252,21 +1252,42 @@ function compassView(step){
 }
 const stepNav = (back, backLabel, next, nextLabel) => `<div class="row" style="justify-content:space-between;max-width:1120px;margin:0 auto">${back ? `<a class="btn" href="#/${back}">${backLabel}</a>` : "<span></span>"}${next ? `<a class="btn pri" href="#/${next}">${nextLabel}</a>` : ""}</div>`;
 
+/* The canvas's editable lines. The Leaner Canvas and the first sitting (#/start) draw the same lines on the same records. */
+const numberedN = (i) => `<span class="n">${i + 1}.</span>`;
+const canvasLines = (items, render, addKind, addLabel) => `<div class="lines">${items.map((it, i) => render(it, i)).join("")}</div><button class="add" data-act="cAdd" data-kind="${addKind}">+ ${addLabel}</button>`;
+function problemLines(){
+  return canvasLines(sortById([...S.problems]), (p, i) => `<div class="ln">${numberedN(i)}<div class="ed" style="flex:1">${ed("pField", `data-id="${esc(p.id)}" data-field="text"`, p.text, "Type here")}<div class="sub">${ed("pField", `data-id="${esc(p.id)}" data-field="who"`, p.who, "who has it", "sans")}</div></div><button class="btn icon no x" title="Remove" data-act="pRemove" data-id="${esc(p.id)}">✕</button></div>`, "problem", "Add a problem");
+}
+function solutionLines(showProblem){
+  const C = S.compass;
+  return `<div class="lines">${sortById([...S.problems]).map((p, i) => `<div class="ln">${numberedN(i)}${showProblem ? `<div style="flex:1"><div class="sub">${esc(p.text || "untitled problem")}</div>${ed("cSolution", `data-id="${esc(p.id)}"`, (C.solutions||{})[p.id], "Type here")}</div>` : ed("cSolution", `data-id="${esc(p.id)}"`, (C.solutions||{})[p.id], "Type here")}</div>`).join("") || `<p class="hint">Add a problem first.</p>`}</div>`;
+}
+function customerLines(){
+  return canvasLines([...S.compass.customers].sort((a, b) => (b.ideal ? 1 : 0) - (a.ideal ? 1 : 0)), (c, i) => `<div class="ln ${c.ideal ? "ideal" : ""}">${numberedN(i)}${ed("cItem", `data-kind="customers" data-id="${esc(c.id)}" data-field="text"`, c.text, "Type here")}<button class="star ${c.ideal ? "on" : ""}" data-act="cIdeal" data-id="${esc(c.id)}" title="Label as your ideal customer">${c.ideal ? "ideal" : "make 1"}</button><button class="btn icon no x" title="Remove" data-act="cRemove" data-kind="customers" data-id="${esc(c.id)}">✕</button></div>`, "customers", "Add a customer");
+}
+function alternativeLines(){
+  return canvasLines(S.compass.alternatives, (a, i) => `<div class="ln">${numberedN(i)}<div style="flex:1">${ed("cItem", `data-kind="alternatives" data-id="${esc(a.id)}" data-field="name"`, a.name, "Type here")}<div class="sub">${ed("cItem", `data-kind="alternatives" data-id="${esc(a.id)}" data-field="gap"`, a.gap, "the gap you think it leaves", "sans")}</div></div><button class="btn icon no x" title="Remove" data-act="cRemove" data-kind="alternatives" data-id="${esc(a.id)}">✕</button></div>`, "alternatives", "Add an alternative");
+}
+/* The two ad-libs, as fill-in-the-blank lines plus the sentence read back. */
+function statementBlanks(stmt, parts, readback){
+  const v = S.compass[stmt];
+  return `${parts.map(([k, lead, ph]) => `<div class="blank"><span class="lead">${esc(lead)}</span>${ed("cStmt", `data-stmt="${stmt}" data-field="${k}"`, v[k], ph)}</div>`).join("")}<div class="readback">${esc(readback)}</div>`;
+}
+/* "Use" rows that pull the value proposition's parts from the canvas. */
+function valuePropUses(){
+  const ideal = idealCustomer(); const pr = sortById([...S.problems])[0]; const alts = S.compass.alternatives || [];
+  const use = (label, val, field) => val ? `<div class="use"><span><b>${esc(label)}:</b> ${esc(val)}</span><button class="btn sm" data-act="cUse" data-stmt="valueProp" data-field="${field}" data-val="${esc(val)}">Use</button></div>` : "";
+  return `${use("Customer", ideal && ideal.text, "who")}${use("Problem", pr && pr.text, "what")}${pr && (S.compass.solutions||{})[pr.id] ? use("Approach", S.compass.solutions[pr.id], "how") : ""}${alts.length ? use("Competitors", alts.map(a => a.name).filter(Boolean).join(", "), "over") : ""}`;
+}
+
 /* 01 Leaner Canvas */
 function canvasSheet(){
-  const C = S.compass; const probs = sortById([...S.problems]);
-  const lines = (items, render, addKind, addLabel) => `<div class="lines">${items.map((it, i) => render(it, i)).join("")}</div><button class="add" data-act="cAdd" data-kind="${addKind}">+ ${addLabel}</button>`;
-  const numbered = (i) => `<span class="n">${i + 1}.</span>`;
   return `<div class="sheet">${sheetHead("01", "Leaner Canvas", 20)}
   <div class="canvas">
-    <div class="box b-problem"><h3>Problem</h3><p class="ins">List your customers' top 1 to 3 problems.</p>
-      ${lines(probs, (p, i) => `<div class="ln">${numbered(i)}<div class="ed" style="flex:1">${ed("pField", `data-id="${esc(p.id)}" data-field="text"`, p.text, "Type here")}<div class="sub">${ed("pField", `data-id="${esc(p.id)}" data-field="who"`, p.who, "who has it", "sans")}</div></div><button class="btn icon no x" title="Remove" data-act="pRemove" data-id="${esc(p.id)}">✕</button></div>`, "problem", "Add a problem")}</div>
-    <div class="box b-solution"><h3>Solution</h3><p class="ins">Outline a possible solution for each problem.</p>
-      <div class="lines">${probs.map((p, i) => `<div class="ln">${numbered(i)}${ed("cSolution", `data-id="${esc(p.id)}"`, (C.solutions||{})[p.id], "Type here")}</div>`).join("") || `<p class="hint">Add a problem first.</p>`}</div></div>
-    <div class="box b-customer"><h3>Ideal customer</h3><p class="ins">List all possible customers. Label your ideal customer 1.</p>
-      ${lines([...C.customers].sort((a, b) => (b.ideal ? 1 : 0) - (a.ideal ? 1 : 0)), (c, i) => `<div class="ln ${c.ideal ? "ideal" : ""}">${numbered(i)}${ed("cItem", `data-kind="customers" data-id="${esc(c.id)}" data-field="text"`, c.text, "Type here")}<button class="star ${c.ideal ? "on" : ""}" data-act="cIdeal" data-id="${esc(c.id)}" title="Label as your ideal customer">${c.ideal ? "ideal" : "make 1"}</button><button class="btn icon no x" title="Remove" data-act="cRemove" data-kind="customers" data-id="${esc(c.id)}">✕</button></div>`, "customers", "Add a customer")}</div>
-    <div class="box b-alts"><h3>Existing alternatives</h3><p class="ins">List how these problems are solved today.</p>
-      ${lines(C.alternatives, (a, i) => `<div class="ln">${numbered(i)}<div style="flex:1">${ed("cItem", `data-kind="alternatives" data-id="${esc(a.id)}" data-field="name"`, a.name, "Type here")}<div class="sub">${ed("cItem", `data-kind="alternatives" data-id="${esc(a.id)}" data-field="gap"`, a.gap, "the gap you think it leaves", "sans")}</div></div><button class="btn icon no x" title="Remove" data-act="cRemove" data-kind="alternatives" data-id="${esc(a.id)}">✕</button></div>`, "alternatives", "Add an alternative")}</div>
+    <div class="box b-problem"><h3>Problem</h3><p class="ins">List your customers' top 1 to 3 problems.</p>${problemLines()}</div>
+    <div class="box b-solution"><h3>Solution</h3><p class="ins">Outline a possible solution for each problem.</p>${solutionLines()}</div>
+    <div class="box b-customer"><h3>Ideal customer</h3><p class="ins">List all possible customers. Label your ideal customer 1.</p>${customerLines()}</div>
+    <div class="box b-alts"><h3>Existing alternatives</h3><p class="ins">List how these problems are solved today.</p>${alternativeLines()}</div>
   </div>
   ${sheetFoot("01")}</div>
   ${stepNav(null, "", "compass/value", "Next: value proposition")}`;
@@ -1274,17 +1295,14 @@ function canvasSheet(){
 
 /* 02 Value Proposition */
 function valueSheet(){
-  const V = S.compass.valueProp; const ideal = idealCustomer(); const pr = S.problems[0]; const alts = S.compass.alternatives || [];
-  const use = (label, val, field) => val ? `<div class="use"><span><b>${esc(label)}:</b> ${esc(val)}</span><button class="btn sm" data-act="cUse" data-stmt="valueProp" data-field="${field}" data-val="${esc(val)}">Use</button></div>` : "";
   return `<div class="sheet">${sheetHead("02", "Value Proposition Statement", 5, false)}
   <div class="stmt"><div>
-    ${VP_PARTS.map(([k, lead, ph]) => `<div class="blank"><span class="lead">${esc(lead)}</span>${ed("cStmt", `data-stmt="valueProp" data-field="${k}"`, V[k], ph)}</div>`).join("")}
-    <div class="readback">${esc(valuePropText())}</div>
+    ${statementBlanks("valueProp", VP_PARTS, valuePropText())}
   </div><div class="aside">
     <h4>Example from session</h4><p class="ex">${esc(VP_EXAMPLE)}</p>
     <h4>Where the parts come from</h4>
     <p><b>Customer:</b> the ideal customer you labelled 1 on your Leaner Canvas.<br><b>Problem:</b> your customer's top problem.<br><b>Competitors:</b> your existing alternatives. What do they use today?<br><b>Differentiation:</b> the one reason they'd switch.</p>
-    ${use("Customer", ideal && ideal.text, "who")}${use("Problem", pr && pr.text, "what")}${pr && (S.compass.solutions||{})[pr.id] ? use("Approach", S.compass.solutions[pr.id], "how") : ""}${alts.length ? use("Competitors", alts.map(a => a.name).filter(Boolean).join(", "), "over") : ""}
+    ${valuePropUses()}
     <p class="hint" style="margin-top:12px">Adapted from Click by Jake Knapp.</p>
   </div></div>
   ${sheetFoot("02")}</div>
@@ -1293,11 +1311,9 @@ function valueSheet(){
 
 /* 03 Problem Statement */
 function problemSheet(){
-  const P = S.compass.problemStatement;
   return `<div class="sheet">${sheetHead("03", "Problem Statement", 5, false)}
   <div class="stmt"><div>
-    ${PS_PARTS.map(([k, lead, ph]) => `<div class="blank"><span class="lead">${esc(lead)}</span>${ed("cStmt", `data-stmt="problemStatement" data-field="${k}"`, P[k], ph)}</div>`).join("")}
-    <div class="readback">${esc(problemStatementText())}</div>
+    ${statementBlanks("problemStatement", PS_PARTS, problemStatementText())}
   </div><div class="aside">
     <h4>The three parts</h4><p><b>Context:</b> the situation your customer is in when the problem shows up.<br><b>Complication:</b> what they end up doing, or what goes wrong.<br><b>Consequence:</b> why it matters to them.</p>
     <h4>Example from session</h4><p class="ex">${esc(PS_EXAMPLE)}</p>
@@ -1367,7 +1383,7 @@ function notesShelf(r){
     <div class="notice ${r.cls === "ok" ? "ok" : r.cls === "bad" ? "bad" : r.cls === "gray" ? "plain" : "warn"}" style="margin:10px 0 14px"><b>${esc(r.verdict)}</b></div>
     <div class="sidebox"><h4>My riskiest assumption</h4>${ed("cField", `data-field="riskiest"`, S.compass.riskiest, "Type here")}${r.riskiestOpen && !S.compass.riskiest ? `<button class="btn link small" data-act="cSet" data-field="riskiest" data-val="${esc(r.riskiestOpen.a.text)}">Use the top of the map: ${esc(r.riskiestOpen.a.id)}</button>` : ""}</div>
     <div class="sidebox"><h4>How I'll get evidence this week</h4>${ed("cField", `data-field="evidencePlan"`, S.compass.evidencePlan, "Type here")}</div>
-    <div class="sidebox"><h4>Ask your AI</h4><div class="small">Say <span class="kbd">Rank the riskiest assumptions</span>. It places each point, says what it based that on, and flags any it rated with no evidence.</div><button class="btn sm" style="margin-top:6px" data-act="copyText" data-text="Rank the riskiest assumptions">Copy</button></div>
+    <div class="sidebox"><h4>Ask your AI</h4><div class="small">Say <span class="kbd">Diagnose my snapshot</span>. It rates every point, says what evidence that rests on, lists what's stated but untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</div><button class="btn sm" style="margin-top:6px" data-act="copyText" data-text="Diagnose my snapshot">Copy</button></div>
     ${r.candidates ? `<div class="notice warn">${r.candidates} point${r.candidates > 1 ? "s" : ""} suggested by your AI ${r.candidates > 1 ? "are" : "is"} waiting below the grid. Click one to accept or dismiss it.</div>` : ""}
   </div>`;
 }
@@ -1429,7 +1445,7 @@ function youPanel(a){
 /* The AI's side of the page. Always says what the rating rests on. */
 function aiPanel(a){
   const basis = aiBasis(a); const p = aiPriority(a); const dis = disagreement(a);
-  if (basis.kind === "none") return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Rank the riskiest assumptions</pre><button class="btn sm" data-act="copyText" data-text="Rank the riskiest assumptions">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on, and is told to say so when it has none.</p></div>`;
+  if (basis.kind === "none") return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Diagnose my snapshot</pre><button class="btn sm" data-act="copyText" data-text="Diagnose my snapshot">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on and is told to say so when it has none, flags what's untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</p></div>`;
   return `<div class="ov ov-r panel p-ai"><h4>Your AI</h4>
     <div style="margin-bottom:12px">${basis.kind === "evidence" ? `<span class="stamp ok">${esc(basis.label)}</span>` : `<span class="stamp">${esc(basis.label)}</span>`}</div>
     <div class="lab">The case against</div><p class="small" style="margin:0 0 10px">${a.aiAgainst ? esc(a.aiAgainst) : `<span class="muted">No objection written yet. In your AI assistant, say <b>Poke holes</b>.</span>`}</p>
@@ -1444,13 +1460,16 @@ function aiPanel(a){
 }
 
 /* 05 Leads List */
+function leadsTable(minRows){
+  const leads = S.compass.leads || []; const rows = Math.max(minRows, leads.length);
+  return `<div style="overflow-x:auto"><table><tr><th style="width:30px"></th><th>Name<div class="hint" style="font-weight:400">Who could you talk to?</div></th><th>Organisation<div class="hint" style="font-weight:400">Work, club, community</div></th><th>Why?<div class="hint" style="font-weight:400">What do they know about the problem?</div></th><th>How?<div class="hint" style="font-weight:400">Intro, DM, email, event</div></th><th>Done</th></tr>
+  ${Array.from({length: rows}, (_, i) => { const l = leads[i]; if (!l) return `<tr><td class="muted">${i+1}</td><td colspan="5"><button class="add" data-act="cAdd" data-kind="leads">+ Add a lead</button></td></tr>`;
+    return `<tr><td class="muted">${i+1}</td>${["name","org","why","how"].map(f => `<td>${ed("cItem", `data-kind="leads" data-id="${esc(l.id)}" data-field="${f}"`, l[f], "", "sans")}</td>`).join("")}<td><div class="row" style="flex-wrap:nowrap"><input type="checkbox" data-act="leadDone" data-id="${esc(l.id)}" ${l.done ? "checked" : ""} title="Done">${l.interviewId ? `<a class="small" href="#/interviews/${esc(l.interviewId)}">${esc(l.interviewId)}</a>` : `<button class="btn sm" data-act="leadInterview" data-id="${esc(l.id)}">Log interview</button>`}<button class="btn icon no" title="Remove" data-act="cRemove" data-kind="leads" data-id="${esc(l.id)}">✕</button></div></td></tr>`; }).join("")}</table></div>`;
+}
 function leadsSheet(){
-  const leads = S.compass.leads || []; const rows = Math.max(10, leads.length);
   return `<div class="sheet">${sheetHead("05", "Leads List", 5, false)}
   <p class="intro">Who could you talk to about your problem? Aim for more than 5 names. Not everyone will say yes. When you've talked to someone, log the interview from their row.</p>
-  <table><tr><th style="width:30px"></th><th>Name<div class="hint" style="font-weight:400">Who could you talk to?</div></th><th>Organisation<div class="hint" style="font-weight:400">Work, club, community</div></th><th>Why?<div class="hint" style="font-weight:400">What do they know about the problem?</div></th><th>How?<div class="hint" style="font-weight:400">Intro, DM, email, event</div></th><th>Done</th></tr>
-  ${Array.from({length: rows}, (_, i) => { const l = leads[i]; if (!l) return `<tr><td class="muted">${i+1}</td><td colspan="5"><button class="add" data-act="cAdd" data-kind="leads">+ Add a lead</button></td></tr>`;
-    return `<tr><td class="muted">${i+1}</td>${["name","org","why","how"].map(f => `<td>${ed("cItem", `data-kind="leads" data-id="${esc(l.id)}" data-field="${f}"`, l[f], "", "sans")}</td>`).join("")}<td><div class="row" style="flex-wrap:nowrap"><input type="checkbox" data-act="leadDone" data-id="${esc(l.id)}" ${l.done ? "checked" : ""} title="Done">${l.interviewId ? `<a class="small" href="#/interviews/${esc(l.interviewId)}">${esc(l.interviewId)}</a>` : `<button class="btn sm" data-act="leadInterview" data-id="${esc(l.id)}">Log interview</button>`}<button class="btn icon no" title="Remove" data-act="cRemove" data-kind="leads" data-id="${esc(l.id)}">✕</button></div></td></tr>`; }).join("")}</table>
+  ${leadsTable(10)}
   ${suggestedLeads()}
   ${sheetFoot("05")}</div>
   ${stepNav("compass/map", "Back", "interviews", "Next: interviews")}`;
@@ -1479,6 +1498,38 @@ function suggestedLeads(){
   if (!list.length) return ask;
   return `<h2 style="margin-top:18px">Suggested by your AI</h2><p class="ins">Accept a lead to add it to your list above, or dismiss it. Your AI never edits the list itself.</p>
   <div class="boxes g2" style="margin-bottom:0">${list.map(leadCard).join("")}</div>${ask}`;
+}
+
+/* ---------------- the first sitting (#/start): the five sheets' questions in order, on the same records ---------------- */
+const filled = s => !!String(s || "").trim();
+function snapshotSections(){
+  const C = S.compass;
+  return [
+    S.problems.some(p => filled(p.text)),
+    !!idealCustomer() && filled(idealCustomer().text),
+    (C.alternatives || []).some(a => filled(a.name)),
+    S.problems.length > 0 && S.problems.every(p => filled((C.solutions || {})[p.id])),
+    VP_PARTS.every(([k]) => filled(C.valueProp[k])),
+    PS_PARTS.every(([k]) => filled(C.problemStatement[k])),
+    (C.leads || []).filter(l => filled(l.name)).length >= 3
+  ];
+}
+function snapshotDone(){ return snapshotSections().filter(Boolean).length; }
+function startSheet(){
+  const ok = snapshotSections(); const done = ok.filter(Boolean).length;
+  const section = (i, title, question, body, why) => `<div class="box"><h3>${i + 1}. ${esc(title)} ${ok[i] ? `<span class="chip ok" style="margin-left:6px;text-transform:none;letter-spacing:0">Answered</span>` : ""}</h3><p class="ins">${esc(question)}</p>${body}<p class="hint" style="margin:12px 0 0">${esc(why)}</p></div>`;
+  const progress = `<span class="chip ${done === 7 ? "ok" : "gray"}" style="margin-right:12px;align-self:center">${done} of 7 answered</span>`;
+  return `<div class="sheet">${docHead("Start", "Your snapshot, in one sitting", "Seven questions, in plain words. They fill in the five Compass sheets as you go, so there is nothing to copy over and you can come back here to read the whole snapshot at once. A guess is fine; the interviews will test it.", progress)}
+  ${section(0, "The problem", "What problem do you believe people have? Say it the way they would, not as a solution.", problemLines(), "Everything else rests on this. If it's written as a feature, no customer can tell you it's wrong.")}
+  ${section(1, "Who has it", "Who has it? Who has it worst? Mark the one you'd bet on first.", customerLines(), "The segment labelled 1 is who you interview first; the others are who you compare them against.")}
+  ${section(2, "What they do today", "What do they do about it today?", alternativeLines(), "If they already have a way that's good enough, there's no room for you. The gap you name is a bet.")}
+  ${section(3, "What you'd build", "What would you build for each problem?", solutionLines(true), "One line each. The interviews test the problem, not the solution, but you need the solution written down to see what you're assuming.")}
+  ${section(4, "Your value proposition", "Fill in the blanks. The parts come from above.", `<div class="stmt"><div>${statementBlanks("valueProp", VP_PARTS, valuePropText())}</div><div class="aside"><h4>From your answers above</h4>${valuePropUses() || `<p class="hint">Answer the first four questions and the parts appear here.</p>`}</div></div>`, "This is the claim you'll have to earn: why they'd switch from what they do today.")}
+  ${section(5, "Your problem statement", "Fill in the blanks: the situation, what goes wrong, why it matters.", `<div class="stmt"><div>${statementBlanks("problemStatement", PS_PARTS, problemStatementText())}</div><div class="aside"><h4>Use it in discovery</h4><p>Your context and complication become your first question:</p><div class="use"><span class="ex">“${esc(firstQuestion())}”</span><button class="btn sm" data-act="copyText" data-text="${esc(firstQuestion())}">Copy</button></div></div></div>`, "Your context and complication become your first interview question, so write them in the customer's words.")}
+  ${section(6, "Three people", "Three people you could talk to this week.", leadsTable(3), "Not everyone will say yes. Start with people who have the problem, not people who like you.")}
+  <div class="row" style="margin-top:4px"><button class="btn pri" data-act="startSeed">Put these on the map</button><span class="small muted">${done} of 7 answered. You can come back for the rest.</span></div>
+  <p class="hint" style="margin-top:10px">What happens next: each line above becomes a point on the Assumptions Map. Drag each point into the grid (up is catastrophic if wrong, left is likely wrong), then ask your AI to <span class="kbd">Diagnose my snapshot</span>: it rates every point, says what evidence that rests on, and names the two interviews to run first.</p>
+  ${sheetFoot("")}</div>`;
 }
 
 /* ---------------- Insights: one page per focus area ---------------- */
@@ -1646,6 +1697,7 @@ function shell(content, bare){
       <nav class="nav">
         ${link("home","Where you stand")}
         ${group("compass", "Snapshot of your business", [
+          ...(snapshotDone() < 7 ? [["start","Start: your snapshot"]] : []),
           ["compass/canvas","<span class=num>01</span>Leaner Canvas"], ["compass/value","<span class=num>02</span>Value Proposition"], ["compass/problem","<span class=num>03</span>Problem Statement"],
           ["compass/map","<span class=num>04</span>Assumptions Map", c.candidates ? `<span class="pill">${c.candidates}</span>` : c.counts.Contradicted ? `<span class="chip bad">${c.counts.Contradicted}</span>` : ""],
           ["compass/leads","<span class=num>05</span>Leads List"]
@@ -1671,7 +1723,7 @@ function render(){
   if (store.needsSetup){ root.innerHTML = setupView(); return; }
   const r = route();
   if (r.page === "compass" && r.id === "map" && r.sub && !ui.selNote) ui.selNote = r.sub;
-  const views = {home:dashView, compass:compassView, insights:insightsView, ledger:ledgerView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : () => insightsView("problem"), persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, notes:notesView, guide:guideView, report:reportView, settings:settingsView};
+  const views = {home:dashView, start:startSheet, compass:compassView, insights:insightsView, ledger:ledgerView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : () => insightsView("problem"), persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, notes:notesView, guide:guideView, report:reportView, settings:settingsView};
   const scrollEl = document.querySelector(".main"); const keep = scrollEl && root.dataset.page === location.hash ? scrollEl.scrollTop : 0;
   const bare = r.page === "compass" && r.id === "map";
   root.innerHTML = shell((views[r.page] || dashView)(r.id), bare) + (ui.drawer ? drawerView() : "") + (ui.askFor ? askPanel() : "");
@@ -1805,7 +1857,7 @@ function setupView(){
 /* ---------------- home: where you stand ---------------- */
 function checklist(m){
   const items = [
-    ["Fill in your Leaner Canvas", S.problems.length > 0 && !!idealCustomer() && (S.compass.alternatives||[]).length > 0, "compass/canvas", "Problems, a solution for each, every customer with your ideal labelled 1, and what people use today."],
+    ["Fill in your Leaner Canvas", S.problems.length > 0 && !!idealCustomer() && (S.compass.alternatives||[]).length > 0, snapshotDone() < 3 ? "start" : "compass/canvas", "Problems, a solution for each, every customer with your ideal labelled 1, and what people use today."],
     ["Write your value proposition and problem statement", !!S.compass.valueProp.why && !!S.compass.problemStatement.complication, "compass/value", "Two sentences you'll keep rewriting."],
     ["Place your assumptions on the map", S.assumptions.some(a => assumptionPriority(a)), "compass/map", "Up is catastrophic, left is likely wrong. Top-left gets tested first."],
     ["List who you could talk to", (S.compass.leads||[]).length >= 5, "compass/leads", "More than five names. Not everyone will say yes."],
@@ -1819,7 +1871,7 @@ function checklist(m){
     <div style="margin-top:6px">${items.map(([t, ok, h, d]) => `<div class="check ${ok ? "done" : ""}"><div class="dot">${ok ? "✓" : ""}</div><div><a class="t" href="#/${h}" style="text-decoration:none">${esc(t)}</a><div class="d">${esc(d)}</div></div></div>`).join("")}</div></div>`;
 }
 function nextStep(m){
-  if (!S.problems.length || !idealCustomer()) return ["Fill in your Leaner Canvas: the problems you believe exist and who you'd bet has them.", "compass/canvas", "Open the canvas"];
+  if (!S.problems.length || !idealCustomer()) return ["Get your snapshot down in one sitting: the problems you believe exist and who you'd bet has them.", "start", "Start"];
   if (!S.compass.valueProp.why) return ["Write your value proposition. It's the claim you'll have to earn.", "compass/value", "Write it"];
   if (!S.assumptions.length) return ["Turn your canvas into points and put them on the map.", "compass/map", "Open the map"];
   if (!S.assumptions.some(a => assumptionPriority(a))) return ["Drag your points into the grid. Top-left is what you test first.", "compass/map", "Open the map"];
@@ -1947,7 +1999,7 @@ function addQuoteForm(iv){
 function aiCommands(iv){
   return [
     [`Review interview ${iv ? iv.id : "INT-001"}`, "Pulls out every quote word for word, checks how the interview was run, scores the pain for each problem, and writes a short note. Everything arrives here as a suggestion for you to confirm."],
-    ["Rank the riskiest assumptions", "Rates each point on your map for impact and confidence, says which confirmed quotes it relied on, flags any it rated with no evidence, and suggests bets you've missed."],
+    ["Diagnose my snapshot", "Rates every point on your map for impact and confidence and says which confirmed quotes it relied on (flagging any it rated with none), lists what's stated but untestable, proposes the assumptions hiding in your canvas (a buyer, a channel, a switching cost), and names the two interviews to run first."],
     ["Poke holes", "For your three riskiest assumptions: the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. When the evidence has turned on a bet (shaky or contradicted), it proposes a pivot you accept or dismiss on the map; otherwise it says how many interviews short the signal is. Run it after every two interviews."],
     ["Find where to interview next", "Reads every transcript for where these people gather, checks which places have already produced real pain, and suggests places to look, each with the quote it rests on."],
     ["Find leads", "Proposes people to talk to for your ideal segment and one other, with where to find them and the interview or quote each one resembles. You accept or dismiss each on the Leads List."],
@@ -2227,6 +2279,7 @@ document.addEventListener("click", async ev => {
   else if (a === "leadInterview"){ const l = byId(S.compass.leads, el.dataset.id); const id = nextId("INT-", S.interviews, 3);
     upsert("interviews", {id, date:today(), interviewee:l.name || "", role:l.org || "", customerId:(idealCustomer()||{}).id || "", source:"", interviewer:S.config.founder || "", recentInstance:"", leading:"", pitched:"", demoed:"", closing:"", rubricRun:false, notes:l.why ? "From leads list: " + l.why : "", coachingNote:""});
     l.done = true; l.interviewId = id; persist("compass"); ui.tab[id] = "quotes"; go("interviews/" + id); }
+  else if (a === "startSeed"){ const n = seedAssumptions(); go("compass/map"); toast(n ? `Added ${n} point${n > 1 ? "s" : ""} from your snapshot. Drag them into the grid to rate them.` : "Everything on your snapshot already has a point. Drag the points into the grid to rate them."); }
   else if (a === "seedAssumptions"){ const n = seedAssumptions(); render(); toast(n ? `Added ${n} point${n > 1 ? "s" : ""} from your canvas. Drag them into the grid to rate them.` : "Nothing new. Everything on the canvas already has a point."); }
   else if (a === "newAssumption"){ const id = nextId("A-", S.assumptions, 2); upsert("assumptions", blankAssumption(id)); selectPoint(id); ui.focusLab = id; render(); }
   else if (a === "selNote"){ selectPoint(el.dataset.id); render(); }
@@ -2309,7 +2362,7 @@ document.addEventListener("submit", async ev => {
     if ((d.problem || "").trim()) upsert("problems", {id:"PR-01", text:d.problem.trim(), who:(d.who || "").trim()});
     if ((d.who || "").trim()){ S.compass.customers = [{id:"C-01", text:d.who.trim(), why:"", ideal:true}]; await persist("compass"); }
     await store.write("drm/README.md", "This folder holds your Discovery Records Manager data. Edit it with the DRM app or ask your AI assistant; see CLAUDE.md at the top of the repository.\n");
-    store.needsSetup = false; store.stamps = await store.scan(); startWatching(); go("home"); render();
+    store.needsSetup = false; store.stamps = await store.scan(); startWatching(); go("start"); render();
   } else if (f.dataset.form === "addProblem"){ upsert("problems", {id:nextId("PR-", S.problems, 2), text:d.text.trim(), who:(d.who||"").trim()}); f.reset(); render(); }
   else if (f.dataset.form === "addQuote"){ const id = nextId(r.id + "-Q", S.evidence.filter(x => x.id.startsWith(r.id + "-Q")), 2);
     upsert("evidence", {id, interviewId:r.id, problemId:d.problemId, jobId:"", quote:d.quote.trim(), where:d.where, type:d.type, foundBy:"Founder", status:"Confirmed", note:""}); ui.addQuote = null; render(); }
