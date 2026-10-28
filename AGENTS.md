@@ -21,6 +21,7 @@ This folder is a founder's customer-discovery evidence ledger. The founder opens
 - Never edit `drm/transcripts/*.md`, `drm/config.json`, `drm/persona.json` or `README.md` (the app rebuilds README.md on every save).
 - You may update these fields on an interview file: `recentInstance`, `leading`, `pitched`, `demoed`, `closing`, `rubricRun`, `coachingNote`.
 - Never edit `leads[]` inside `drm/compass.json`: that is the founder's own Leads List. To propose a person, write a Candidate file in `drm/leads/`; the founder accepts it into their list, or dismisses it, in the app.
+- Never write a pivot (`drm/pivots/`) unless its trigger assumption meets the gate in the **Poke holes** task. Only the founder accepts a pivot (`Active`) or retires it, in the app.
 - IDs must be unique. Before creating a file, list the folder and use the next unused number.
 - Keep JSON valid and keep every field listed below, even when empty (`""`, `[]`).
 
@@ -49,6 +50,7 @@ drm/
   jobs/JB-01.json      jobs to be done (kept for later)
   places/PL-01.json    where to find people to interview, one place per file
   leads/LD-01.json     people you propose the founder talk to, one per file
+  pivots/PV-01.json    what you'd change if a bet breaks, one move per file; only when the evidence has turned
   persona.json         the founder's persona draft (read-only for you)
   notes/2026-10-27-review-INT-001.md   your written reviews (Markdown)
 ```
@@ -113,6 +115,14 @@ Lead `drm/leads/LD-01.json` (a person the founder could talk to)
 ```
 `status` is `Candidate` (yours), `Accepted` or `Dismissed` (the founder's, set in the app; never write them). `name` only if you actually saw it on a page you opened, with that page in `url`; otherwise leave `name` empty and describe the person in `role` plus where to find them in `howFound`. `why` names the interview or quote this person resembles, with the IDs in `evidenceIds`; with none, write `"evidenceIds":[]` and say in `why` that it's a guess from the segment description: the app stamps it as a guess. `verified` is what you saw and when. `customerId` is a segment from compass.json and `placeId` a file in `drm/places/`, or `""`. Never invent a name, a URL or a member count.
 
+Pivot `drm/pivots/PV-01.json` (what the founder would change if a bet breaks)
+```json
+{"id":"PV-01","triggerAssumptionIds":["A-03"],"kind":"problem","text":"Same treasurers, different problem: not collecting receipts from members, but matching the photos already in the group chat to the e-transfers.",
+ "evidenceIds":["INT-001-Q03"],"why":"If members won't upload to any app, the collection step can't be fixed on the member side. INT-001-Q03 shows the club went back to the group chat, where the photos already are. One club, so a candidate only.",
+ "foundBy":"Claude Code","status":"Candidate","note":""}
+```
+`kind` is one of the classic moves: `zoom-in` (one feature becomes the whole product), `customer-segment` (same problem, different people), `problem` (same people, different problem), `channel` (same product, different way to reach them), `value-capture` (same product, different buyer or pricing), `platform` (the tool becomes the product or the product becomes a tool). `triggerAssumptionIds` are the assumptions that have to be wrong for this move to make sense; `evidenceIds` are the confirmed quotes that point to it, and `why` says how. `status` is `Candidate` (yours), `Active` or `Retired` (the founder's, set in the app; never write them). The app shows a pivot only while every trigger is Shaky or Contradicted by confirmed evidence ("in play"); otherwise it's stamped "Not in play" and never counted. A pivot with no quotes behind it is a guess: say so in `why`, and never propose one from opinion quotes alone.
+
 ## The Pain Scale (score each interview-problem pair, by behavior)
 
 - **Hair on Fire**: already invested money or recurring time they can't get back, and the problem is still not solved.
@@ -175,9 +185,14 @@ Pass 1, extract. Pass 2, verify: for every evidence file you wrote, search the t
 **Poke holes** (run it after every two interviews; the app suggests it): read `drm/compass.json`, every active assumption and the confirmed evidence and pain scores. Take the three assumptions with the highest founder priority (impact × (6 − confidence)), or the three highest by your own rating if the founder hasn't placed theirs.
 1. For each, write the strongest case that it is wrong, using confirmed quotes only; cite the IDs. If no confirmed quote bears on it, say so: the case against is then "nothing has tested this", which is a case against.
 2. Set `aiAgainst` and `aiWouldChange` on each of the three (and on any other rated assumption that is missing them).
-3. Name the move the founder would make if it is wrong: a different segment, a different problem for the same people, a narrower slice, a different channel, or a different buyer. One line each, no detail; this is a note, not a plan.
+3. Name the move the founder would make if it is wrong: a different segment, a different problem for the same people, a narrower slice, a different channel, or a different buyer. One line each, no detail; this is a note, not a plan. Then apply the pivot gate, in your own terms since you can't run the app:
+   - A **problem** assumption is Contradicted or Shaky when at least `minInterviews` (from `drm/config.json`) confirmed pain scores exist for its problem and fewer than `strongShare` of them are Hair on Fire or Incremental Improvement (or that share is reached only with weak interviews: friends or family, leading questions, a pitch or demo, or no recent instance).
+   - A **customers** or **early-adopters** assumption is Contradicted or Shaky when its segment (interviews with that `customerId`) has at least 3 confirmed pain scores and the same share test fails, or another segment with 3 or more scores shows at least 25 points more real pain.
+   - Any **other** kind is Contradicted or Shaky when confirmed quotes tagged against it (`evidence[]` with `"stance":"contradicts"`) equal or outnumber those for it, or when fewer than 3 quotes support it.
+   - Untested (too few scores or no tagged quotes) and Holding up never open the gate.
+   For a trigger assumption that meets the gate, write one `drm/pivots/PV-xx.json` Candidate file per move (list the folder and use the next unused number), citing in `evidenceIds` the confirmed quotes that point to that move and `foundBy` set to your tool name. Never propose a pivot from opinion or future-intent quotes alone. For an assumption that doesn't meet the gate, write nothing and say in the note "no pivot signal yet: N confirmed interviews short" (N = `minInterviews` minus the confirmed scores on its problem, or 3 minus the segment's scores) or "holding up".
 4. Give the one interview question that would settle each.
-5. Write `drm/notes/YYYY-MM-DD-poke-holes.md` with the three cases, the moves and the questions, then run `node tools/check.js`.
+5. Write `drm/notes/YYYY-MM-DD-poke-holes.md` with the three cases, the moves (and for each whether a pivot file was written or why not) and the questions, then run `node tools/check.js`. It warns when a pivot's trigger doesn't meet the gate; fix that by deleting the pivot, not by arguing with the check.
 
 ## Style for notes
 

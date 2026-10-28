@@ -270,6 +270,7 @@ mark.focus-mark,mark.focus{outline:2px solid var(--navy);outline-offset:1px}
 .pt .dotp.s-ok{background:var(--teal)} .pt .dotp.s-warn{background:var(--yellow)} .pt .dotp.s-bad{background:var(--coral)} .pt .dotp.s-none{background:#fff}
 .pt.cand .dotp{border-style:dashed;border-color:var(--teal)}
 .pt.sel .dotp{box-shadow:0 0 0 4px var(--pale),0 1px 3px rgba(0,51,82,.3)}
+.pt.piv .dotp{outline:1.5px dashed var(--coral);outline-offset:3px}
 .pt.dragging{z-index:9}
 .lbx{position:absolute;transform:translate(0,-50%) scale(var(--ik));transform-origin:0 50%;width:max-content;max-width:240px;min-width:40px;min-height:22px;font-size:12.5px;line-height:1.35;color:var(--navy);background:rgba(255,255,255,.96);padding:3px 8px 3px 24px;border-radius:5px;border:1px solid var(--line-2);box-shadow:0 1px 3px rgba(0,51,82,.12);cursor:grab;white-space:pre-wrap;outline:none;margin:0}
 .lbx:before{content:attr(data-k);position:absolute;left:7px;top:4px;font-size:10px;font-weight:800;color:var(--ink-3);letter-spacing:.02em}
@@ -434,7 +435,7 @@ const idb = {
   async set(k, v){ const db = await this.open(); return new Promise(res => { const t = db.transaction("kv","readwrite").objectStore("kv").put(v, k); t.onsuccess = () => res(); t.onerror = () => res(); }); }
 };
 
-const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs", assumptions:"assumptions", places:"places", leads:"leads"};
+const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs", assumptions:"assumptions", places:"places", leads:"leads", pivots:"pivots"};
 
 class FolderStore {
   constructor(root){ this.root = root; this.kind = "folder"; this.name = root.name; this.stamps = null; }
@@ -507,7 +508,7 @@ class MemoryStore {
 }
 
 function emptyState(){
-  return {config:{}, interviews:[], evidence:[], pains:[], problems:[], jobs:[], assumptions:[], places:[], leads:[], compass:emptyCompass(), transcripts:{}, notes:[], unreadable:[],
+  return {config:{}, interviews:[], evidence:[], pains:[], problems:[], jobs:[], assumptions:[], places:[], leads:[], pivots:[], compass:emptyCompass(), transcripts:{}, notes:[], unreadable:[],
           persona:{problemId:"", fields:Object.fromEntries(PERSONA_FIELDS.map(([k]) => [k, {text:"", evidence:[]}]))}};
 }
 
@@ -942,6 +943,9 @@ Nice to Have at most. She hasn't done anything about it.
     {id:"A-04", seed:"solution:PR-01", kind:"solution", problemId:"PR-01", customerId:"", alternativeId:"", text:"Treasurers would switch from the group chat to an app where members snap receipts", impact:4, confidence:1, pos:{x:0.12, y:0.78}, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"Nobody has been asked about switching. The solution hasn't come up in any interview.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
     {id:"A-05", seed:"", kind:"other", problemId:"", customerId:"C-03", alternativeId:"", text:"Student union finance staff would pay for this on behalf of clubs", impact:4, confidence:"", pos:null, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"A buyer assumption hiding in the value proposition. The treasurer isn't the one with budget. Worth one conversation.", evidence:[], note:"", status:"Candidate", foundBy:"Claude Code"}
   ];
+  D.pivots = [
+    {id:"PV-01", triggerAssumptionIds:["A-03"], kind:"problem", text:"Same treasurers, different problem: not collecting receipts from members, but matching the photos already in the group chat to the e-transfers.", evidenceIds:["INT-001-Q03"], why:"If members won't upload to any app, the collection step can't be fixed on the member side. INT-001-Q03 shows the club went back to the group chat, where the photos already are; the work left is the treasurer's matching. One club, so a candidate only.", foundBy:"Claude Code", status:"Candidate", note:""}
+  ];
   D.persona.problemId = "PR-01";
   D.persona.fields.who = {text:"Treasurer of a student club who handles member reimbursements", evidence:["INT-001-Q01"]};
   D.persona.fields.workaround = {text:"Photos in the group chat plus a tracking sheet they built and update weekly", evidence:["INT-001-Q02","INT-001-Q03"]};
@@ -971,6 +975,15 @@ const AREAS = {
   alternatives: {title:"Alternatives and competition", k:"A", kinds:["alternatives","competition","other"],   lede:"Do today's alternatives leave the gap you think, and why would anyone choose you over them?"}
 };
 const PLACE_KINDS = ["LinkedIn search","Online community","Event or meetup","Organisation or club","Referral","Other"];
+/* The classic pivot moves. A pivot is only in play when the bet it hangs on is shaky or contradicted by confirmed evidence. */
+const PIVOT_KINDS = {
+  "zoom-in":          {label:"Zoom in",          meaning:"one feature becomes the whole product"},
+  "customer-segment": {label:"Customer segment", meaning:"same problem, different people"},
+  "problem":          {label:"Problem",          meaning:"same people, different problem"},
+  "channel":          {label:"Channel",          meaning:"same product, different way to reach them"},
+  "value-capture":    {label:"Value capture",    meaning:"same product, different buyer or pricing"},
+  "platform":         {label:"Platform",         meaning:"the tool becomes the product or the product becomes a tool"}
+};
 const STATUS_ORDER = {"Contradicted":0, "Shaky":1, "Untested":2, "Holding up":3};
 // Ad-libs from the Ideas Lab Week 1 Toolkit.
 const VP_PARTS = [["who","If we help","Type your customer here"],["what","solve","Type your problem here"],["how","with","Type your approach here"],["over","they will choose it over","Type your competitors here"],["why","because our solution is","Type your differentiation here"]];
@@ -1086,6 +1099,31 @@ function assumptionStatus(a){
   if (sup >= 3 && sup >= 2 * con) return {status:"Holding up", why:`${sup} quotes for, ${con} against`, n:ev.length};
   return {status:"Shaky", why:`${sup} for, ${con} against; not enough yet`, n:ev.length};
 }
+/* The pivot gate: a pivot is in play only when every trigger assumption is Shaky or Contradicted by confirmed evidence. Otherwise it's shown, stamped, and never counted. */
+function pivotGate(pv){
+  const ids = (pv.triggerAssumptionIds || []).filter(Boolean);
+  if (!ids.length) return {open:false, why:"Not in play: no trigger assumption named"};
+  const states = [];
+  for (const id of ids){
+    const a = byId(S.assumptions, id);
+    if (!a) return {open:false, why:`Not in play: ${id} doesn't exist`};
+    if (a.status === "Retired") return {open:false, why:`Not in play: ${id} is retired`};
+    const s = assumptionStatus(a);
+    if (!["Contradicted","Shaky"].includes(s.status)) return {open:false, why:`Not in play: ${id} is ${s.status === "Untested" ? "untested" : "holding up"} (${s.why})`};
+    states.push(`${id} is ${s.status.toLowerCase()}`);
+  }
+  return {open:true, why:`In play: ${states.join(", ")}`};
+}
+function pivotsInPlay(){ return (S.pivots || []).filter(pv => pv.status !== "Retired" && pivotGate(pv).open); }
+function pivotsFor(aId){ return sortById((S.pivots || []).filter(pv => pv.status !== "Retired" && (pv.triggerAssumptionIds || []).includes(aId))).map(pv => ({pv, g:pivotGate(pv)})); }
+function pivotTriggerIds(){ const set = new Set(); for (const pv of pivotsInPlay()) for (const id of pv.triggerAssumptionIds || []) set.add(id); return set; }
+/* How many confirmed interviews an untested bet is short of its gate; null when the bet isn't counted that way. */
+function interviewsShort(a, s){
+  if (s.status !== "Untested") return null;
+  if (a.kind === "problem" && a.problemId) return Math.max(0, Number(S.config.minInterviews ?? 5) - (s.n || 0));
+  if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId) return Math.max(0, 3 - (s.n || 0));
+  return null;
+}
 function assumptionPriority(a){ const i = Number(a.impact) || 0, c = Number(a.confidence) || 0; return i && c ? i * (6 - c) : null; }
 function aiPriority(a){ const i = Number(a.aiImpact) || 0, c = Number(a.aiConfidence) || 0; return i && c ? i * (6 - c) : null; }
 function rankedAssumptions(){
@@ -1121,7 +1159,7 @@ function compassReadout(){
   else if (top.every(x => x.s.status === "Holding up")) verdict = "Your three riskiest assumptions are holding up so far. Before you lean on them, ask your AI to poke holes.", cls = "ok";
   else if (top.some(x => x.s.status === "Shaky")) verdict = "One of your riskiest assumptions is shaky. More interviews with the right people will settle it.", cls = "warn";
   else verdict = "Your riskiest assumptions are still untested. That's where the next interviews go.", cls = "warn";
-  return {counts, top, riskiestOpen, verdict, cls, total:active.length, rated:rated.length, candidates:S.assumptions.filter(a => a.status === "Candidate").length};
+  return {counts, top, riskiestOpen, verdict, cls, total:active.length, rated:rated.length, candidates:S.assumptions.filter(a => a.status === "Candidate").length, pivots:pivotsInPlay().length};
 }
 function areaOf(a){ return (ASSUMPTION_KINDS[a.kind] || {}).area || "alternatives"; }
 function areaReadout(area){
@@ -1164,6 +1202,20 @@ function ledgerChecks(){
     if (l.url && !/^https?:\/\//.test(l.url)) push("warn", l.id, "compass/leads", "Lead url should be a full http(s) address the AI actually opened, or empty.");
     if (l.customerId && !byId(S.compass.customers || [], l.customerId)) push("warn", l.id, "compass/leads", `Lead customerId ${l.customerId} isn't a segment on the canvas.`);
     if (l.placeId && !byId(S.places, l.placeId)) push("warn", l.id, "compass/leads", `Lead placeId ${l.placeId} doesn't exist.`);
+  }
+  for (const pv of S.pivots || []){
+    if (!["Candidate","Active","Retired"].includes(pv.status)) push("bad", pv.id, "compass/map", `Pivot has a bad status "${pv.status}".`);
+    if (pv.status === "Retired") continue;
+    const trig = (pv.triggerAssumptionIds || []).filter(Boolean); const href = "compass/map/" + (trig[0] || "");
+    if (!PIVOT_KINDS[pv.kind]) push("warn", pv.id, href, `Pivot kind "${pv.kind}" isn't one of ${Object.keys(PIVOT_KINDS).join(", ")}.`);
+    if (!(pv.text || "").trim()) push("bad", pv.id, href, "Pivot has no text.");
+    if (!trig.length) push("bad", pv.id, href, "Pivot names no trigger assumption.");
+    for (const id of trig){ const t = byId(S.assumptions, id); if (!t) push("bad", pv.id, href, `Trigger ${id} doesn't exist.`); else if (t.status === "Retired") push("warn", pv.id, href, `Trigger ${id} is retired.`); }
+    const ids = (pv.evidenceIds || []).filter(Boolean); const found = ids.map(id => byId(S.evidence, id));
+    const missing = ids.filter((id, i) => !found[i]); if (missing.length) push("bad", pv.id, href, "Pivot cites quotes that don't exist: " + missing.join(", ") + ".");
+    if (!ids.length) push("warn", pv.id, href, "Pivot cites no quotes. A pivot with no quotes behind it is a guess; say so in why.");
+    else if (found.filter(Boolean).length && found.filter(Boolean).every(e => e.type === "Opinion or future intent")) push("warn", pv.id, href, "Every quote behind this pivot is opinion or future intent. Never propose a pivot from opinion alone.");
+    const g = pivotGate(pv); if (!g.open && trig.length && trig.every(id => byId(S.assumptions, id))) push("info", pv.id, href, g.why + ". It isn't counted until the evidence turns.");
   }
   for (const iv of S.interviews){
     if (iv.placeId && !byId(S.places, iv.placeId)) push("warn", iv.id, "interviews/" + iv.id, `placeId ${iv.placeId} doesn't exist.`);
@@ -1263,7 +1315,8 @@ const LABEL_DEFAULT = {dx:18, dy:0};
 function labelOf(a){ const l = a.label && typeof a.label === "object" ? a.label : LABEL_DEFAULT; return {dx:Number(l.dx) || 0, dy:Number(l.dy) || 0}; }
 function pointHtml(x, w, extra){
   const a = x.a; const sel = ui.selNote === a.id; const l = labelOf(a); const k = ASSUMPTION_KINDS[a.kind] || {short:"?"};
-  return `<div class="pt ${extra || ""} ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""}" data-pt="${esc(a.id)}" style="left:${w.x}px;top:${w.y}px"><span class="dotp s-${statusDot(x.s.status)}"></span></div>
+  const piv = pivotTriggerIds().has(a.id);
+  return `<div class="pt ${extra || ""} ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""} ${piv ? "piv" : ""}" data-pt="${esc(a.id)}" style="left:${w.x}px;top:${w.y}px"><span class="dotp s-${statusDot(x.s.status)}"></span></div>
   <div class="lbx ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""}" data-lab="${esc(a.id)}" data-act="aText" data-id="${esc(a.id)}" contenteditable="plaintext-only" data-ph="Type the assumption" data-k="${esc(k.short)}" style="left:${w.x + l.dx}px;top:${w.y + l.dy}px">${esc(a.text)}</div>`;
 }
 function mapView(){
@@ -1301,7 +1354,7 @@ function mapView(){
         ${placed.map(x => pointHtml(x, worldOf(x.a.pos))).join("")}
       </div>
       <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
-      <div class="legend"><span><i style="background:var(--teal)"></i>Holding up</span><span><i style="background:var(--yellow)"></i>Shaky</span><span><i style="background:var(--coral)"></i>Contradicted</span><span><i style="background:#fff"></i>No evidence yet</span><span><i style="border:1.5px dashed var(--coral)"></i>AI's placement</span></div>
+      <div class="legend"><span><i style="background:var(--teal)"></i>Holding up</span><span><i style="background:var(--yellow)"></i>Shaky</span><span><i style="background:var(--coral)"></i>Contradicted</span><span><i style="background:#fff"></i>No evidence yet</span><span><i style="border:1.5px dashed var(--coral)"></i>AI's placement</span><span><i style="outline:1.5px dashed var(--coral);outline-offset:2px;width:6px;height:6px;margin-left:2px;margin-right:6px"></i>Pivot in play</span></div>
       <div class="hint2">Click to add a point · drag a point to rate it · drag its label to tidy · right-drag to pan · scroll to zoom</div>
       ${sel ? selCard(sel) + youPanel(sel) + aiPanel(sel) : ""}
       ${ui.mapShelf && !sel ? notesShelf(r) : ""}
@@ -1334,7 +1387,28 @@ function selCard(a){
     ${taggable ? `<details class="fold" style="margin-top:8px;padding:6px 12px"><summary>Quotes for and against (${tagged.length})</summary>
       ${tagged.map(t => `<div class="q compact s-${esc(t.e.status)}" style="margin:8px 0 6px"><div class="spread"><span class="words">${esc(t.e.quote)}</span><div class="row"><span class="seg"><button class="${t.stance === "supports" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="supports">For</button><button class="${t.stance === "contradicts" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="contradicts">Against</button></span><button class="btn icon no" title="Untag" data-act="aUntag" data-id="${esc(a.id)}" data-eid="${esc(t.id)}">✕</button></div></div><div class="meta"><a href="#/interviews/${esc(t.e.interviewId)}">${esc(t.e.interviewId)}</a>${t.e.status !== "Confirmed" ? statusChip(t.e.status) : ""}</div></div>`).join("")}
       <select data-act="aTag" data-id="${esc(a.id)}" style="max-width:100%;margin-top:6px"><option value="">Tag a confirmed quote…</option>${confirmedQuotes.filter(e => !(a.evidence||[]).some(t => t.id === e.id)).map(e => opt(e.id, "", `${e.id}: ${e.quote.slice(0, 90)}`)).join("")}</select></details>` : ""}
+    ${pivotsSection(a, x.s)}
   </div>`;
+}
+/* One pivot: the move, what it rests on, and whether the evidence has opened the gate. Shown on the selected point and on the Insights page for its area. */
+function pivotCard(x, opts = {}){
+  const pv = x.pv, g = x.g; const k = PIVOT_KINDS[pv.kind] || {label:pv.kind || "?", meaning:""};
+  const ids = (pv.evidenceIds || []).filter(Boolean);
+  const trig = (pv.triggerAssumptionIds || []).filter(Boolean);
+  const quotes = ids.map(id => { const e = byId(S.evidence, id); return e ? `<div class="q compact s-${esc(e.status)}" style="margin:0 0 6px;padding:8px 10px 6px 12px"><span class="words" style="font-size:13.5px">${esc(e.quote)}</span><div class="meta"><a href="#/interviews/${esc(e.interviewId)}">${esc(e.interviewId)}</a>${e.status !== "Confirmed" ? statusChip(e.status) : ""}</div></div>` : `<span class="chip bad">${esc(id)} not found</span>`; }).join("");
+  return `<div class="tile" style="border-left:4px solid ${g.open ? "var(--coral)" : "var(--line-2)"};margin:0 0 8px">
+    <div class="spread"><div class="row" style="gap:6px"><span class="mono muted">${esc(pv.id)}</span><span class="chip blue" title="${esc(k.meaning)}">${esc(k.label)}</span>${g.open ? `<span class="chip bad">In play</span>` : `<span class="chip gray">Not in play</span>`}${pv.status === "Candidate" ? `<span class="ai">Suggested by ${esc(pv.foundBy || "AI")}</span>` : ""}</div>
+      ${pv.status === "Candidate" ? `<div class="row"><button class="btn sm" data-act="pivotStatus" data-id="${esc(pv.id)}" data-val="Retired">Dismiss</button><button class="btn pri sm" data-act="pivotStatus" data-id="${esc(pv.id)}" data-val="Active">Accept</button></div>` : pv.status === "Active" ? `<button class="btn sm" data-act="pivotStatus" data-id="${esc(pv.id)}" data-val="Retired">Retire</button>` : ""}</div>
+    <div class="belief" style="font-size:14.5px;margin-top:6px">${esc(pv.text || "untitled pivot")}</div>
+    <div class="h" style="margin-top:4px">${esc(k.meaning)}. ${esc(g.why)}.${opts.showTriggers !== false && trig.length ? ` If wrong: ${trig.map(id => `<a href="#/compass/map/${esc(id)}" class="mono">${esc(id)}</a>`).join(", ")}.` : ""}</div>
+    ${pv.why ? `<p class="small" style="margin:6px 0 0">${esc(pv.why)}</p>` : ""}
+    ${ids.length ? `<div class="lab" style="font-size:12.5px;color:var(--ink-2);margin:8px 0 4px">What it rests on</div>${quotes}` : `<div style="margin-top:8px"><span class="stamp" style="transform:none;font-size:10.5px">No quote behind it: a guess</span></div>`}
+  </div>`;
+}
+function pivotsSection(a, s){
+  const list = pivotsFor(a.id);
+  if (!list.length) return ["Contradicted","Shaky"].includes(s.status) ? `<div class="h" style="margin-top:8px"><b>If this is wrong:</b> no pivot proposed yet. In your AI assistant, say <span class="kbd">Poke holes</span>; it proposes what you'd change, from confirmed quotes only.</div>` : "";
+  return `<div class="lab" style="font-size:12.5px;color:var(--ink-2);margin:10px 0 4px">If this is wrong</div>${list.map(x => pivotCard(x, {showTriggers:false})).join("")}`;
 }
 function scale5(name, id, val){ return `<span class="seg you">${[1,2,3,4,5].map(n => `<button class="${String(val) === String(n) ? "on" : ""}" data-act="aScale" data-id="${esc(id)}" data-field="${name}" data-val="${n}">${n}</button>`).join("")}</span>`; }
 function bar5(val, cls){ const v = Number(val) || 0; return `<div class="rate">${[1,2,3,4,5].map(n => `<i class="${n <= v ? cls : ""}"></i>`).join("")}</div>`; }
@@ -1429,6 +1503,19 @@ function beliefBox(area){
   else inner = `${(C.alternatives||[]).map(a => `<div class="belief"><b>${esc(a.name)}</b>${a.gap ? ` <span class="muted">leaves this gap:</span> ${esc(a.gap)}` : ""}</div>`).join("") || `<div class="belief muted">No alternatives on the canvas yet.</div>`}<div class="belief" style="margin-top:8px">They will choose it over ${esc(C.valueProp.over || "[competitors]")} because our solution is ${esc(C.valueProp.why || "[differentiation]")}.</div>`;
   return `<div class="box soft"><h3>What you believe</h3><p class="ins">From your Compass. <a href="#/compass/${area === "problem" ? "problem" : area === "solution" ? "value" : "canvas"}">Edit it there.</a></p>${inner}</div>`;
 }
+/* "If this breaks": the pivots in play for this area, or how far the riskiest bet here is from giving any signal. */
+function pivotBox(area, r){
+  const all = sortById((S.pivots || []).filter(pv => pv.status !== "Retired" && (pv.triggerAssumptionIds || []).some(id => { const a = byId(S.assumptions, id); return a && a.status !== "Retired" && areaOf(a) === area; }))).map(pv => ({pv, g:pivotGate(pv)}));
+  const open = all.filter(x => x.g.open), closed = all.filter(x => !x.g.open);
+  let body;
+  if (open.length) body = open.map(x => pivotCard(x)).join("");
+  else {
+    const top = r.list[0]; const short = top ? interviewsShort(top.a, top.s) : null;
+    body = `<p class="small" style="margin:0"><b>No pivot signal yet.</b> ${top ? `Riskiest bet here, <a href="#/compass/map/${esc(top.a.id)}" class="mono">${esc(top.a.id)}</a>: ${esc(top.s.why)}${short !== null ? ` (${short} confirmed interview${short === 1 ? "" : "s"} short)` : ""}.` : "No bets in this area yet."} Your AI proposes a pivot only when a bet here is shaky or contradicted by confirmed evidence.</p>`;
+  }
+  const rest = closed.length ? `<div class="h" style="margin-top:8px">${closed.map(x => `<div><span class="mono">${esc(x.pv.id)}</span> ${esc((PIVOT_KINDS[x.pv.kind] || {label:x.pv.kind}).label)}: ${esc(x.pv.text)} <span class="chip gray">${esc(x.g.why)}</span></div>`).join("")}</div>` : "";
+  return `<div class="box soft"><h3>If this breaks</h3><p class="ins">Pivots your AI proposed, in play only while the bet they hang on is shaky or contradicted. You accept or dismiss each from its point on the map.</p>${body}${rest}</div>`;
+}
 function insightsView(area){
   area = AREAS[area] ? area : "problem";
   const A = AREAS[area]; const r = areaReadout(area);
@@ -1445,6 +1532,7 @@ function insightsView(area){
     <p class="small" style="margin:0">${area === "problem" ? "Each problem bet holds up when enough confirmed interviews score it Hair on Fire or Incremental Improvement." : area === "customers" ? "The early-adopter bet holds up when your ideal segment shows more real pain than the other segments; set the segment on each interview so it counts. Your AI reads every transcript for where these people gather and suggests places to look; a place with no quote behind it is a guess until you've been there." : area === "solution" ? "Tag confirmed quotes for or against each solution bet from its point on the map. Behavior counts; “I would use it” doesn't." : "Tag confirmed quotes for or against each alternative or competition bet. A workaround they keep using is a quote about an alternative."}</p></div></div>
   <h2>Your bets in this area</h2>
   ${r.list.length ? `<div class="boxes g2" style="margin-bottom:6px">${r.list.map(pointTile).join("")}</div>` : `<div class="empty">No ${esc(A.title.toLowerCase())} points yet. <a href="#/compass/map">Add them on the map.</a></div>`}
+  ${pivotBox(area, r)}
   ${evidence}
   ${sheetFoot("")}</div>`;
 }
@@ -1743,7 +1831,12 @@ function nextStep(m){
   if (noRubric) return [`${noRubric.id} hasn't been reviewed by your AI yet.`, "interviews/" + noRubric.id, "Open " + noRubric.id];
   const reviewed = S.interviews.filter(i => i.rubricRun).length, holes = S.notes.filter(n => /poke-holes/i.test(n.name)).length;
   if (reviewed >= 2 && holes < Math.floor(reviewed / 2)) return ["Two more interviews are in. Ask your AI to poke holes in your riskiest assumptions before the next ones.", "ask", "See how"];
-  if (c.counts.Contradicted) return ["An assumption is contradicted. Decide what changes on the canvas.", "compass/map", "Open the map"];
+  if (c.counts.Contradicted){
+    const con = rankedAssumptions().filter(x => x.a.status === "Active" && x.s.status === "Contradicted");
+    const bare = con.find(x => !pivotsFor(x.a.id).length);
+    if (bare) return [`${bare.a.id} is contradicted. Ask your AI to poke holes: it proposes what you'd change.`, "ask", "See how"];
+    return ["An assumption is contradicted and your AI has proposed a pivot. Accept or dismiss it on the map, then decide what changes on the canvas.", "compass/map/" + con[0].a.id, "Open the point"];
+  }
   if (c.riskiestOpen) return [`Still untested: ${c.riskiestOpen.a.text}. Point the next interviews at it.`, "compass/map", "Open the map"];
   if (!S.persona.fields.who.text) return ["Start your customer persona, with a quote behind every line.", "persona", "Open persona"];
   return ["Keep interviewing. Each conversation should re-test an assumption, not just add new ideas.", "interviews", "Log an interview"];
@@ -1757,7 +1850,7 @@ function dashView(){
   ${checklist(m)}
   <div class="boxes g2">
     <div class="box"><h3>Snapshot</h3><p class="ins">What you believe, and whether it's holding up.</p>
-      ${S.assumptions.length ? `<p style="margin:0 0 8px">${esc(c.verdict)}</p><div class="row small" style="gap:6px">${["Holding up","Shaky","Untested","Contradicted"].map(k => `${statusChipA(k)} ${c.counts[k]}`).join(" ")}</div>` : `<p style="margin:0">No points on the map yet. <a href="#/compass/map">Make them from your canvas.</a></p>`}
+      ${S.assumptions.length ? `<p style="margin:0 0 8px">${esc(c.verdict)}</p><div class="row small" style="gap:6px">${["Holding up","Shaky","Untested","Contradicted"].map(k => `${statusChipA(k)} ${c.counts[k]}`).join(" ")}</div>${c.pivots ? `<p class="small" style="margin:8px 0 0"><a href="#/compass/map">${c.pivots} pivot${c.pivots === 1 ? "" : "s"} in play</a>: a bet is shaky or contradicted and your AI has proposed what you'd change.</p>` : ""}` : `<p style="margin:0">No points on the map yet. <a href="#/compass/map">Make them from your canvas.</a></p>`}
       <div class="row" style="margin-top:10px"><a class="btn sm" href="#/compass/map">Open the map</a><a class="btn sm" href="#/compass/canvas">Leaner Canvas</a></div></div>
     <div class="box"><h3>Evidence</h3><p class="ins">What customers said and did.</p>
       <div class="tiles" style="grid-template-columns:1fr 1fr;margin:0">
@@ -1855,7 +1948,7 @@ function aiCommands(iv){
   return [
     [`Review interview ${iv ? iv.id : "INT-001"}`, "Pulls out every quote word for word, checks how the interview was run, scores the pain for each problem, and writes a short note. Everything arrives here as a suggestion for you to confirm."],
     ["Rank the riskiest assumptions", "Rates each point on your map for impact and confidence, says which confirmed quotes it relied on, flags any it rated with no evidence, and suggests bets you've missed."],
-    ["Poke holes", "For your three riskiest assumptions: the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. Run it after every two interviews."],
+    ["Poke holes", "For your three riskiest assumptions: the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. When the evidence has turned on a bet (shaky or contradicted), it proposes a pivot you accept or dismiss on the map; otherwise it says how many interviews short the signal is. Run it after every two interviews."],
     ["Find where to interview next", "Reads every transcript for where these people gather, checks which places have already produced real pain, and suggests places to look, each with the quote it rests on."],
     ["Find leads", "Proposes people to talk to for your ideal segment and one other, with where to find them and the interview or quote each one resembles. You accept or dismiss each on the Leads List."],
     [`Research a segment ${(idealCustomer() || {}).id || "C-01"}`, "Who these people are, what they already use, where they gather and what they call the problem in their own words, every claim linked to a page it opened and dated. Swap in the segment id."],
@@ -2141,6 +2234,7 @@ document.addEventListener("click", async ev => {
   else if (a === "toggleShelf"){ ui.mapShelf = !ui.mapShelf; if (ui.mapShelf) deselect(); render(); }
   else if (a === "toggleFull"){ ui.mapFull = !ui.mapFull; render(); }
   else if (a === "aScale"){ const x = byId(S.assumptions, el.dataset.id); const nx = {...x, [el.dataset.field]: Number(el.dataset.val)}; if (nx.impact && nx.confidence) nx.pos = {x:(nx.confidence - 1) / 4, y:(nx.impact - 1) / 4}; upsert("assumptions", nx); render(); }
+  else if (a === "pivotStatus"){ const pv = byId(S.pivots, el.dataset.id); const prev = pv.status; upsert("pivots", {...pv, status: el.dataset.val}); render(); toast(el.dataset.val === "Active" ? `Accepted ${pv.id}.` : `Dismissed ${pv.id}.`, () => { upsert("pivots", {...byId(S.pivots, pv.id), status: prev}); render(); }); }
   else if (a === "aStatus"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, status: el.dataset.val}); if (el.dataset.val === "Retired"){ ui.selNote = null; dropSub(); } render(); }
   else if (a === "aStance"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).map(t => t.id === el.dataset.eid ? {...t, stance:el.dataset.val} : t)}); render(); }
   else if (a === "aUntag"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).filter(t => t.id !== el.dataset.eid)}); render(); }
