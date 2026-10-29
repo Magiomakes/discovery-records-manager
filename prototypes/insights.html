@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Insights prototype: assumption tiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,200;100,300;100,800&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+/* DESIGN.md: stone, ink, one blue accent (links, primary action, focus). Status is a shape and a word, never a colour. */
+:root{--stone:#eeeeea;--stone-top:#f3f3ef;--inset:#f6f6f3;--ink:#111111;--grey:#8c8c88;--hair:#c9c9c4;--acc:#1438d8;
+  --hatch:repeating-linear-gradient(45deg,var(--ink) 0 1px,transparent 1px 3.5px);--hatch-grey:repeating-linear-gradient(45deg,var(--grey) 0 1px,transparent 1px 3.5px);
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;--serif:"Fraunces",Georgia,"Iowan Old Style",serif;--mono:ui-monospace,Menlo,Consolas,monospace;--t:.15s ease-out}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--sans);font-weight:300;font-variation-settings:"wdth" 100;color:var(--ink);background:linear-gradient(180deg,var(--stone-top) 0,var(--stone) 480px) fixed;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--acc);text-decoration:none;border-bottom:1px solid currentColor} a:hover{border-bottom-width:2px} a:active{opacity:.7}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+b{font-weight:800}
+.mono{font-family:var(--mono);font-size:12px}
+.muted{color:var(--grey)}
+.lbl,h2,h3,.stw,.etype{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+h2{margin:40px 0 12px;padding-top:12px;border-top:2px solid var(--ink)} h3{margin:0 0 8px}
+/* ===== the band: four tabs and the page's question, nothing else ===== */
+.band{padding:0 48px;border-bottom:2px solid var(--ink)}
+.tabs{display:flex;gap:18px;overflow-x:auto;border-bottom:1px solid var(--ink)}
+.tabs a{border:none;color:var(--grey);padding:14px 0 10px;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.tabs a:hover{color:var(--ink);border-color:var(--grey)} .tabs a:active{opacity:.7} .tabs a.on{color:var(--ink);border-color:var(--ink)}
+.band .q{font-family:var(--serif);font-weight:300;font-size:28px;line-height:1.25;letter-spacing:-.005em;font-variation-settings:"opsz" 72;max-width:40ch;margin:0;padding:22px 0 26px}
+.page{padding:24px 48px 96px;min-width:0}
+/* ===== five status counts in gauge order ===== */
+.counts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0 24px;margin:0 0 8px}
+.counts>div{border-top:1px solid var(--ink);padding:10px 0 12px;min-width:0}
+.counts .l{display:flex;align-items:center;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1.2;min-height:2.4em}
+.counts .n{font-size:48px;font-weight:200;letter-spacing:-.02em;line-height:1;margin:2px 0 4px}
+/* status glyph: hollow = untested, half = shaky, ringed = weak signal, filled = strong signal, hatched = contradicted */
+.gy{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);margin-right:6px;flex-shrink:0;background:transparent;vertical-align:0}
+.gy.shaky{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)} .gy.weak{box-shadow:inset 0 0 0 2px var(--ink)} .gy.strong{background:var(--ink)} .gy.contradicted{background:var(--hatch)}
+.gy.lg{width:14px;height:14px;margin-right:8px} .gy.lg.weak{box-shadow:inset 0 0 0 3px var(--ink)}
+.stw{white-space:nowrap;display:inline-flex;align-items:center}
+.why{font-size:12px;color:var(--grey);display:block;margin-top:2px;font-weight:300;text-transform:none;letter-spacing:0}
+/* ===== assumption tiles: ruled boxes, 2px ink top rule, no shadow, no rounding ===== */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;margin-top:24px}
+.at{display:block;border:none;border-top:2px solid var(--ink);padding:12px 0 14px;color:inherit;cursor:pointer;background:none;text-align:left;font:inherit;min-width:0;transition:transform var(--t)}
+.at:hover{transform:translateX(4px)} .at:hover .txt{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px} .at:active{opacity:.7}
+.at .id{font-family:var(--mono);font-size:12px;font-weight:800;margin:0 0 6px;display:flex;justify-content:space-between;gap:8px;color:var(--grey)}
+.at .txt{font-size:24px;font-weight:300;line-height:1.2;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em;margin:0 0 14px}
+.at .rowb{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;align-items:end;border-top:1px solid var(--hair);padding-top:10px}
+.at .pri{text-align:right} .at .pri .n{font-size:48px;font-weight:200;line-height:.9;letter-spacing:-.02em;display:block} .at .pri .l{display:block;font-size:11px;color:var(--grey);font-weight:800;text-transform:uppercase;letter-spacing:.02em;margin-top:4px}
+.at .ivs{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;margin-top:6px}
+.at .obj{font-size:12px;color:var(--grey);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.at.seg{border-left:3px solid transparent;padding-left:0}
+.at.seg.ideal{border-left-color:var(--ink);padding-left:12px}
+.at .pick{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+.skel{margin-top:24px;font-size:14px;color:var(--grey);max-width:66ch;border-top:1px solid var(--grey);padding-top:10px}
+/* ===== detail ===== */
+.back{display:inline-block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;margin-bottom:18px}
+h1{font-size:48px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 14px;max-width:24ch}
+.kind{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--grey);margin-bottom:6px}
+.status{border-top:2px solid var(--ink);padding:12px 0 0;max-width:72ch}
+.status .why{font-size:15px;color:var(--ink);margin-top:4px}
+.fa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px}
+.fa>div{min-width:0}
+.tally{border-top:1px solid var(--ink);padding-top:8px}
+.tally .n{font-size:96px;font-weight:800;letter-spacing:-.04em;line-height:.9;display:block;margin:6px 0 8px}
+.tally .l{display:block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.tally .s{font-size:12px;color:var(--grey);display:block;margin-bottom:8px}
+/* the customer's words: Fraunces pull quote with a margin note */
+.quote{border-top:1px solid var(--hair);padding:14px 0 12px;max-width:60ch}
+.quote .w{font-family:var(--serif);font-weight:300;font-size:24px;line-height:1.25;letter-spacing:-.005em;text-indent:-.45em;font-variation-settings:"opsz" 72;display:block}
+.quote .w:before{content:"\201C"} .quote .w:after{content:"\201D"}
+.quote.sm .w{font-size:17px;font-variation-settings:"opsz" 24;text-indent:-.4em}
+.quote .meta{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--grey);margin-top:8px}
+.quote .meta .etype{color:var(--ink);font-size:11px}
+.quote .meta a{color:var(--ink);border-bottom-color:transparent} .quote .meta a:hover{border-bottom-color:var(--ink)}
+.quote.cand{color:var(--grey)} .quote.cand .w{color:var(--grey)} .quote.cand .meta .etype{color:var(--grey)}
+.stamp{display:inline-flex;align-items:center;border:1px solid var(--ink);padding:1px 7px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;background:var(--hatch-grey);color:var(--ink);white-space:nowrap}
+.stamp.plain{background:none;border-color:var(--grey);color:var(--grey)}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--ink);padding:1px 7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;line-height:1.5}
+.chip.hof{background:var(--ink);color:var(--stone)} .chip.inc{background:var(--hatch-grey)} .chip.lat,.chip.nap{border-color:var(--grey);color:var(--grey)} .chip.nap{border-style:dashed}
+.chip.on{background:var(--ink);color:var(--stone)} .chip.off{border-style:dashed;border-color:var(--grey);color:var(--grey)}
+.ncount{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--grey);margin:18px 0 0;border-top:1px solid var(--grey);padding-top:8px}
+/* the share bar: one slot per interview needed */
+.share{display:grid;column-gap:4px;height:56px;margin:14px 0 0;max-width:960px}
+.share i{display:block;border:2px solid var(--ink)}
+.share i.hof{background:var(--ink)} .share i.inc{background:var(--hatch)} .share i.nth,.share i.lat,.share i.nap{border-color:var(--ink)} .share i.empty{border:1px dashed var(--grey)}
+.share-n{display:grid;column-gap:4px;margin-top:10px;max-width:960px}
+.share-n>div{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;padding-top:8px;border-top:1px solid var(--ink);min-width:0}
+.share-n .n{display:block;font-weight:200;font-size:96px;line-height:.9;letter-spacing:-.03em;margin:4px 0 6px}
+.share-n .g{color:var(--grey)} .share-n .g span{border-top-color:var(--grey)}
+/* per-interview rows and lead rows: a ruled list, hairlines inside */
+.rows{border-top:1px solid var(--ink);margin-top:24px}
+.r{display:grid;grid-template-columns:minmax(140px,2fr) minmax(120px,2fr) minmax(150px,2fr) minmax(0,6fr);column-gap:24px;row-gap:6px;border-bottom:1px solid var(--hair);padding:12px 0;align-items:start}
+.r.head{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;padding:8px 0}
+.r .who b{display:block} .r .sub{font-size:12px;color:var(--grey);display:block}
+.r .quote{border:none;padding:0;max-width:none}
+.r .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* the AI's reading: a label column then the content (2 + 10 of twelve) */
+.lrow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,10fr);column-gap:24px;border-top:1px solid var(--hair);padding:14px 0 16px;align-items:start}
+.lrow:first-of-type{border-top:none}
+.lrow .lbl{line-height:1.4;padding-top:2px}
+.lrow p{margin:0;max-width:66ch}
+.nums{display:flex;gap:48px;flex-wrap:wrap}
+.nums .n{font-size:48px;font-weight:200;letter-spacing:-.02em;line-height:1;display:block}
+.nums .l{font-size:12px;color:var(--grey);display:block;margin-top:4px}
+.settle{font-family:var(--serif);font-weight:300;font-size:24px;line-height:1.25;font-variation-settings:"opsz" 72;max-width:60ch;margin:0}
+.btn{border:2px solid var(--ink);background:none;padding:6px 12px;cursor:pointer;white-space:nowrap;font:inherit;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.02em;color:var(--ink);line-height:1.2;transition:opacity var(--t)}
+.btn:hover{background:var(--ink);color:var(--stone)} .btn:active{opacity:.7} .btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--stone)} .btn.pri:hover{background:var(--stone);color:var(--acc)}
+.cmp{margin:18px 0 0;max-width:72ch}
+.persona .lrow p{font-size:15px;margin-bottom:6px}
+@media (max-width:1100px){.counts{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:900px){.band{padding:0 16px}.page{padding:20px 16px 80px}.band .q{font-size:24px;padding:16px 0 20px}h1{font-size:34px;letter-spacing:-.02em}
+  .fa{grid-template-columns:1fr}.tally .n{font-size:72px}.counts{grid-template-columns:repeat(3,minmax(0,1fr))}.share{height:40px}.share-n .n{font-size:48px}
+  .r{grid-template-columns:1fr 1fr}.r>.q4{grid-column:1 / -1}.r.head>.q4{display:none}.lrow{grid-template-columns:1fr;row-gap:6px}.quote .w{font-size:20px}}
+@media (max-width:420px){.grid{grid-template-columns:1fr}.counts{grid-template-columns:repeat(2,minmax(0,1fr))}.r{grid-template-columns:1fr}.nums{gap:24px}}
+@media (prefers-reduced-motion:reduce){.at:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="band" id="band"></div>
+<div class="page" id="page"></div>
+<script>
+/* ===== data: the demo state from index.html, extended so the pattern is visible ===== */
+const MIN_INTERVIEWS = 5, STRONG_SHARE = 0.5, MIN_SCORED = 2, MIN_SEGMENT = 3, CONTRADICTED_SHARE = 0.2;
+const STATUSES = ["Contradicted","Shaky","Untested","Weak signal","Strong signal"];
+const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent","Not a Problem"];
+const TOP2 = ["Hair on Fire","Incremental Improvement"];
+const TCLS = {"Hair on Fire":"hof","Incremental Improvement":"inc","Nice to Have":"nth","Latent":"lat","Not a Problem":"nap","":"empty"};
+const S = {
+  problems:[
+    {id:"PR-01", text:"Chasing members for receipts before reimbursing them", who:"Student club treasurers"},
+    {id:"PR-02", text:"Members forget event payment deadlines", who:"Club treasurers"},
+    {id:"PR-03", text:"Last year's records are lost when the treasurer graduates", who:"Club treasurers"},
+    {id:"PR-04", text:"The student union takes weeks to pay a club back", who:"Club treasurers"}],
+  customers:[{id:"C-01", text:"Student club treasurers", ideal:true},{id:"C-02", text:"Club presidents", ideal:false},{id:"C-03", text:"Student union finance staff", ideal:false}],
+  interviews:[
+    {id:"INT-001", date:"2026-10-20", interviewee:"Treasurer A", role:"Club treasurer, business club", source:"Online community or follower", customerId:"C-01", recentInstance:"Yes", leading:0, pitched:"No", demoed:"No"},
+    {id:"INT-002", date:"2026-10-22", interviewee:"Treasurer B", role:"Club treasurer, hiking club", source:"Friend or family", customerId:"C-01", recentInstance:"No", leading:2, pitched:"Yes", demoed:"No"},
+    {id:"INT-003", date:"2026-10-24", interviewee:"Treasurer C", role:"Club treasurer, debate society", source:"Referral from an interviewee", customerId:"C-01", recentInstance:"Yes", leading:0, pitched:"No", demoed:"No"},
+    {id:"INT-004", date:"2026-10-26", interviewee:"President D", role:"Club president, film society", source:"Stranger (cold outreach)", customerId:"C-02", recentInstance:"Yes", leading:0, pitched:"No", demoed:"No"},
+    {id:"INT-005", date:"2026-10-27", interviewee:"President E", role:"Club president, rowing club", source:"Stranger (cold outreach)", customerId:"C-02", recentInstance:"Yes", leading:1, pitched:"No", demoed:"No"}],
+  evidence:[
+    {id:"INT-001-Q01", interviewId:"INT-001", problemId:"PR-01", quote:"Last Sunday I spent about three hours going through group chat photos to match receipts to the spreadsheet.", where:"12:40", type:"Cost (time or money)", stance:"for", status:"Confirmed"},
+    {id:"INT-001-Q02", interviewId:"INT-001", problemId:"PR-01", quote:"I built my own tracking sheet in September and I update it every week.", where:"15:05", type:"Past behavior, irreversible", stance:"for", status:"Confirmed"},
+    {id:"INT-001-Q03", interviewId:"INT-001", problemId:"PR-01", quote:"We tried a free expense app for a month but nobody uploaded to it, so we went back to the group chat.", where:"18:30", type:"Past behavior, reversible", stance:"for", status:"Confirmed"},
+    {id:"INT-001-Q04", interviewId:"INT-001", problemId:"PR-01", quote:"Honestly it drives me up the wall.", where:"19:10", type:"Strong language", stance:"for", status:"Candidate"},
+    {id:"INT-001-Q05", interviewId:"INT-001", problemId:"PR-02", quote:"I post a reminder in the chat every Thursday before the deadline and still half of them pay late.", where:"21:15", type:"Current workaround", stance:"for", status:"Confirmed"},
+    {id:"INT-001-Q06", interviewId:"INT-001", problemId:"PR-04", quote:"The union pays us back eventually, it's fine.", where:"22:40", type:"Opinion or future intent", stance:"against", status:"Confirmed"},
+    {id:"INT-002-Q01", interviewId:"INT-002", problemId:"PR-01", quote:"Yeah, I'd probably use something like that if it was free.", where:"08:15", type:"Opinion or future intent", stance:"for", status:"Confirmed"},
+    {id:"INT-002-Q02", interviewId:"INT-002", problemId:"PR-01", quote:"It only comes up at the end of term, it's not a big deal.", where:"10:02", type:"Frequency", stance:"against", status:"Confirmed"},
+    {id:"INT-002-Q03", interviewId:"INT-002", problemId:"PR-02", quote:"I set up a Google Form for the ski trip payments last term and dropped it after.", where:"13:20", type:"Past behavior, reversible", stance:"for", status:"Confirmed"},
+    {id:"INT-003-Q01", interviewId:"INT-003", problemId:"PR-01", quote:"I keep a running note on my phone of who owes what and chase them one by one after practice.", where:"09:50", type:"Current workaround", stance:"for", status:"Confirmed"},
+    {id:"INT-003-Q02", interviewId:"INT-003", problemId:"PR-01", quote:"It's maybe an hour a week, every week, through the term.", where:"11:05", type:"Cost (time or money)", stance:"for", status:"Confirmed"},
+    {id:"INT-003-Q03", interviewId:"INT-003", problemId:"PR-02", quote:"Deadlines aren't really a thing for us, people pay at the door.", where:"16:30", type:"Frequency", stance:"against", status:"Confirmed"},
+    {id:"INT-003-Q04", interviewId:"INT-003", problemId:"PR-04", quote:"The union turns it around in a week or so.", where:"20:10", type:"Frequency", stance:"against", status:"Confirmed"},
+    {id:"INT-004-Q01", interviewId:"INT-004", problemId:"PR-01", quote:"That's the treasurer's headache, I just sign off.", where:"05:40", type:"Opinion or future intent", stance:"against", status:"Confirmed"},
+    {id:"INT-004-Q02", interviewId:"INT-004", problemId:"PR-02", quote:"Every event we lose a few people because they forget to pay by the cutoff.", where:"07:10", type:"Frequency", stance:"for", status:"Confirmed"},
+    {id:"INT-004-Q03", interviewId:"INT-004", problemId:"PR-03", quote:"We lost all of last year's records when the old treasurer graduated.", where:"14:25", type:"Cost (time or money)", stance:"for", status:"Confirmed"},
+    {id:"INT-005-Q01", interviewId:"INT-005", problemId:"PR-01", quote:"I guess it would be nice if receipts were easier.", where:"06:30", type:"Opinion or future intent", stance:"for", status:"Confirmed"},
+    {id:"INT-005-Q02", interviewId:"INT-005", problemId:"PR-04", quote:"I didn't know the union took that long, our treasurer handles it.", where:"12:00", type:"Opinion or future intent", stance:"against", status:"Candidate"}],
+  pains:[
+    {id:"INT-001__PR-01", interviewId:"INT-001", problemId:"PR-01", tier:"Hair on Fire", evidenceIds:["INT-001-Q01","INT-001-Q02"], status:"Confirmed"},
+    {id:"INT-001__PR-02", interviewId:"INT-001", problemId:"PR-02", tier:"Incremental Improvement", evidenceIds:["INT-001-Q05"], status:"Confirmed"},
+    {id:"INT-001__PR-04", interviewId:"INT-001", problemId:"PR-04", tier:"Nice to Have", evidenceIds:["INT-001-Q06"], status:"Confirmed"},
+    {id:"INT-002__PR-01", interviewId:"INT-002", problemId:"PR-01", tier:"Nice to Have", evidenceIds:["INT-002-Q01"], status:"Confirmed"},
+    {id:"INT-002__PR-02", interviewId:"INT-002", problemId:"PR-02", tier:"Incremental Improvement", evidenceIds:["INT-002-Q03"], status:"Confirmed"},
+    {id:"INT-002__PR-04", interviewId:"INT-002", problemId:"PR-04", tier:"Latent", evidenceIds:[], status:"Confirmed"},
+    {id:"INT-003__PR-01", interviewId:"INT-003", problemId:"PR-01", tier:"Incremental Improvement", evidenceIds:["INT-003-Q01","INT-003-Q02"], status:"Confirmed"},
+    {id:"INT-003__PR-02", interviewId:"INT-003", problemId:"PR-02", tier:"Not a Problem", evidenceIds:["INT-003-Q03"], status:"Confirmed"},
+    {id:"INT-003__PR-04", interviewId:"INT-003", problemId:"PR-04", tier:"Not a Problem", evidenceIds:["INT-003-Q04"], status:"Confirmed"},
+    {id:"INT-004__PR-01", interviewId:"INT-004", problemId:"PR-01", tier:"Nice to Have", evidenceIds:["INT-004-Q01"], status:"Candidate"},
+    {id:"INT-004__PR-02", interviewId:"INT-004", problemId:"PR-02", tier:"Nice to Have", evidenceIds:["INT-004-Q02"], status:"Confirmed"},
+    {id:"INT-004__PR-03", interviewId:"INT-004", problemId:"PR-03", tier:"Nice to Have", evidenceIds:["INT-004-Q03"], status:"Confirmed"},
+    {id:"INT-004__PR-04", interviewId:"INT-004", problemId:"PR-04", tier:"Nice to Have", evidenceIds:[], status:"Confirmed"},
+    {id:"INT-005__PR-01", interviewId:"INT-005", problemId:"PR-01", tier:"Nice to Have", evidenceIds:["INT-005-Q01"], status:"Candidate"},
+    {id:"INT-005__PR-02", interviewId:"INT-005", problemId:"PR-02", tier:"Nice to Have", evidenceIds:[], status:"Candidate"},
+    {id:"INT-005__PR-04", interviewId:"INT-005", problemId:"PR-04", tier:"Latent", evidenceIds:[], status:"Confirmed"}],
+  assumptions:[
+    {id:"A-01", kind:"problem", problemId:"PR-01", text:"Student club treasurers have this problem: chasing members for receipts before reimbursing them", aiImpact:5, aiConfidence:2, aiEvidence:["INT-001-Q01","INT-001-Q02","INT-003-Q01"],
+      aiReason:"Three confirmed interviews; two of them show a kept workaround and a recurring cost, one from a treasurer who spent a Sunday on it and one who chases people weekly. Three is not five, and both strong ones came through the same community.",
+      aiAgainst:"The only treasurer not recruited through your poll or a referral, a friend, said it only comes up at the end of term (INT-002-Q02), and both presidents called it someone else's headache (INT-004-Q01).",
+      aiWouldChange:"Two more treasurers from cold outreach who each describe a recent instance and something they already do about it; or one more who says the spreadsheet is fine.",
+      settle:"Walk me through the last time you paid a member back. What did you do first, and what did you do when the receipt wasn't there?"},
+    {id:"A-06", kind:"problem", problemId:"PR-02", text:"Club treasurers have this problem: members forget event payment deadlines", aiImpact:3, aiConfidence:2, aiEvidence:["INT-001-Q05","INT-002-Q03"],
+      aiReason:"Two of four confirmed interviews show a workaround, but one of those is a friend who built a form after you pitched her, so only she and Treasurer A get it over the bar.",
+      aiAgainst:"Treasurer C says deadlines aren't a thing for her club because people pay at the door (INT-003-Q03); a president describes the loss but has done nothing about it (INT-004-Q02).",
+      aiWouldChange:"A treasurer from a club with ticketed events who already chases payments some way other than a chat reminder.",
+      settle:"When was the last event where someone paid late? What did you do about it that week?"},
+    {id:"A-07", kind:"problem", problemId:"PR-03", text:"Club treasurers have this problem: last year's records are lost when the treasurer graduates", aiImpact:2, aiConfidence:2, aiEvidence:["INT-004-Q03"],
+      aiReason:"One confirmed interview mentions it, a president who lost last year's books and has done nothing since. One story is not a pattern.",
+      aiAgainst:"Nothing has tested this: nobody has been asked about handover, and the one mention came from a president, not a treasurer.",
+      aiWouldChange:"Two treasurers who took over this term and describe what they inherited and what they did to rebuild it.",
+      settle:"What did you inherit from the last treasurer, and what did you have to rebuild?"},
+    {id:"A-08", kind:"problem", problemId:"PR-04", text:"Club treasurers have this problem: the student union takes weeks to pay a club back", aiImpact:3, aiConfidence:1, aiEvidence:["INT-001-Q06","INT-003-Q04"],
+      aiReason:"Five confirmed interviews and none of them scored above Nice to Have. Two treasurers said the union turns it around in about a week and called it fine.",
+      aiAgainst:"Two treasurers say the union pays back in a week or so and it's fine (INT-001-Q06, INT-003-Q04); nobody has done anything about it.",
+      aiWouldChange:"A treasurer who fronted money personally because the union was slow, more than once.",
+      settle:"When did you last front money for the club yourself, and how long until you got it back?"},
+    {id:"A-04", kind:"solution", problemId:"PR-01", text:"Treasurers would switch from the group chat to an app where members snap receipts", aiImpact:4, aiConfidence:1, aiEvidence:[], evidence:[{id:"INT-001-Q03", stance:"contradicts"}],
+      aiReason:"Nobody has been asked about switching. The one confirmed quote that touches it points the other way.", aiAgainst:"Her club tried a free expense app for a month and nobody uploaded to it (INT-001-Q03).", aiWouldChange:"A club that tried an app and kept using it.", settle:"What have you already tried instead of the group chat, and why did you stop?"},
+    {id:"A-03", kind:"alternatives", text:"Free expense apps don't solve it: members won't install another app", aiImpact:3, aiConfidence:3, aiEvidence:["INT-001-Q03"], evidence:[{id:"INT-001-Q03", stance:"supports"}],
+      aiReason:"One confirmed quote: her club tried an app for a month and nobody uploaded. One club.", aiAgainst:"Nobody uploading may say the problem isn't worth a new habit, not that the app was wrong (INT-001-Q03).", aiWouldChange:"A club that dropped an app for a reason other than members not installing it.", settle:"What did you try before the group chat, and what made you go back?"},
+    {id:"A-05", kind:"other", text:"Student union finance staff would pay for this on behalf of clubs", aiImpact:4, aiConfidence:1, aiEvidence:[], evidence:[],
+      aiReason:"A buyer assumption hiding in the value proposition. No interview has reached the finance office.", aiAgainst:"Nothing has tested this.", aiWouldChange:"One conversation with the person who signs off club reimbursements.", settle:"Who last approved a tool purchase for clubs, and what did it take?"}],
+  persona:[
+    {k:"Who", text:"Treasurer of a student club who pays members back out of the club account", evidence:["INT-001-Q01","INT-003-Q01"]},
+    {k:"What they do today", text:"Photos in the group chat, plus a tracking sheet or a phone note they built and keep up every week", evidence:["INT-001-Q02","INT-003-Q01"]},
+    {k:"What they have tried", text:"A free expense app, dropped when members wouldn't upload", evidence:["INT-001-Q03"]},
+    {k:"How often", text:"Weekly through the term, with a long session near month end", evidence:["INT-003-Q02"]},
+    {k:"The moment", text:"A weekend near month end, before the club's reimbursement deadline", evidence:[]}],
+  leads:[
+    {id:"LD-01", role:"Treasurer who took over a club's books this term", where:"Student union club-executive training (PL-01): ask who attended and for an intro", resembles:"INT-001", why:"Treasurer A learned the job at this training and still updates the sheet she built after it", evidenceIds:["INT-001-Q02"]},
+    {id:"LD-03", role:"Treasurer of a sports club with weekly practice fees", where:"Referral from Treasurer C, who named two other debate-circuit treasurers", resembles:"INT-003", why:"Treasurer C chases members one by one after practice and spends an hour a week on it", evidenceIds:["INT-003-Q01"]},
+    {id:"LD-02", role:"Finance officer at the student union who signs off club reimbursements", where:"Student union website, staff directory; email the finance office", resembles:"", why:"A guess from the segment description. No interview has reached this segment.", evidenceIds:[]}]
+};
+const KINDS = {problem:"Problem", solution:"Solution", alternatives:"Existing alternative", competition:"Competition", other:"Other assumption", customers:"Customers", "early-adopters":"Early adopters"};
+const PAGES = {
+  problem:{title:"Problem", q:"Do people have the problem you named, and have they already done something about it?", kinds:["problem"]},
+  customers:{title:"Customers", q:"Is your ideal customer actually your ideal customer?", kinds:[]},
+  solution:{title:"Solution", q:"Would they drop what they do today for what you'd build?", kinds:["solution"], part:"The specific part for Solution: jobs, what people are trying to do, with the quotes that show it and what they did about it (workarounds, past behaviour), and where the evidence says the solution should differ from your belief."},
+  alternatives:{title:"Alternatives", q:"Do today's alternatives leave the gap you think, and why would anyone choose you over them?", kinds:["alternatives","competition","other"], part:"The specific part for Alternatives: the alternatives and competitors your AI proposes from its search, as Candidate records with the page it opened and the date, which you accept or dismiss here, refreshed every time Diagnose runs."}
+};
+/* ===== helpers ===== */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const byId = (arr, id) => arr.find(x => x.id === id);
+const confirmedPains = () => S.pains.filter(p => p.status === "Confirmed");
+const weakInterview = iv => !iv || Number(iv.leading) > 0 || iv.pitched === "Yes" || iv.demoed === "Yes" || iv.source === "Friend or family" || iv.recentInstance === "No";
+const weakWhy = iv => [iv.source === "Friend or family" ? "a friend" : "", Number(iv.leading) > 0 ? `${iv.leading} leading question${iv.leading > 1 ? "s" : ""}` : "", iv.pitched === "Yes" ? "pitched" : "", iv.demoed === "Yes" ? "demoed" : "", iv.recentInstance === "No" ? "no recent instance" : ""].filter(Boolean).join(", ");
+const glyphCls = s => s === "Strong signal" ? "strong" : s === "Weak signal" ? "weak" : s === "Shaky" ? "shaky" : s === "Contradicted" ? "contradicted" : "";
+const statusWord = (s, lg) => `<span class="stw"><i class="gy ${glyphCls(s)} ${lg ? "lg" : ""}"></i>${esc(s === "Untested" ? "No evidence yet" : s)}</span>`;
+const aiPriority = a => (Number(a.aiImpact) && Number(a.aiConfidence)) ? a.aiImpact * (6 - a.aiConfidence) : null;
+function painShare(ps){
+  const isWeak = p => weakInterview(byId(S.interviews, p.interviewId));
+  const top2 = ps.filter(p => TOP2.includes(p.tier)); const weak = top2.filter(isWeak).length; const n = ps.length;
+  return {n, top2:top2.length, weak, cleanHof:ps.filter(p => p.tier === "Hair on Fire" && !isWeak(p)).length, share:n ? top2.length / n : 0, cleanShare:n ? (top2.length - weak) / n : 0};
+}
+/* Same shape as index.html's problemSignal: five readings, fixed thresholds. */
+function signal(ps, minN, minScored){
+  const {n, top2, weak, cleanHof, share, cleanShare} = painShare(ps); const pct = Math.round(share * 100);
+  const w = weak ? `; ${weak} of those ${weak === 1 ? "is" : "are"} from a friend, a leading interview, a pitch or no recent instance` : "";
+  if (n < minScored) return {status:"Untested", why:`${n} of ${minScored} confirmed interviews scored on this`, n};
+  if (n >= minN && share <= CONTRADICTED_SHARE) return {status:"Contradicted", why:`Only ${top2} of ${n} interviews show real pain (${pct}%)`, n};
+  if (share >= STRONG_SHARE && cleanShare < STRONG_SHARE) return {status:"Shaky", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, so only interviews that can't carry it clear your bar`, n};
+  if (share < STRONG_SHARE) return {status:"Shaky", why:`${top2} of ${n} interviews show real pain (${pct}%), below your ${Math.round(STRONG_SHARE * 100)}% bar`, n};
+  if (n < minN) return {status:"Weak signal", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, but ${n} of ${minN} is too few to lean on`, n};
+  if (!cleanHof) return {status:"Weak signal", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, but none of the clean ones is Hair on Fire`, n};
+  return {status:"Strong signal", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, ${cleanHof} clean Hair on Fire`, n};
+}
+function assumptionStatus(a){
+  if (a.kind === "problem") return signal(confirmedPains().filter(p => p.problemId === a.problemId), MIN_INTERVIEWS, MIN_SCORED);
+  const tags = (a.evidence || []).filter(t => { const e = byId(S.evidence, t.id); return e && e.status === "Confirmed"; });
+  const f = tags.filter(t => t.stance === "supports").length, c = tags.length - f;
+  if (!tags.length) return {status:"Untested", why:"no confirmed quote tagged for or against it", n:0};
+  if (c >= f) return {status:c > f ? "Contradicted" : "Shaky", why:`${c} confirmed quote${c === 1 ? "" : "s"} against, ${f} for`, n:tags.length};
+  if (f < 3) return {status:"Weak signal", why:`${f} of 3 confirmed quotes for it, ${c} against`, n:tags.length};
+  return {status:"Strong signal", why:`${f} confirmed quotes for it, ${c} against`, n:tags.length};
+}
+/* One reading per interview: its best confirmed tier, so a segment is compared interview by interview. */
+function bestTier(ivId){ const ts = confirmedPains().filter(p => p.interviewId === ivId).map(p => TIERS.indexOf(p.tier)).filter(i => i >= 0); return ts.length ? TIERS[Math.min(...ts)] : ""; }
+function segmentRead(c){
+  const ivs = S.interviews.filter(i => i.customerId === c.id).filter(i => bestTier(i.id));
+  const ps = ivs.map(i => ({interviewId:i.id, tier:bestTier(i.id)}));
+  const r = signal(ps, MIN_INTERVIEWS, MIN_SEGMENT); const sh = painShare(ps);
+  const others = S.customers.filter(o => o.id !== c.id).map(o => { const ops = S.interviews.filter(i => i.customerId === o.id && bestTier(i.id)).map(i => ({interviewId:i.id, tier:bestTier(i.id)})); return {o, ...painShare(ops)}; }).filter(o => o.n >= MIN_SEGMENT);
+  const best = others.sort((x, y) => y.share - x.share)[0];
+  if (ivs.length >= MIN_SEGMENT && best && best.share >= sh.share + 0.25) return {...r, status:"Contradicted", why:`${best.o.text} show more pain (${Math.round(best.share * 100)}% vs ${Math.round(sh.share * 100)}%)`, ivs:ivs.length, ...sh};
+  if (r.status === "Untested") r.why = `${ivs.length} of ${MIN_SEGMENT} confirmed interviews from this segment`;
+  return {...r, ivs:ivs.length, ...sh};
+}
+function counts(list){ const c = Object.fromEntries(STATUSES.map(s => [s, 0])); for (const x of list) c[x.s.status]++; return c; }
+function listFor(page){ return S.assumptions.filter(a => PAGES[page].kinds.includes(a.kind)).map(a => ({a, s:assumptionStatus(a), p:aiPriority(a)})).sort((x, y) => (y.p ?? -1) - (x.p ?? -1)); }
+/* ===== pieces ===== */
+function countTiles(c){ return `<div class="counts">${STATUSES.map(s => `<div><div class="l"><i class="gy lg ${glyphCls(s)}"></i>${s === "Untested" ? "No evidence yet" : s}</div><div class="n">${c[s]}</div></div>`).join("")}</div>`; }
+function tile(x, page){
+  const a = x.a; const n = a.kind === "problem" ? x.s.n : x.s.n;
+  const ivs = a.kind === "problem" ? `${n} of ${MIN_INTERVIEWS} interviews` : `${n} tagged quote${n === 1 ? "" : "s"}`;
+  return `<a class="at" href="#${page}/${esc(a.id)}"><div class="id"><span>${esc(a.id)}</span><span>${esc(KINDS[a.kind])}</span></div><p class="txt">${esc(a.text)}</p>
+    <div class="rowb"><div>${statusWord(x.s.status)}<div class="ivs">${ivs}</div></div><div class="pri"><span class="n">${x.p ?? "–"}</span><span class="l">AI priority</span></div></div>
+    <div class="obj" title="${esc(a.aiAgainst)}">${esc(a.aiAgainst || "No objection written.")}</div></a>`;
+}
+function quoteCard(e, sm){
+  const iv = byId(S.interviews, e.interviewId); const cand = e.status !== "Confirmed";
+  return `<div class="quote ${sm ? "sm" : ""} ${cand ? "cand" : ""}"><span class="w">${esc(e.quote)}</span><div class="meta"><span class="etype">${esc(e.type)}</span>${e.stance === "against" ? `<span class="stamp plain">Against</span>` : ""}<span><a href="#"><b class="mono">${esc(e.interviewId)}</b></a> · ${esc(iv.interviewee)}, ${esc(iv.role)}</span><span>at ${esc(e.where)}</span>${weakInterview(iv) ? `<span class="stamp" title="${esc(weakWhy(iv))}">Weak interview</span>` : ""}${cand ? `<span class="stamp plain">Not counted yet</span>` : ""}</div></div>`;
+}
+function evidenceFor(a){
+  const all = a.kind === "problem" ? S.evidence.filter(e => e.problemId === a.problemId) : S.evidence.filter(e => (a.evidence || []).some(t => t.id === e.id)).map(e => ({...e, stance:(a.evidence.find(t => t.id === e.id).stance === "supports") ? "for" : "against"}));
+  const conf = all.filter(e => e.status === "Confirmed"), cand = all.filter(e => e.status !== "Confirmed");
+  const col = (st, label, sub) => { const q = conf.filter(e => e.stance === st), c = cand.filter(e => e.stance === st);
+    return `<div><div class="tally"><span class="l">${label}</span><span class="n">${q.length}</span><span class="s">${sub}</span></div>${q.map(e => quoteCard(e)).join("") || `<p class="muted" style="margin:0">No confirmed quote ${st} it yet.</p>`}${c.length ? `<div class="ncount">Not counted yet: ${c.length} to confirm</div>${c.map(e => quoteCard(e, true)).join("")}` : ""}</div>`; };
+  return `<h2>Evidence</h2><div class="fa">${col("for", "For", "confirmed quotes that show the problem or what they do about it")}${col("against", "Against", "confirmed quotes that show it mild, rare, solved or not theirs")}</div>`;
+}
+function shareBar(problemId){
+  const ps = confirmedPains().filter(p => p.problemId === problemId); const cnt = Object.fromEntries(TIERS.map(t => [t, ps.filter(p => p.tier === t).length]));
+  const segs = []; for (const t of TIERS) for (let i = 0; i < cnt[t]; i++) segs.push(t); const slots = Math.max(MIN_INTERVIEWS, segs.length); while (segs.length < slots) segs.push("");
+  const left = Math.max(0, MIN_INTERVIEWS - ps.length);
+  return `<div class="share" style="grid-template-columns:repeat(${slots},1fr)">${segs.map(t => `<i class="${TCLS[t]}" title="${esc(t || "still to interview")}"></i>`).join("")}</div>
+    <div class="share-n" style="grid-template-columns:repeat(${slots},1fr)">${TIERS.filter(t => cnt[t]).map(t => `<div style="grid-column:span ${cnt[t]}"><span class="n">${cnt[t]}</span>${esc(t)}</div>`).join("")}${left ? `<div class="g" style="grid-column:span ${left};border-top-color:var(--grey)"><span class="n">${left}</span>still to interview</div>` : ""}</div>`;
+}
+function painRows(problemId){
+  const ps = S.pains.filter(p => p.problemId === problemId).sort((x, y) => (x.status === "Confirmed" ? 0 : 1) - (y.status === "Confirmed" ? 0 : 1) || TIERS.indexOf(x.tier) - TIERS.indexOf(y.tier));
+  return `<div class="rows"><div class="r head"><span>Interview</span><span>Segment</span><span>Tier</span><span class="q4">The quote it rests on</span></div>${ps.map(p => { const iv = byId(S.interviews, p.interviewId); const c = byId(S.customers, iv.customerId); const e = byId(S.evidence, (p.evidenceIds || [])[0]);
+    return `<div class="r"><div class="who"><b>${esc(iv.interviewee)}</b><span class="sub">${esc(p.interviewId)} · ${esc(iv.role)}</span>${weakInterview(iv) ? `<span class="stamp" style="margin-top:6px" title="${esc(weakWhy(iv))}">Weak interview</span>` : ""}</div><div>${esc(c ? c.text : "No segment set")}</div><div><span class="chip ${TCLS[p.tier]}">${esc(p.tier)}</span>${p.status !== "Confirmed" ? `<span class="sub">not counted yet</span>` : ""}</div><div class="q4">${e ? quoteCard(e, true) : `<span class="muted">No quote cited.</span>`}</div></div>`; }).join("")}</div>`;
+}
+function aiBox(a){
+  return `<h2>What your AI says</h2><div class="lrow"><div class="lbl">It rates</div><div class="nums"><div><span class="n">${a.aiImpact}</span><span class="l">impact, of 5</span></div><div><span class="n">${a.aiConfidence}</span><span class="l">confidence, of 5</span></div><div><span class="n">${aiPriority(a) ?? "–"}</span><span class="l">priority, impact × (6 − confidence)</span></div></div></div>
+  <div class="lrow"><div class="lbl">The case against</div><p>${esc(a.aiAgainst)}</p></div><div class="lrow"><div class="lbl">Its reason</div><p>${esc(a.aiReason)} <span class="muted">Rests on ${(a.aiEvidence || []).map(id => `<span class="mono">${esc(id)}</span>`).join(", ") || "no quotes: a guess"}.</span></p></div>
+  <div class="lrow"><div class="lbl">What would change its mind</div><p>${esc(a.aiWouldChange)}</p></div>
+  <h2>What would settle it</h2><p class="settle">${esc(a.settle)}</p>`;
+}
+/* ===== views ===== */
+function detailView(page, id){
+  const a = byId(S.assumptions, id); if (!a) return `<a class="back" href="#${page}">← ${PAGES[page].title}</a><p>No assumption ${esc(id)}.</p>`;
+  const s = assumptionStatus(a); const pr = byId(S.problems, a.problemId);
+  const part = a.kind === "problem" ? `<h2>How painful</h2><p style="margin:0;max-width:62ch">${esc(pr.text)}. ${esc(pr.who)}. One slot per interview needed; ${s.n} of ${MIN_INTERVIEWS} confirmed and scored.</p>${shareBar(a.problemId)}${painRows(a.problemId)}` : `<h2>${a.kind === "solution" ? "Jobs" : "Alternatives and competitors"}</h2><p class="muted" style="margin:0;max-width:66ch">${esc(PAGES[page].part)}</p>`;
+  return `<a class="back" href="#${page}">← ${esc(PAGES[page].title)}</a><div class="kind">${esc(a.id)} · ${esc(KINDS[a.kind])}</div><h1>${esc(a.text)}</h1>
+    <div class="status">${statusWord(s.status, true)}<span class="why">${esc(s.why)}.</span></div>${evidenceFor(a)}${part}${aiBox(a)}`;
+}
+function gridView(page){
+  const list = listFor(page); const P = PAGES[page];
+  return `${countTiles(counts(list))}<div class="grid">${list.map(x => tile(x, page)).join("")}</div>${P.part ? `<p class="skel">Skeleton: the tiles and the detail follow the Problem pattern. ${esc(P.part)}</p>` : ""}`;
+}
+const leadState = {};
+function customersView(){
+  const reads = S.customers.map(c => ({c, r:segmentRead(c)}));
+  const tiles = reads.map(({c, r}) => `<div class="at seg ${c.ideal ? "ideal" : ""}"><div class="id"><span>${esc(c.id)}</span>${c.ideal ? `<span class="pick">Your pick</span>` : ""}</div><p class="txt">${esc(c.text)}</p>
+    <div class="rowb"><div>${statusWord(r.status)}<div class="ivs">${r.top2} of ${r.n} real pain${r.weak ? `, ${r.weak} from a weak interview` : ""}</div></div><div class="pri"><span class="n">${r.ivs}</span><span class="l">interview${r.ivs === 1 ? "" : "s"}</span></div></div>
+    <div class="obj" title="${esc(r.why)}">${esc(r.why)}.</div></div>`).join("");
+  const cmp = reads.map(({c, r}) => `${esc(c.text)}: ${r.n ? `${r.top2} of ${r.n} real pain` : "no interviews yet"}`).join(" · ");
+  const persona = S.persona.map(l => { const ev = l.evidence.map(id => byId(S.evidence, id)).filter(e => e && e.status === "Confirmed");
+    return `<div class="lrow"><div class="lbl">${esc(l.k)}</div><div><p>${esc(l.text)} ${ev.length ? "" : `<span class="stamp plain">Guess</span>`}</p>${ev.map(e => quoteCard(e, true)).join("")}</div></div>`; }).join("");
+  const leads = S.leads.map(l => { const st = leadState[l.id] || "";
+    return `<div class="r"><div class="who"><b>${esc(l.role)}</b><span class="sub">${esc(l.id)}</span></div><div>${esc(l.where)}</div><div>${l.resembles ? `Resembles <a href="#"><b class="mono">${esc(l.resembles)}</b></a><span class="sub">${esc(l.why)}</span>` : `<span class="stamp plain">Guess</span><span class="sub">${esc(l.why)}</span>`}</div>
+      <div class="q4 acts">${st ? `<span class="chip ${st === "Accepted" ? "on" : "off"}">${st}</span><button class="btn" data-lead="${esc(l.id)}" data-val="">Undo</button>` : `<button class="btn pri" data-lead="${esc(l.id)}" data-val="Accepted">Accept</button><button class="btn" data-lead="${esc(l.id)}" data-val="Dismissed">Dismiss</button>`}</div></div>`; }).join("");
+  return `${countTiles(counts(reads.map(x => ({s:x.r}))))}<div class="grid">${tiles}</div><p class="cmp">${cmp}. A segment reads nothing under ${MIN_SEGMENT} confirmed interviews; the ideal one is contradicted when another segment shows 25 points more real pain.</p>
+    <h2>Persona, from the evidence</h2><div class="persona">${persona}</div>
+    <h2>Leads</h2><p style="margin:0;max-width:66ch">People your AI proposes you talk to, in order of how closely they resemble the interviews that found real pain. Accept puts one on your Leads List; dismiss drops it.</p><div class="rows"><div class="r head"><span>Who</span><span>Where to find them</span><span>Resembles</span><span class="q4"></span></div>${leads}</div>`;
+}
+function render(){
+  const h = location.hash.replace(/^#/, "") || "problem"; const [page, id] = h.split("/"); const P = PAGES[page] || PAGES.problem; const pg = PAGES[page] ? page : "problem";
+  document.getElementById("band").innerHTML = `<div class="tabs">${Object.entries(PAGES).map(([k, v]) => `<a href="#${k}" class="${k === pg ? "on" : ""}">${v.title}</a>`).join("")}</div><p class="q">${esc(P.q)}</p>`;
+  document.getElementById("page").innerHTML = id ? detailView(pg, id) : pg === "customers" ? customersView() : gridView(pg);
+  document.title = `${P.title} · Insights prototype`;
+  window.scrollTo(0, 0);
+}
+document.addEventListener("click", e => { const b = e.target.closest("[data-lead]"); if (!b) return; leadState[b.dataset.lead] = b.dataset.val; render(); });
+window.addEventListener("hashchange", render);
+render();
+</script>
+</body>
+</html>
