@@ -7,7 +7,6 @@ const root = path.resolve(__dirname, "..", "drm");
 const read = d => { const dir = path.join(root, d); if (!fs.existsSync(dir)) return []; return fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => { try { return {file: d + "/" + f, ...JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"))}; } catch (e) { return {file: d + "/" + f, _unreadable: e.message}; } }); };
 const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs"), places = read("places"), leads = read("leads"), pivots = read("pivots");
 let compass = {}; try { compass = JSON.parse(fs.readFileSync(path.join(root, "compass.json"), "utf8")); } catch (e) {}
-let config = {}; try { config = JSON.parse(fs.readFileSync(path.join(root, "config.json"), "utf8")); } catch (e) {}
 const transcripts = {}; const tdir = path.join(root, "transcripts"); if (fs.existsSync(tdir)) for (const f of fs.readdirSync(tdir)) if (f.endsWith(".md")) transcripts[f.slice(0, -3)] = fs.readFileSync(path.join(tdir, f), "utf8");
 const TYPES = ["Past behavior, irreversible","Past behavior, reversible","Current workaround","Frequency","Cost (time or money)","Strong language","Opinion or future intent"];
 const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent","Not a Problem"];
@@ -91,15 +90,16 @@ for (const l of leads) {
   if (l.placeId && !byId(places, l.placeId)) warn(l.file, `placeId ${l.placeId} doesn't exist`);
 }
 /* The pivot gate, computed the way the app computes assumption status (CLAUDE.md, Poke holes): a pivot is in play only when every trigger is Shaky or Contradicted. */
-const minN = Number(config.minInterviews ?? 5), strongShare = Number(config.strongShare ?? 0.5);
+/* Fixed thresholds (not founder-adjustable): five confirmed pain scores per problem before it counts as tested; half of them in the top two tiers for a strong signal. */
+const MIN_INTERVIEWS = 5, STRONG_SHARE = 0.5;
 const confirmedPains = pains.filter(p => p.status === "Confirmed" && !p._unreadable);
 const weak = iv => !iv || Number(iv.leading) > 0 || iv.pitched === "Yes" || iv.demoed === "Yes" || iv.source === "Friend or family" || iv.recentInstance === "No";
 const share = ps => { const top = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)); const w = top.filter(p => weak(byId(interviews, p.interviewId))).length; return {n:ps.length, s:ps.length ? top.length / ps.length : 0, clean:ps.length ? (top.length - w) / ps.length : 0}; };
 function triggerState(a) {
   if (a.kind === "problem" && a.problemId) {
     const r = share(confirmedPains.filter(p => p.problemId === a.problemId));
-    if (r.n < minN) return {open:false, why:`${r.n} of ${minN} confirmed scores`};
-    if (r.s >= strongShare && r.clean >= strongShare) return {open:false, why:`holding up, ${Math.round(r.s*100)}% show real pain`};
+    if (r.n < MIN_INTERVIEWS) return {open:false, why:`${r.n} of ${MIN_INTERVIEWS} confirmed scores`};
+    if (r.s >= STRONG_SHARE && r.clean >= STRONG_SHARE) return {open:false, why:`holding up, ${Math.round(r.s*100)}% show real pain`};
     return {open:true};
   }
   if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId) {
@@ -107,7 +107,7 @@ function triggerState(a) {
     const r = share(seg(a.customerId));
     if (r.n < 3) return {open:false, why:`${r.n} of 3 confirmed scores from this segment`};
     if (a.kind === "early-adopters") { const others = (compass.customers || []).filter(c => c.id !== a.customerId).map(c => share(seg(c.id))).filter(o => o.n >= 3); if (others.some(o => o.s >= r.s + 0.25)) return {open:true}; }
-    if (r.s >= strongShare && r.clean >= strongShare) return {open:false, why:`holding up, ${Math.round(r.s*100)}% of this segment's scores show real pain`};
+    if (r.s >= STRONG_SHARE && r.clean >= STRONG_SHARE) return {open:false, why:`holding up, ${Math.round(r.s*100)}% of this segment's scores show real pain`};
     return {open:true};
   }
   const ev = (a.evidence || []).map(x => ({...x, e:byId(evidence, x.id)})).filter(x => x.e && x.e.status === "Confirmed");

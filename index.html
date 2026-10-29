@@ -50,11 +50,15 @@ b,strong{font-weight:var(--wb)}
 .nav a:hover{border-left-color:var(--grey)}
 .nav a:active{opacity:.7}
 .nav a.on{font-weight:var(--wb);border-left-color:var(--ink)}
-.nav .grp{display:flex;align-items:center;gap:6px;width:100%;border:none;background:none;cursor:pointer;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:var(--grey);padding:18px 20px 5px;text-align:left}
-.nav .grp:hover{color:var(--ink)}
-.nav .grp:active{opacity:.7}
-.nav .grp .chev{display:inline-block;width:10px;transition:transform var(--t)}
+/* a group heading: the title links to the section's page; the chevron beside it collapses the group */
+.nav .grp{display:flex;align-items:center;gap:6px;width:100%;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;color:var(--grey);padding:18px 20px 5px 17px;text-align:left}
+.nav .grp .chev{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;padding:0;margin:0;border:none;background:none;cursor:pointer;color:inherit;font:inherit;transition:transform var(--t)}
+.nav .grp .chev:hover{color:var(--ink)}
+.nav .grp .chev:active{opacity:.7}
 .nav .grp.closed .chev{transform:rotate(-90deg)}
+.nav .grp a.gt{display:inline;padding:0;border:none;border-bottom:1px solid transparent;color:inherit;font:inherit;line-height:inherit}
+.nav .grp a.gt:hover{color:var(--ink);border-bottom-color:var(--ink)}
+.nav .grp a.gt.on{color:var(--ink);border-bottom-color:var(--ink)}
 .nav .grp.has-active{color:var(--ink)}
 .nav .grp .pill{margin-left:auto}
 .nav .num{font-family:var(--mono);font-size:11px;color:var(--grey);margin-right:6px}
@@ -66,7 +70,7 @@ b,strong{font-weight:var(--wb)}
 .main{overflow:auto;min-width:0}
 .main.bare{overflow:hidden;display:flex;flex-direction:column}
 .app.nosb{grid-template-columns:1fr} .app.nosb .side{display:none}
-.page{max-width:1280px;padding:36px 48px 96px}
+.page{padding:36px 48px 96px}
 .crumbs{font-size:12px;color:var(--grey);margin-bottom:8px}
 .crumbs a{color:var(--grey)}
 h2{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;margin:40px 0 12px;padding-top:12px;border-top:2px solid var(--ink)}
@@ -106,7 +110,9 @@ h3{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:
 .boxes{display:grid;gap:0 24px}
 .boxes.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .boxes.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (max-width:900px){.boxes.g2,.boxes.g3{grid-template-columns:1fr}}
+/* .fit: as many columns as the width holds (each at least --col), so wide windows get more columns, not wider ones */
+.boxes.fit{grid-template-columns:repeat(auto-fill,minmax(var(--col,340px),1fr))}
+@media (max-width:900px){.boxes.g2,.boxes.g3,.boxes.fit{grid-template-columns:1fr}}
 /* counts: label / big thin numeral / caption, on a hairline */
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 24px;margin-bottom:24px}
 @media (max-width:1000px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -129,7 +135,7 @@ h3{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:
 .lrow>.lbl .sub{display:block;font-weight:var(--w);text-transform:none;letter-spacing:0;color:var(--grey);margin-top:4px}
 @media (max-width:1100px){.lrow{grid-template-columns:minmax(0,1fr);row-gap:8px}}
 /* the verdict: first and largest on the home page and the map */
-h1.verdict{font-size:64px;font-weight:var(--wb);line-height:.98;letter-spacing:-.03em;margin:0}
+h1.verdict{font-size:64px;font-weight:var(--wb);line-height:.98;letter-spacing:-.03em;margin:0;max-width:26ch}
 h1.verdict.sm{font-size:24px;line-height:1.15;letter-spacing:-.02em;max-width:none}
 @media (max-width:1100px){h1.verdict{font-size:clamp(34px,6vw,56px)}}
 @media (max-width:600px){h1.verdict{font-size:34px;letter-spacing:-.02em}h1.verdict.sm{font-size:20px}}
@@ -151,6 +157,8 @@ h1.verdict.sm{font-size:24px;line-height:1.15;letter-spacing:-.02em;max-width:no
 .gauge .tick{position:absolute;top:0;bottom:0;width:1px;background:var(--hair)}
 .gauge .tick.c{background:var(--ink)}
 .gauge .needle{position:absolute;left:0;top:-10px;width:100%;height:48px;background:none;margin:0;pointer-events:none;transform:translateX(calc(var(--p,0) * 50%));animation:needle .24s ease-out both}
+/* the slide happens once per page load; after that every re-render draws the needle in place (same transform, no animation) */
+.settled .gauge .needle{animation:none}
 .gauge .needle:before{content:"";position:absolute;left:50%;top:0;width:2px;height:100%;margin-left:-1px;background:var(--ink)}
 .gauge .needle:after{content:"";position:absolute;left:50%;top:-6px;border:6px solid transparent;border-top-color:var(--ink);transform:translateX(-50%)}
 @keyframes needle{from{transform:translateX(0)}to{transform:translateX(calc(var(--p,0) * 50%))}}
@@ -200,6 +208,7 @@ table.bets tr.click td{cursor:pointer} table.bets tr.click:hover td{background:n
 .canvas{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:0 24px;grid-template-areas:"problem solution customer" "problem solution alts"}
 .canvas .b-problem{grid-area:problem} .canvas .b-solution{grid-area:solution} .canvas .b-customer{grid-area:customer} .canvas .b-alts{grid-area:alts}
 .canvas .box{margin:0 0 24px}
+@media (min-width:1500px){.canvas{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:auto;grid-template-areas:"problem solution customer alts"}}
 @media (max-width:900px){.canvas{grid-template-columns:1fr;grid-template-areas:"problem" "solution" "customer" "alts"}}
 .lines{display:flex;flex-direction:column;gap:0}
 .ln{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--hair)}
@@ -218,8 +227,10 @@ table.bets tr.click td{cursor:pointer} table.bets tr.click:hover td{background:n
 .ed.sans{font-family:var(--sans);font-weight:var(--w);font-size:14px;font-variation-settings:"wdth" 100}
 .add{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;color:var(--grey);background:none;border:none;cursor:pointer;padding:8px 0;text-align:left}
 .add:hover{color:var(--ink)} .add:active{opacity:.7}
-.stmt{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:0 48px}
+.stmt{display:grid;grid-template-columns:minmax(0,7fr) minmax(280px,5fr);gap:0 48px}
 @media (max-width:900px){.stmt{grid-template-columns:1fr}}
+.stmt .aside p,.stmt .aside .use{max-width:60ch}
+.blank .ed{max-width:52ch}
 .blank{border-bottom:2px solid var(--ink);padding:0 0 10px;margin-bottom:22px}
 .blank .lead{display:inline-block;font-weight:var(--wb);font-size:12px;text-transform:uppercase;letter-spacing:.02em;padding:4px 0}
 .blank .ed{display:block;margin-top:6px;min-height:1.6em;font-size:24px;font-variation-settings:"opsz" 48}
@@ -481,6 +492,52 @@ pre.prompt{white-space:pre-wrap;background:var(--inset);border:1px solid var(--i
 @media (max-width:700px){.g2,.g3{grid-template-columns:1fr}}
 .split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0 48px;align-items:start}
 @media (max-width:1100px){.split{grid-template-columns:1fr}}
+/* section pages: the sheet's ruled rows, with a list of the pages in the section */
+.seclist{list-style:none;margin:0;padding:0}
+.seclist li{display:grid;grid-template-columns:minmax(140px,2fr) minmax(0,8fr);column-gap:24px;padding:8px 0;border-bottom:1px solid var(--hair);max-width:90ch}
+.seclist li:last-child{border-bottom:none}
+.seclist li a{font-weight:var(--wb);border-bottom-color:transparent} .seclist li a:hover{border-bottom-color:currentColor}
+.seclist li span{color:var(--ink)}
+@media (max-width:700px){.seclist li{grid-template-columns:1fr;row-gap:2px}}
+.lrow .prose{max-width:66ch;margin:0}
+.lrow .prose+.prose{margin-top:10px}
+.lrow .prose .kbd{margin:0 2px}
+/* How to use AI: ruled rows, a label or a mono command on the left */
+.say{list-style:none;margin:0;padding:0;max-width:100ch}
+.say li{display:grid;grid-template-columns:minmax(180px,3fr) minmax(0,8fr) auto;column-gap:24px;align-items:start;padding:10px 0;border-bottom:1px solid var(--hair)}
+.say li:last-child{border-bottom:none}
+.say li b{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;padding-top:2px}
+.say li .cmd{font-family:var(--mono);font-size:13px;font-weight:var(--wb);padding-top:1px}
+.say li>span{color:var(--ink);max-width:66ch}
+.say li .btn{align-self:center}
+@media (max-width:700px){.say li{grid-template-columns:1fr auto;row-gap:2px}.say li>span{grid-column:1/-1}}
+/* Notes from the AI: a compact ruled block, date first; the text behind a toggle */
+.notes .note:first-child{border-top:none;padding-top:0}
+.note{border-top:1px solid var(--ink);padding:10px 0 8px;margin:0 0 6px}
+.note.bare{border-top:none;padding-top:0}
+.note .nh{display:flex;gap:4px 12px;align-items:baseline;flex-wrap:wrap;font-size:12px}
+.note .nh .d{font-family:var(--mono);color:var(--grey)}
+.note .nh b{font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
+.note .nh .t{color:var(--ink)}
+.note details summary{cursor:pointer;font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;margin-top:8px;display:inline-block;list-style:none}
+.note details summary::-webkit-details-marker{display:none}
+.note details summary:before{content:"▸ ";color:var(--grey)} .note details[open] summary:before{content:"▾ "}
+.note details summary:hover{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.note details summary:active{opacity:.7}
+.note .md{margin-top:6px;font-size:14px}
+.note .md h2{margin-top:14px;padding-top:8px;border-top:1px solid var(--hair)}
+.note .md h2:first-child{margin-top:4px;border-top:none;padding-top:0}
+.note .md p,.note .md li{max-width:66ch;margin:4px 0}
+/* Quotes, to be confirmed: one decision at a time, the transcript beside it */
+.rv{border-top:2px solid var(--ink);padding-top:12px}
+.rv .rvh{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.rv .rvh .tool a{color:inherit;font-family:var(--mono)} .rv .rvh .who{font-weight:var(--w);text-transform:none;letter-spacing:0;color:var(--grey)}
+.rv .q{border-top:none;padding-top:0}
+.rv .decide{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--hair)}
+.rv .decide .hint{max-width:34ch}
+.rv .transcript.rvt{position:relative;max-height:56vh}
+.tabs.filters .n{font-family:var(--mono);font-weight:var(--w);margin-left:4px}
+@media (max-width:1100px){.rv .split{grid-template-columns:minmax(0,1fr)}}
 .checks{display:flex;gap:6px;flex-wrap:wrap}
 .belief{font-family:var(--serif);font-weight:300;font-size:20px;line-height:1.3;font-variation-settings:"opsz" 48}
 .belief + .belief{margin-top:8px}
@@ -503,13 +560,16 @@ pre.prompt{white-space:pre-wrap;background:var(--inset);border:1px solid var(--i
 const TEMPLATE_URL = "https://github.com/Magiomakes/discovery-records-manager";
 const SETUP_URL = TEMPLATE_URL + "/blob/main/SETUP.md";
 
+/* Signal thresholds. Fixed in the app and in CLAUDE.md, not a setting: a problem is tested once this many confirmed
+   interviews score it, and the signal is strong when at least this share land in Hair on Fire or Incremental Improvement. */
+const MIN_INTERVIEWS = 5, STRONG_SHARE = 0.5;
 const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent","Not a Problem"];
 const TIER_CLASS = {"Hair on Fire":"tier-hof","Incremental Improvement":"tier-inc","Nice to Have":"tier-nth","Latent":"tier-lat","Not a Problem":"tier-nap"};
 const TIER_DEF = {
   "Hair on Fire":"Already invested money or recurring time they can't get back, and the problem is still not solved.",
   "Incremental Improvement":"Actively trying to fix it, but the effort is reversible (tried a tool and dropped it, stopped when a free trial ended).",
   "Nice to Have":"Describes the problem clearly but has done nothing about it.",
-  "Latent":"Has the problem but doesn't see it as a problem. A coaching flag, not a buying signal.",
+  "Latent":"Has the problem but doesn't see it as a problem. A flag to notice, not a buying signal.",
   "Not a Problem":"No sign they have it."
 };
 const EVIDENCE_TYPES = ["Past behavior, irreversible","Past behavior, reversible","Current workaround","Frequency","Cost (time or money)","Strong language","Opinion or future intent"];
@@ -667,7 +727,7 @@ function emptyState(){
 /* ---------------- app state ---------------- */
 let store = null, S = emptyState(), lastPush = null, saveErr = null, savedAt = null, aiReady = null;
 function loadCollapsed(){ try { return JSON.parse(localStorage.getItem("drm-collapsed") || "{}"); } catch(e){ return {}; } }
-let ui = {collapsed:loadCollapsed(), drafts:{transcript:{}, rubric:{}}, toast:null, importPreview:null, tab:{}, filters:{status:"All", problem:"All", type:"All"}, drawer:null, hideChecklist: localStorage.getItem("drm-hide-checklist") === "1"};
+let ui = {collapsed:loadCollapsed(), drafts:{transcript:{}, rubric:{}}, toast:null, importPreview:null, tab:{}, filters:{problem:"All", type:"All"}, reviewIdx:0, drawer:null, hideChecklist: localStorage.getItem("drm-hide-checklist") === "1"};
 
 const sortById = a => a.sort((x, y) => String(x.id).localeCompare(String(y.id), undefined, {numeric:true}));
 function byId(list, id){ return list.find(r => r.id === id); }
@@ -679,13 +739,10 @@ async function persist(type, rec){
     else if (type === "compass") await store.write("drm/compass.json", JSON.stringify(S.compass, null, 2));
     else if (type === "transcript") await store.write(`drm/transcripts/${rec.id}.md`, rec.text);
     else await store.write(`drm/${DIRS[type]}/${rec.id}.json`, JSON.stringify(rec, null, 2));
-    saveErr = null; savedAt = Date.now(); scheduleReport();
+    saveErr = null; savedAt = Date.now();
   } catch(e){ saveErr = e.message || String(e); console.error(e); }
 }
-async function unpersist(type, id){ await store.remove(`drm/${DIRS[type]}/${id}.json`); scheduleReport(); }
-
-let reportTimer = null;
-function scheduleReport(){ clearTimeout(reportTimer); reportTimer = setTimeout(async () => { try { await store.write("README.md", buildReport()); } catch(e){ console.error(e); } }, 800); }
+async function unpersist(type, id){ await store.remove(`drm/${DIRS[type]}/${id}.json`); }
 
 function upsert(type, rec){
   const list = S[type]; const i = list.findIndex(r => r.id === rec.id);
@@ -698,7 +755,7 @@ function removeRec(type, id){ S[type] = S[type].filter(r => r.id !== id); unpers
 /* ---------------- calculations ---------------- */
 function confirmedPains(){ return S.pains.filter(p => p.status === "Confirmed"); }
 function hygieneIssues(iv){ return (Number(iv.leading) > 0 ? 1 : 0) + (iv.pitched === "Yes" ? 1 : 0) + (iv.demoed === "Yes" ? 1 : 0); }
-/* An interview that can't carry a bet on its own: a friend or family member, leading questions, a pitch or demo, or no recent instance. It still counts; it just can't be what holds the bet up. */
+/* An interview that can't carry an assumption on its own: a friend or family member, leading questions, a pitch or demo, or no recent instance. It still counts; it just can't be what holds the assumption up. */
 function weakInterview(iv){ return !iv || hygieneIssues(iv) > 0 || iv.source === "Friend or family" || iv.recentInstance === "No"; }
 function painShare(ps){
   const top2 = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier));
@@ -723,7 +780,7 @@ function problemStats(pr){
   const counts = Object.fromEntries(TIERS.map(t => [t, ps.filter(p => p.tier === t).length]));
   const n = ps.length; const top2 = counts["Hair on Fire"] + counts["Incremental Improvement"];
   const share = n ? top2 / n : 0;
-  const minN = Number(S.config.minInterviews ?? 5), strong = Number(S.config.strongShare ?? 0.5);
+  const minN = MIN_INTERVIEWS, strong = STRONG_SHARE;
   const signal = n < minN ? "Need more interviews" : share >= strong ? "Strong signal" : "Weak signal";
   const confirmedQuotes = S.evidence.filter(e => e.problemId === pr.id && e.status === "Confirmed");
   const quotes = confirmedQuotes.length, against = confirmedQuotes.filter(e => stanceOf(e) === "against").length;
@@ -779,6 +836,7 @@ function metrics(){
     opinion: S.evidence.filter(e => e.status === "Confirmed" && e.type === "Opinion or future intent").length,
     candidates: S.evidence.filter(e => e.status === "Candidate").length + S.pains.filter(p => p.status === "Candidate").length + (S.places || []).filter(p => p.status === "Candidate").length + (S.leads || []).filter(l => l.status === "Candidate").length,
     rejected: S.evidence.filter(e => e.status === "Rejected").length,
+    toConfirm: S.evidence.filter(e => e.status === "Candidate").length + S.pains.filter(p => p.status === "Candidate").length,
     hof: iv.filter(i => topTier(i.id) === "Hair on Fire").length,
     painIssues: S.pains.filter(p => p.status !== "Rejected" && !painCheck(p).ok).length,
     tierCounts: Object.fromEntries(TIERS.map(t => [t, confirmedPains().filter(p => p.tier === t).length]))
@@ -923,77 +981,7 @@ function applyImport(iv, plan, raw){
   upsert("interviews", updated);
 }
 
-/* ---------------- coach report (README.md) ---------------- */
-const mdc = s => String(s ?? "").replace(/\|/g,"/").replace(/\r?\n/g," ");
-function buildReport(){
-  const c = S.config, m = metrics();
-  const L = [];
-  L.push(`# Discovery Records: ${c.venture || "Untitled venture"}`, "");
-  L.push(`Founder: ${c.founder || "?"}${c.coach ? " · Coach: " + c.coach : ""} · Updated ${new Date().toISOString().slice(0,16).replace("T"," ")} UTC`, "");
-  L.push("> Generated by the Discovery Records Manager. Don't edit this file by hand, it is rewritten on every save. Only Confirmed quotes and scores are counted.", "");
-  L.push("## Summary", "");
-  L.push("| Measure | Count |","|---|---|");
-  L.push(`| Interviews logged | ${m.n} |`, `| From friends or family | ${m.ff} (${Math.round(m.ffShare*100)}%) |`, `| Described a specific, recent instance | ${m.recent} |`,
-         `| Interviews with a hygiene issue | ${m.hygiene} |`, `| Pitched or sold the idea | ${m.pitched} |`, `| Demoed a product | ${m.demoed} |`, `| Leading questions, total | ${m.leading} |`,
-         `| Interviews with a confirmed Hair on Fire problem | ${m.hof} |`, `| Confirmed quotes | ${m.confirmed} |`, `| Confirmed quotes that are only opinion or future intent | ${m.opinion} |`,
-         `| AI suggestions not yet reviewed | ${m.candidates} |`, "");
-  L.push("## Compass", "");
-  L.push("### Leaner Canvas", "");
-  L.push("Problems: " + (S.problems.length ? S.problems.map(p => `${p.id} ${mdc(p.text)}`).join("; ") : "_none_"), "");
-  L.push("Solutions: " + (Object.keys(S.compass.solutions||{}).length ? S.problems.filter(p => (S.compass.solutions||{})[p.id]).map(p => `${p.id}: ${mdc(S.compass.solutions[p.id])}`).join("; ") : "_none_"), "");
-  const idealC = idealCustomer(); L.push(`Customers: ${(S.compass.customers||[]).map(c => (c.ideal ? "**1. " : "") + mdc(c.text) + (c.ideal ? "** (ideal)" : "")).join("; ") || "_none_"}`, "");
-  L.push("Existing alternatives: " + ((S.compass.alternatives||[]).map(x => mdc(x.name) + (x.gap ? ` (gap: ${mdc(x.gap)})` : "")).join("; ") || "_none_"), "");
-  L.push("### Statements", "", `Value proposition: ${mdc(valuePropText())}`, "", `Problem statement: ${mdc(problemStatementText())}`, "");
-  L.push("### Assumptions Map", "");
-  if (S.compass.riskiest) L.push(`My riskiest assumption (founder's words): ${mdc(S.compass.riskiest)}`, "");
-  if (S.compass.evidencePlan) L.push(`How I'll get evidence this week: ${mdc(S.compass.evidencePlan)}`, "");
-  const ra = rankedAssumptions().filter(x => x.a.status === "Active");
-  if (ra.length){ L.push("| # | Assumption | Kind | Impact (you / AI) | Confidence (you / AI) | Priority | Evidence says | AI based on |", "|---|---|---|---|---|---|---|---|"); for (const x of ra){ const ab = aiBasis(x.a); L.push(`| ${x.a.id} | ${mdc(x.a.text)} | ${ASSUMPTION_KINDS[x.a.kind]?.label || x.a.kind} | ${x.a.impact||"?"} / ${x.a.aiImpact||"?"} | ${x.a.confidence||"?"} / ${x.a.aiConfidence||"?"} | ${x.p||"?"} | **${x.s.status}**: ${mdc(x.s.why)} | ${ab.label} |`); } L.push(""); const c = compassReadout(); L.push(`Direction check: ${c.verdict}`, ""); }
-  const lc = ledgerChecks(); if (lc.length) L.push(`Ledger check: ${lc.length} issue${lc.length > 1 ? "s" : ""} open (see the Ledger check page in the app).`, "");
-  L.push("## Problems", "");
-  if (!S.problems.length) L.push("_No problems recorded yet._", "");
-  else {
-    L.push("| ID | Problem | Interviews scored | " + TIERS.join(" | ") + " | Top-two share | Signal |", "|---|---|---|" + TIERS.map(() => "---").join("|") + "|---|---|");
-    for (const p of sortById([...S.problems])){ const s = problemStats(p); L.push(`| ${p.id} | ${mdc(p.text)} | ${s.n} | ${TIERS.map(t => s.counts[t]).join(" | ")} | ${Math.round(s.share*100)}% | ${s.signal} |`); }
-    L.push("");
-  }
-  L.push("## Interviews", "");
-  if (!S.interviews.length) L.push("_No interviews yet._", "");
-  else {
-    L.push("| ID | Date | Role | Found via | Recent instance | Hygiene issues | Top confirmed tier |", "|---|---|---|---|---|---|---|");
-    for (const i of sortById([...S.interviews])) L.push(`| ${i.id} | ${i.date||""} | ${mdc(i.role)} | ${mdc(i.source)} | ${i.recentInstance||"?"} | ${hygieneIssues(i)} | ${topTier(i.id) || "Not scored"} |`);
-    L.push("");
-  }
-  const cp = (S.places || []).filter(p => p.status === "Confirmed");
-  if (cp.length){ L.push("## Where to find more interviewees", ""); for (const p of cp) L.push(`- **${mdc(p.name)}** (${mdc(p.kind)}): ${mdc(p.how)}${p.why ? " — " + mdc(p.why) : ""}`); L.push(""); }
-  const P = S.persona; const pp = byId(S.problems, P.problemId);
-  L.push("## Customer persona", "", `Problem: ${pp ? pp.id + " " + pp.text : "_not chosen_"}`, "");
-  const conf = confirmedQuoteIds();
-  for (const [k, label] of PERSONA_FIELDS){
-    const f = P.fields[k] || {text:"", evidence:[]}; const ev = (f.evidence||[]).filter(id => conf.has(id));
-    L.push(`**${label}:** ${f.text ? mdc(f.text) : "_not filled in_"}${f.text && !ev.length ? " ⚠️ _no confirmed quotes behind this yet_" : ""}`);
-    for (const id of ev){ const e = byId(S.evidence, id); if (e) L.push(`> "${mdc(e.quote)}" (${e.id})`); }
-    L.push("");
-  }
-  L.push("## MVP scope (kept for later)", "");
-  const wedges = S.jobs.filter(j => j.decision === "Wedge");
-  L.push(`Wedge job: ${wedges.length === 1 ? mdc(wedges[0].statement) : wedges.length > 1 ? "⚠️ more than one marked as Wedge" : "_none chosen yet_"}`, "");
-  const rj = rankedJobs();
-  if (rj.length){ L.push("| Rank | Job | Type | Priority | Checks met | Decision |", "|---|---|---|---|---|---|"); rj.forEach((x, i) => L.push(`| ${i+1} | ${mdc(x.j.statement)} | ${x.j.type||""} | ${x.s.priority} | ${x.s.met}/5 | ${x.j.decision||"Undecided"} |`)); L.push(""); }
-  const no = S.jobs.filter(j => j.decision === "Say no");
-  if (no.length){ L.push("Say-no list:", ""); for (const j of no) L.push(`- ${mdc(j.statement)}: ${mdc(j.why) || "_no reason given_"}`); L.push(""); }
-  L.push("## Confirmed evidence by problem", "");
-  for (const p of sortById([...S.problems])){
-    const ev = S.evidence.filter(e => e.problemId === p.id && e.status === "Confirmed"); if (!ev.length) continue;
-    L.push(`### ${p.id}: ${mdc(p.text)}`, "");
-    for (const e of ev) L.push(`- "${mdc(e.quote)}" (${e.interviewId}, ${e.type || "untyped"})`);
-    L.push("");
-  }
-  L.push("---", `Method adapted from Darren Yee, [The Discovery Ladder](https://darrenyee.substack.com/p/the-discovery-ladder). App: [Discovery Records Manager](${TEMPLATE_URL}).`, "");
-  return L.join("\n");
-}
-
-/* Minimal markdown rendering for the in-app report preview */
+/* Minimal markdown rendering for AI notes */
 function renderMd(md){
   const lines = md.split("\n"); let html = "", inTable = false, inList = false;
   const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/_(.+?)_/g,"<i>$1</i>").replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
@@ -1017,11 +1005,40 @@ function renderMd(md){
   if (inTable) html += "</table>"; if (inList) html += "</ul>";
   return html;
 }
+/* Notes the AI wrote into drm/notes/, routed by filename to the page they are about. Anything that matches nothing lands on the home page, so no note is unreachable. */
+function noteKind(n){
+  const s = String(n.name || "").toLowerCase(); let m;
+  if ((m = s.match(/review-(int-\d+)/))) return {kind:"review", id:m[1].toUpperCase(), label:"Interview review"};
+  if (/poke-holes/.test(s)) return {kind:"map", label:"Poke holes"};
+  if (/assumptions/.test(s)) return {kind:"map", label:"Diagnosis"};
+  if (/where-to-look/.test(s)) return {kind:"customers", label:"Where to look"};
+  if (/leads/.test(s)) return {kind:"customers", label:"Leads"};
+  if (/research-c-\d+/.test(s)) return {kind:"customers", label:"Segment research"};
+  if (/persona/.test(s)) return {kind:"customers", label:"Persona audit"};
+  if (/jobs/.test(s)) return {kind:"solution", label:"Jobs"};
+  if (/happy-ears/.test(s)) return {kind:"quotes", label:"Happy ears check"};
+  return {kind:"home", label:"Note"};
+}
+function notesFor(kind, id){ return S.notes.filter(n => { const k = noteKind(n); return k.kind === kind && (!id || k.id === id); }); }
+function noteDate(n){ const m = String(n.name || "").match(/^(\d{4}-\d{2}-\d{2})/); return m ? m[1] : new Date(n.modified || 0).toISOString().slice(0, 10); }
+function noteTitle(n){ const m = String(n.text || "").match(/^#\s+(.+)$/m); return m ? m[1].trim() : String(n.name || "").replace(/\.md$/, ""); }
+function noteBody(n){ return String(n.text || "").replace(/^#\s+.+$/m, ""); }
+/* One compact ruled block per note: date, what kind of note, its title; the text behind a toggle. With `lead`, the first section is open and the rest sits behind "Read the full note". */
+function noteBlock(n, opts = {}){
+  const k = noteKind(n); const body = noteBody(n);
+  const head = `<div class="nh"><span class="d">${esc(noteDate(n))}</span><b>${esc(opts.label || k.label)}</b><span class="t">${esc(noteTitle(n))}</span><span class="d">${esc(n.name)}</span></div>`;
+  if (opts.lead){
+    const parts = body.split(/^(?=## )/m); const lead = parts.length > 2 ? parts.slice(0, 2).join("") : body, rest = parts.length > 2 ? parts.slice(2).join("") : "";
+    return `<div class="note">${head}<div class="md">${renderMd(lead)}</div>${rest.trim() ? `<details><summary>Read the full note</summary><div class="md">${renderMd(rest)}</div></details>` : ""}</div>`;
+  }
+  return `<div class="note ${opts.bare ? "bare" : ""}">${head}<details${opts.open ? " open" : ""}><summary>Read the note</summary><div class="md">${renderMd(body)}</div></details></div>`;
+}
+function noteBlocks(list, opts){ return list.length ? `<div class="notes">${list.map(n => noteBlock(n, opts)).join("")}</div>` : ""; }
 
 /* ---------------- example data (demo) ---------------- */
 function demoState(){
   const D = emptyState();
-  D.config = {founder:"Sam (example)", venture:"Receipts for student club treasurers", coach:"IIE coach", minInterviews:5, strongShare:0.5};
+  D.config = {founder:"Sam (example)", venture:"Receipts for student club treasurers"};
   D.problems = [{id:"PR-01", text:"Chasing members for receipts before reimbursing them", who:"Student club treasurers"}];
   D.interviews = [
     {id:"INT-001", date:"2026-10-20", interviewee:"Treasurer A", role:"Club treasurer, business club", source:"Online community or follower", interviewer:"Sam", recentInstance:"Yes", leading:0, pitched:"No", demoed:"No", closing:"Yes", rubricRun:true, notes:""},
@@ -1069,7 +1086,22 @@ Nice to Have at most. She hasn't done anything about it.
 ## Next time
 1. "Walk me through the last time you dealt with reimbursements."
 2. "What did you do about it?"
-3. Don't mention the app until the end, if at all.`}];
+3. Don't mention the app until the end, if at all.`},
+  {name:"2026-10-23-assumptions.md", modified: Date.now() - 2 * 36e5, text:`# Riskiest assumptions, 23 October
+
+## Riskiest untested
+A-04, that treasurers would switch to an app. Nobody has been asked about switching, and the one confirmed quote that touches it (INT-001-Q03, "We tried a free expense app for a month but nobody uploaded to it") points the other way.
+
+## Statements no interview can test
+- "nobody has to install anything new" (value proposition): a feature, not something a customer would do differently.
+- "members stop trusting the numbers" (problem statement): nobody has described a member who did.
+
+## Interviews to run first
+1. C-01, tests A-01: "Have you experienced sitting down to pay members back at month end / matching receipt photos from the group chat to e-transfers by hand?"
+2. C-03, tests A-05: the same opener, to a finance officer who signs off club reimbursements.
+
+## What would make this wrong
+Three treasurers from cold outreach who each describe a recent instance and a workaround they keep; or one who dropped the group chat for an app and stayed.`}];
   D.compass = {meta:{name:"Sam", date:"2026-10-20", version:"v2"},
     solutions:{"PR-01":"A phone app where members snap receipts and the treasurer approves and pays in one tap."},
     customers:[{id:"C-01", text:"Student club treasurers", ideal:true},{id:"C-02", text:"Club presidents", ideal:false},{id:"C-03", text:"Student union finance staff", ideal:false}],
@@ -1108,7 +1140,7 @@ Nice to Have at most. She hasn't done anything about it.
 /* ============================================================
    COMPASS: a snapshot of the business. Leaner Canvas, the two
    statements, an assumptions map (an infinite canvas of points)
-   and the leads list. Hunches go in here; the rest of the app
+   and the leads list. Assumptions go in here; the rest of the app
    exists to test them.
    ============================================================ */
 const ASSUMPTION_KINDS = {
@@ -1118,7 +1150,7 @@ const ASSUMPTION_KINDS = {
   "solution":       {label:"Solution",             short:"S",  area:"solution",     test:"confirmed quotes you tag as for or against"},
   "alternatives":   {label:"Existing alternative", short:"A",  area:"alternatives", test:"confirmed quotes you tag as for or against"},
   "competition":    {label:"Competition",          short:"X",  area:"alternatives", test:"confirmed quotes you tag as for or against"},
-  "other":          {label:"Other bet",            short:"O",  area:"alternatives", test:"confirmed quotes you tag as for or against"}
+  "other":          {label:"Other assumption",     short:"O",  area:"alternatives", test:"confirmed quotes you tag as for or against"}
 };
 const AREAS = {
   problem:      {title:"Problem",                     k:"P", kinds:["problem"],                               lede:"Do the people you named have the problem you named, and have they already done something about it?"},
@@ -1127,7 +1159,7 @@ const AREAS = {
   alternatives: {title:"Alternatives and competition", k:"A", kinds:["alternatives","competition","other"],   lede:"Do today's alternatives leave the gap you think, and why would anyone choose you over them?"}
 };
 const PLACE_KINDS = ["LinkedIn search","Online community","Event or meetup","Organisation or club","Referral","Other"];
-/* The classic pivot moves. A pivot is only in play when the bet it hangs on is shaky or contradicted by confirmed evidence. */
+/* The classic pivot moves. A pivot is only in play when the assumption it hangs on is shaky or contradicted by confirmed evidence. */
 const PIVOT_KINDS = {
   "zoom-in":          {label:"Zoom in",          meaning:"one feature becomes the whole product"},
   "customer-segment": {label:"Customer segment", meaning:"same problem, different people"},
@@ -1211,7 +1243,7 @@ function shelfWorld(i){ const cols = 4; return {x:-MAP.size / 2 + 40 + (i % cols
 /* Evidence-based status. The reading comes from discovery data, never from a typed score. */
 function segShare(ps){ return ps.length ? ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)).length / ps.length : 0; }
 function assumptionStatus(a){
-  const minN = Number(S.config.minInterviews ?? 5), strong = Number(S.config.strongShare ?? 0.5);
+  const minN = MIN_INTERVIEWS, strong = STRONG_SHARE;
   const confirmed = confirmedPains();
   if (a.kind === "problem" && a.problemId){
     const ps = confirmed.filter(p => p.problemId === a.problemId);
@@ -1269,10 +1301,10 @@ function pivotGate(pv){
 function pivotsInPlay(){ return (S.pivots || []).filter(pv => pv.status !== "Retired" && pivotGate(pv).open); }
 function pivotsFor(aId){ return sortById((S.pivots || []).filter(pv => pv.status !== "Retired" && (pv.triggerAssumptionIds || []).includes(aId))).map(pv => ({pv, g:pivotGate(pv)})); }
 function pivotTriggerIds(){ const set = new Set(); for (const pv of pivotsInPlay()) for (const id of pv.triggerAssumptionIds || []) set.add(id); return set; }
-/* How many confirmed interviews an untested bet is short of its gate; null when the bet isn't counted that way. */
+/* How many confirmed interviews an untested assumption is short of its gate; null when the assumption isn't counted that way. */
 function interviewsShort(a, s){
   if (s.status !== "Untested") return null;
-  if (a.kind === "problem" && a.problemId) return Math.max(0, Number(S.config.minInterviews ?? 5) - (s.n || 0));
+  if (a.kind === "problem" && a.problemId) return Math.max(0, MIN_INTERVIEWS - (s.n || 0));
   if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId) return Math.max(0, 3 - (s.n || 0));
   return null;
 }
@@ -1323,7 +1355,7 @@ function postureGauge(c, small){
 /* Status as a shape, never a colour: hollow = untested, half = shaky, filled = holding up, hatched = contradicted. */
 const glyphCls = s => s === "Holding up" ? "holding" : s === "Shaky" ? "shaky" : s === "Contradicted" ? "contradicted" : "";
 function statusWord(s, why){ return `<span class="stw"><i class="gy ${glyphCls(s)}"></i>${esc(s === "Untested" ? "No evidence yet" : s)}</span>${why ? `<span class="why">${esc(why)}.</span>` : ""}`; }
-/* The riskiest-assumptions table: priority, the bet, its status, then the AI's objection before the AI's numbers. */
+/* The riskiest-assumptions table: priority, the assumption, its status, then the AI's objection before the AI's numbers. */
 function betsTable(list){
   if (!list.length) return "";
   const rows = list.map(x => { const a = x.a; const b = aiBasis(a); const ap = aiPriority(a); const obj = a.aiAgainst || a.aiReason; const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind};
@@ -1332,7 +1364,7 @@ function betsTable(list){
 }
 /* The share bar: one slot per interview needed, filled by tier as confirmed scores come in, with the counts as numerals under it. */
 function shareBar(p){
-  const minN = Number(S.config.minInterviews ?? 5); const s = problemStats(p);
+  const minN = MIN_INTERVIEWS; const s = problemStats(p);
   const cls = {"Hair on Fire":"hof","Incremental Improvement":"inc","Nice to Have":"nth","Latent":"lat","Not a Problem":"nap","":"empty"};
   const segs = []; for (const t of TIERS) for (let i = 0; i < s.counts[t]; i++) segs.push(t); const slots = Math.max(minN, segs.length); while (segs.length < slots) segs.push("");
   const left = Math.max(0, minN - s.n);
@@ -1399,7 +1431,7 @@ function ledgerChecks(){
   }
   for (const iv of S.interviews){
     if (iv.placeId && !byId(S.places, iv.placeId)) push("warn", iv.id, "interviews/" + iv.id, `placeId ${iv.placeId} doesn't exist.`);
-    if (!iv.customerId && S.compass.customers.length) push("info", iv.id, "interviews/" + iv.id, "No customer segment set, so it can't count toward the early-adopter bet.");
+    if (!iv.customerId && S.compass.customers.length) push("info", iv.id, "interviews/" + iv.id, "No customer segment set, so it can't count toward the early-adopter assumption.");
     if (!S.transcripts[iv.id]) push("warn", iv.id, "interviews/" + iv.id, "No transcript saved.");
   }
   for (const f of S.unreadable || []) push("bad", f, "home", "File couldn't be read and was skipped.");
@@ -1430,7 +1462,7 @@ function compassView(step){
   const views = {canvas:canvasSheet, value:valueSheet, problem:problemSheet, leads:leadsSheet};
   return compassNav(step) + (views[step] || canvasSheet)();
 }
-const stepNav = (back, backLabel, next, nextLabel) => `<div class="row" style="justify-content:space-between;max-width:1120px;margin:0 auto">${back ? `<a class="btn" href="#/${back}">${backLabel}</a>` : "<span></span>"}${next ? `<a class="btn pri" href="#/${next}">${nextLabel}</a>` : ""}</div>`;
+const stepNav = (back, backLabel, next, nextLabel) => `<div class="row" style="justify-content:space-between">${back ? `<a class="btn" href="#/${back}">${backLabel}</a>` : "<span></span>"}${next ? `<a class="btn pri" href="#/${next}">${nextLabel}</a>` : ""}</div>`;
 
 /* The canvas's editable lines. The Leaner Canvas and the first sitting (#/start) draw the same lines on the same records. */
 const numberedN = (i) => `<span class="n">${i + 1}.</span>`;
@@ -1527,7 +1559,7 @@ function mapView(){
   const worldPos = x => inGrid(x.a.pos) ? worldOf(x.a.pos) : shelfWorld(shelf.indexOf(x));
   const leaders = active.concat(cands).map(x => { const w = worldPos(x); const l = labelOf(x.a); return `<line x1="${w.x}" y1="${w.y}" x2="${w.x + l.dx}" y2="${w.y + l.dy}" stroke="#c9c9c4" stroke-width="1.2"/>`; }).join("");
   const steps = [["canvas","01 Leaner Canvas"],["value","02 Value Proposition"],["problem","03 Problem Statement"],["map","04 Assumptions Map"],["leads","05 Leads List"]];
-  const counts = ["Holding up","Shaky","Untested","Contradicted"].map(k => `<span class="cnt" title="${k === "Untested" ? "No evidence yet" : k}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
+  const counts = ["Contradicted","Shaky","Untested","Holding up"].map(k => `<span class="cnt" title="${k === "Untested" ? "No evidence yet" : k}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
   return `<div class="mapfull">
     <div class="tabstrip"><div class="tabs" style="margin:0;border:none">${steps.map(([k, l]) => `<button class="${k === "map" ? "on" : ""}" data-act="go" data-href="compass/${k}">${l}</button>`).join("")}</div>
       <div class="row" style="gap:6px"><span class="counts">${counts}</span>
@@ -1554,7 +1586,7 @@ function mapView(){
         ${placed.map(x => pointHtml(x, worldOf(x.a.pos))).join("")}
       </div>
       <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
-      <div class="legend"><span><i style="background:var(--ink)"></i>Holding up</span><span><i style="background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)"></i>Shaky</span><span><i style="background:var(--hatch)"></i>Contradicted</span><span><i></i>No evidence yet</span><span><i style="border-style:dashed;border-color:var(--grey)"></i>AI's placement</span><span><i style="box-shadow:0 0 0 2px var(--stone),0 0 0 3px var(--grey);margin-left:3px;margin-right:8px"></i>Pivot in play</span></div>
+      <div class="legend"><span><i style="background:var(--hatch)"></i>Contradicted</span><span><i style="background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)"></i>Shaky</span><span><i></i>No evidence yet</span><span><i style="background:var(--ink)"></i>Holding up</span><span><i style="border-style:dashed;border-color:var(--grey)"></i>AI's placement</span><span><i style="box-shadow:0 0 0 2px var(--stone),0 0 0 3px var(--grey);margin-left:3px;margin-right:8px"></i>Pivot in play</span></div>
       <div class="hint2">Click to add a point · drag a point to rate it · drag its label to tidy · right-drag to pan · scroll to zoom</div>
       ${ui.mapShelf && !sel ? notesShelf(r) : ""}
     </div>
@@ -1570,6 +1602,7 @@ function notesShelf(r){
     <div class="sidebox"><h4>How I'll get evidence this week</h4>${ed("cField", `data-field="evidencePlan"`, S.compass.evidencePlan, "Type here")}</div>
     <div class="sidebox"><h4>Ask your AI</h4><div class="small">Say <span class="kbd">Diagnose my snapshot</span>. It rates every point, says what evidence that rests on, lists what's stated but untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</div><button class="btn sm" style="margin-top:6px" data-act="copyText" data-text="Diagnose my snapshot">Copy</button></div>
     ${r.candidates ? `<div class="notice warn">${r.candidates} point${r.candidates > 1 ? "s" : ""} suggested by your AI ${r.candidates > 1 ? "are" : "is"} waiting below the grid. Click one to accept or dismiss it.</div>` : ""}
+    ${notesFor("map").length ? `<div class="sidebox"><h4>From your AI</h4>${noteBlocks(notesFor("map"))}</div>` : ""}
   </div>`;
 }
 /* The selected point: what the evidence says. Neither yours nor the AI's: the data's. Floats at the top of the canvas. */
@@ -1620,7 +1653,7 @@ function youPanel(a){
     <div class="lab">Impact if wrong</div>${scale5("impact", a.id, a.impact)}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
     <div class="lab">Likely right?</div>${scale5("confidence", a.id, a.confidence)}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
     <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b> <span class="small muted">impact × (6 − confidence)</span>` : `<span class="small muted">Pick numbers above or drag the point into the grid.</span>`}</div>
-    <div class="lab">Kind of bet</div><select class="inline" data-act="aKind" data-id="${esc(a.id)}">${Object.entries(ASSUMPTION_KINDS).map(([k2, v]) => opt(k2, a.kind, v.label)).join("")}</select>
+    <div class="lab">Kind of assumption</div><select class="inline" data-act="aKind" data-id="${esc(a.id)}">${Object.entries(ASSUMPTION_KINDS).map(([k2, v]) => opt(k2, a.kind, v.label)).join("")}</select>
     ${a.kind === "problem" ? `<div class="lab">Linked problem</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="problemId" style="max-width:100%"><option value="">None</option>${S.problems.map(pr => opt(pr.id, a.problemId, pr.id + ": " + pr.text)).join("")}</select>` : ""}
     ${(a.kind === "early-adopters" || a.kind === "customers") ? `<div class="lab">Linked segment</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="customerId" style="max-width:100%"><option value="">None</option>${(S.compass.customers||[]).map(c => opt(c.id, a.customerId, c.text)).join("")}</select>` : ""}
     <div class="lab">Your note</div>${ed("aNote", `data-id="${esc(a.id)}"`, a.note, "Anything to remember about this one", "sans")}
@@ -1706,8 +1739,8 @@ function startSheet(){
   const progress = `<span class="chip ${done === 7 ? "ok" : "gray"}" style="margin-right:12px;align-self:center">${done} of 7 answered</span>`;
   return `<div class="sheet">${docHead("Start", "Your snapshot, in one sitting", "Seven questions, in plain words. They fill in the five Compass sheets as you go, so there is nothing to copy over and you can come back here to read the whole snapshot at once. A guess is fine; the interviews will test it.", progress)}
   ${section(0, "The problem", "What problem do you believe people have? Say it the way they would, not as a solution.", problemLines(), "Everything else rests on this. If it's written as a feature, no customer can tell you it's wrong.")}
-  ${section(1, "Who has it", "Who has it? Who has it worst? Mark the one you'd bet on first.", customerLines(), "The segment labelled 1 is who you interview first; the others are who you compare them against.")}
-  ${section(2, "What they do today", "What do they do about it today?", alternativeLines(), "If they already have a way that's good enough, there's no room for you. The gap you name is a bet.")}
+  ${section(1, "Who has it", "Who has it? Who has it worst? Mark the one you'd start with.", customerLines(), "The segment labelled 1 is who you interview first; the others are who you compare them against.")}
+  ${section(2, "What they do today", "What do they do about it today?", alternativeLines(), "If they already have a way that's good enough, there's no room for you. The gap you name is an assumption.")}
   ${section(3, "What you'd build", "What would you build for each problem?", solutionLines(true), "One line each. The interviews test the problem, not the solution, but you need the solution written down to see what you're assuming.")}
   ${section(4, "Your value proposition", "Fill in the blanks. The parts come from above.", `<div class="stmt"><div>${statementBlanks("valueProp", VP_PARTS, valuePropText())}</div><div class="aside"><h4>From your answers above</h4>${valuePropUses() || `<p class="hint">Answer the first four questions and the parts appear here.</p>`}</div></div>`, "This is the claim you'll have to earn: why they'd switch from what they do today.")}
   ${section(5, "Your problem statement", "Fill in the blanks: the situation, what goes wrong, why it matters.", `<div class="stmt"><div>${statementBlanks("problemStatement", PS_PARTS, problemStatementText())}</div><div class="aside"><h4>Use it in discovery</h4><p>Your context and complication become your first question:</p><div class="use"><span class="ex">“${esc(firstQuestion())}”</span><button class="btn sm" data-act="copyText" data-text="${esc(firstQuestion())}">Copy</button></div></div></div>`, "Your context and complication become your first interview question, so write them in the customer's words.")}
@@ -1719,7 +1752,7 @@ function startSheet(){
 
 /* ---------------- Insights: one page per focus area ---------------- */
 function statusChipA(s){ return `<span class="chip st"><i class="gy ${glyphCls(s)}"></i>${esc(s === "Untested" ? "No evidence yet" : s)}</span>`; }
-/* Kept for the older tile layout; the bets table (betsTable) replaced it on every page. Status is a glyph, never a colour. */
+/* Kept for the older tile layout; the assumptions table (betsTable) replaced it on every page. Status is a glyph, never a colour. */
 const statusColor = s => s === "Untested" ? "var(--grey)" : "var(--ink)";
 function pointTile(x){
   const a = x.a, s = x.s; const b = aiBasis(a); const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind};
@@ -1729,7 +1762,7 @@ function pointTile(x){
     <div class="h" style="margin-top:6px">${esc(s.why)}.</div></div>`;
 }
 function statusTiles(counts){
-  return `<div class="tiles">${["Holding up","Shaky","Untested","Contradicted"].map(k => `<div class="tile"><div class="l"><i class="gy ${glyphCls(k)}"></i>${k === "Untested" ? "No evidence yet" : k}</div><div class="n">${counts[k]}</div></div>`).join("")}</div>`;
+  return `<div class="tiles">${["Contradicted","Shaky","Untested","Holding up"].map(k => `<div class="tile"><div class="l"><i class="gy ${glyphCls(k)}"></i>${k === "Untested" ? "No evidence yet" : k}</div><div class="n">${counts[k]}</div></div>`).join("")}</div>`;
 }
 function beliefBox(area){
   const C = S.compass; const probs = sortById([...S.problems]);
@@ -1740,7 +1773,7 @@ function beliefBox(area){
   else inner = `${(C.alternatives||[]).map(a => `<div class="belief"><b>${esc(a.name)}</b>${a.gap ? ` <span class="muted">leaves this gap:</span> ${esc(a.gap)}` : ""}</div>`).join("") || `<div class="belief muted">No alternatives on the canvas yet.</div>`}<div class="belief" style="margin-top:8px">They will choose it over ${esc(C.valueProp.over || "[competitors]")} because our solution is ${esc(C.valueProp.why || "[differentiation]")}.</div>`;
   return `<div class="box soft"><h3>What you believe</h3><p class="ins">From your Compass. <a href="#/compass/${area === "problem" ? "problem" : area === "solution" ? "value" : "canvas"}">Edit it there.</a></p>${inner}</div>`;
 }
-/* "If this breaks": the pivots in play for this area, or how far the riskiest bet here is from giving any signal. */
+/* "If this breaks": the pivots in play for this area, or how far the riskiest assumption here is from giving any signal. */
 function pivotBox(area, r){
   const all = sortById((S.pivots || []).filter(pv => pv.status !== "Retired" && (pv.triggerAssumptionIds || []).some(id => { const a = byId(S.assumptions, id); return a && a.status !== "Retired" && areaOf(a) === area; }))).map(pv => ({pv, g:pivotGate(pv)}));
   const open = all.filter(x => x.g.open), closed = all.filter(x => !x.g.open);
@@ -1748,10 +1781,10 @@ function pivotBox(area, r){
   if (open.length) body = open.map(x => pivotCard(x)).join("");
   else {
     const top = r.list[0]; const short = top ? interviewsShort(top.a, top.s) : null;
-    body = `<p class="small" style="margin:0"><b>No pivot signal yet.</b> ${top ? `Riskiest bet here, <a href="#/compass/map/${esc(top.a.id)}" class="mono">${esc(top.a.id)}</a>: ${esc(top.s.why)}${short !== null ? ` (${short} confirmed interview${short === 1 ? "" : "s"} short)` : ""}.` : "No bets in this area yet."} Your AI proposes a pivot only when a bet here is shaky or contradicted by confirmed evidence.</p>`;
+    body = `<p class="small" style="margin:0"><b>No pivot signal yet.</b> ${top ? `Riskiest assumption here, <a href="#/compass/map/${esc(top.a.id)}" class="mono">${esc(top.a.id)}</a>: ${esc(top.s.why)}${short !== null ? ` (${short} confirmed interview${short === 1 ? "" : "s"} short)` : ""}.` : "No assumptions in this area yet."} Your AI proposes a pivot only when an assumption here is shaky or contradicted by confirmed evidence.</p>`;
   }
   const rest = closed.length ? `<div class="h" style="margin-top:8px">${closed.map(x => `<div><span class="mono">${esc(x.pv.id)}</span> ${esc((PIVOT_KINDS[x.pv.kind] || {label:x.pv.kind}).label)}: ${esc(x.pv.text)} <span class="chip gray">${esc(x.g.why)}</span></div>`).join("")}</div>` : "";
-  return `<div class="box soft"><h3>If this breaks</h3><p class="ins">Pivots your AI proposed, in play only while the bet they hang on is shaky or contradicted. You accept or dismiss each from its point on the map.</p>${body}${rest}</div>`;
+  return `<div class="box soft"><h3>If this breaks</h3><p class="ins">Pivots your AI proposed, in play only while the assumption they hang on is shaky or contradicted. You accept or dismiss each from its point on the map.</p>${body}${rest}</div>`;
 }
 function insightsView(area){
   area = AREAS[area] ? area : "problem";
@@ -1760,24 +1793,26 @@ function insightsView(area){
   let evidence = "";
   if (area === "problem") evidence = `<h2>Pain per problem</h2>${problemsTiles()}`;
   else if (area === "customers") evidence = `<h2>Who feels it most</h2>${segmentTable()}<h2>Where your interviews came from</h2>${sourceTiles()}${placeYieldTable()}<h2>Where to look next</h2>${placesList()}<h2>Customer persona</h2>${personaSummary()}`;
-  else if (area === "solution") evidence = `<h2>What they do today</h2><p class="lede">Solution bets are tested by tagging confirmed quotes for or against them. Workarounds and past behavior are the best place to look.</p>${quoteList(S.evidence.filter(e => e.status === "Confirmed" && ["Current workaround","Past behavior, irreversible","Past behavior, reversible"].includes(e.type)))}
+  else if (area === "solution") evidence = `<h2>What they do today</h2><p class="lede">Solution assumptions are tested by tagging confirmed quotes for or against them. Workarounds and past behavior are the best place to look.</p>${quoteList(S.evidence.filter(e => e.status === "Confirmed" && ["Current workaround","Past behavior, irreversible","Past behavior, reversible"].includes(e.type)))}
     <details class="fold"><summary>Later: jobs to be done and MVP scope</summary><p class="small">Kept for when the problem holds up. A job is the progress a customer is trying to make at a specific moment. <a href="#/jobs">Jobs</a> · <a href="#/mvp">MVP scope</a></p></details>`;
   else evidence = `<h2>Alternatives, one by one</h2>${alternativesTable()}`;
+  const areaNotes = notesFor(area === "problem" ? "map" : area === "customers" ? "customers" : area === "solution" ? "solution" : "none");
+  const notes = areaNotes.length ? `<h2>Notes from your AI</h2>${noteBlocks(areaNotes)}` : "";
   return tabs + `<div class="sheet">${docHead("Insights", esc(A.title), esc(A.lede))}
   ${statusTiles(r.counts)}
   <div class="boxes g2">${beliefBox(area)}<div class="box soft"><h3>How this gets tested</h3><p class="ins">Status is read from your confirmed evidence, never typed in.</p>
-    <p class="small" style="margin:0">${area === "problem" ? "Each problem bet holds up when enough confirmed interviews score it Hair on Fire or Incremental Improvement." : area === "customers" ? "The early-adopter bet holds up when your ideal segment shows more real pain than the other segments; set the segment on each interview so it counts. Your AI reads every transcript for where these people gather and suggests places to look; a place with no quote behind it is a guess until you've been there." : area === "solution" ? "Tag confirmed quotes for or against each solution bet from its point on the map. Behavior counts; “I would use it” doesn't." : "Tag confirmed quotes for or against each alternative or competition bet. A workaround they keep using is a quote about an alternative."}</p></div></div>
-  <h2>Your bets in this area</h2>
+    <p class="small" style="margin:0">${area === "problem" ? "Each problem assumption holds up when enough confirmed interviews score it Hair on Fire or Incremental Improvement." : area === "customers" ? "The early-adopter assumption holds up when your ideal segment shows more real pain than the other segments; set the segment on each interview so it counts. Your AI reads every transcript for where these people gather and suggests places to look; a place with no quote behind it is a guess until you've been there." : area === "solution" ? "Tag confirmed quotes for or against each solution assumption from its point on the map. Behavior counts; “I would use it” doesn't." : "Tag confirmed quotes for or against each alternative or competition assumption. A workaround they keep using is a quote about an alternative."}</p></div></div>
+  <h2>Your assumptions in this area</h2>
   ${r.list.length ? betsTable(r.list) : `<div class="empty">No ${esc(A.title.toLowerCase())} points yet. <a href="#/compass/map">Add them on the map.</a></div>`}
   ${pivotBox(area, r)}
   ${evidence}
+  ${notes}
   ${sheetFoot("")}</div>`;
 }
 function problemsTiles(){
-  const minN = Number(S.config.minInterviews ?? 5);
   if (!S.problems.length) return `<div class="empty">No problems yet. <a href="#/compass/canvas">Add them on the Leaner Canvas.</a></div>`;
   return `${sortById([...S.problems]).map(shareBar).join("")}
-  <p class="hint">Strong signal: at least ${esc(minN)} confirmed interviews score it and ${Math.round((S.config.strongShare ?? .5)*100)}% or more land in Hair on Fire or Incremental Improvement. Change this in Settings.</p>`;
+  <p class="hint">Strong signal: at least ${MIN_INTERVIEWS} confirmed interviews score it and ${Math.round(STRONG_SHARE*100)}% or more land in Hair on Fire or Incremental Improvement.</p>`;
 }
 function personaSummary(){
   const P = S.persona; const filled = PERSONA_FIELDS.filter(([k]) => P.fields[k] && P.fields[k].text);
@@ -1820,13 +1855,13 @@ function placeYieldTable(){
   return `<h3 style="margin-top:14px">Which places find real pain</h3><div class="box flat soft"><table><tr><th>Place</th><th class="right">Interviews</th><th class="right">Real pain</th><th style="width:30%">Share</th></tr>
   ${rows.map(({pl, y}) => y.n ? `<tr><td>${esc(pl.name)}</td><td class="right">${y.n}</td><td class="right">${y.strong}</td><td><div class="row" style="flex-wrap:nowrap;gap:8px"><div class="bar" style="flex:1"><div style="width:${Math.round(y.share*100)}%;background:${y.allWeak ? "var(--hatch)" : "var(--ink)"}"></div></div><span class="small" style="width:3.5em;text-align:right">${Math.round(y.share*100)}%</span>${y.allWeak ? `<span class="chip warn" title="Every strong score here comes from an interview with a hygiene issue, a friend, or no recent instance">weak</span>` : ""}</div></td></tr>` : `<tr><td class="muted">${esc(pl.name)}</td><td colspan="3"><span class="hint">no interviews yet</span></td></tr>`).join("")}
   ${unplaced ? `<tr><td class="muted">Not from a listed place</td><td class="right">${unplaced}</td><td colspan="2"><span class="hint">Set the place on each interview so it counts.</span></td></tr>` : ""}</table></div>
-  <p class="hint">Real pain = interviews from that place whose confirmed score is Hair on Fire or Incremental Improvement. Only confirmed scores count. “Weak” means every strong score there comes from an interview that can't carry a bet on its own. After ten interviews this tells you which channel is worth more of your time.</p>`;
+  <p class="hint">Real pain = interviews from that place whose confirmed score is Hair on Fire or Incremental Improvement. Only confirmed scores count. “Weak” means every strong score there comes from an interview that can't carry an assumption on its own. After ten interviews this tells you which channel is worth more of your time.</p>`;
 }
 function placesList(){
   const list = [...S.places].sort((a, b) => ({Confirmed:0, Candidate:1, Rejected:2}[a.status] ?? 1) - ({Confirmed:0, Candidate:1, Rejected:2}[b.status] ?? 1) || a.id.localeCompare(b.id, undefined, {numeric:true}));
   const ask = `<div class="box soft"><h3>Ask your AI</h3><p class="ins">Say <span class="kbd">Find where to interview next</span>. It reads every transcript for where these people gather, searches for communities, groups and job titles, and writes each place here with the quote it rests on. Places it couldn't check are marked.</p><button class="btn sm" data-act="copyText" data-text="Find where to interview next">Copy</button></div>`;
   if (!list.length) return `<div class="empty" style="padding-bottom:8px">No places suggested yet.</div>${ask}`;
-  return `<div class="boxes g2" style="margin-bottom:14px">${list.map(placeCard).join("")}</div>${ask}`;
+  return `<div class="boxes fit" style="margin-bottom:14px">${list.map(placeCard).join("")}</div>${ask}`;
 }
 function quoteList(list){ return list.length ? list.map(e => quoteCard(e, S.transcripts[e.interviewId] ?? null, {showInterview:true})).join("") : `<div class="empty">No confirmed workaround or past-behavior quotes yet.</div>`; }
 function segmentTable(){
@@ -1837,7 +1872,7 @@ function segmentTable(){
   return `<div class="box flat soft"><table><tr><th>Segment</th><th class="right">Interviews</th><th class="right">Confirmed scores</th><th class="right">Hair on Fire</th><th class="right">Real pain</th></tr>
   ${rows.map(r => `<tr><td>${r.c.ideal ? "<b>1. " : ""}${esc(r.c.text)}${r.c.ideal ? "</b> <span class='chip blue'>ideal</span>" : ""}</td><td class="right">${r.ivs}</td><td class="right">${r.n}</td><td class="right">${r.hof}</td><td class="right">${r.n ? Math.round(r.share*100) + "%" : "–"}</td></tr>`).join("")}
   ${untagged ? `<tr><td class="muted">No segment set</td><td class="right">${untagged}</td><td colspan="3"><span class="chip warn">Set the segment on each interview</span></td></tr>` : ""}</table></div>
-  <p class="hint">Real pain = share of confirmed scores in the top two tiers. The early-adopter bet holds up when the ideal segment beats the others by a clear margin; three confirmed scores per segment is the minimum before it reads anything.</p>`;
+  <p class="hint">Real pain = share of confirmed scores in the top two tiers. The early-adopter assumption holds up when the ideal segment beats the others by a clear margin; three confirmed scores per segment is the minimum before it reads anything.</p>`;
 }
 function alternativesTable(){
   const alts = S.compass.alternatives || [];
@@ -1852,10 +1887,63 @@ function ledgerView(){
   <div class="box soft"><h3>Findings</h3>${issues.length ? issues.sort((x, y) => ({bad:0, warn:1, info:2}[x.sev] - {bad:0, warn:1, info:2}[y.sev])).map(i => `<div class="issue"><span class="chip ${i.sev === "bad" ? "bad" : i.sev === "warn" ? "warn" : "gray"}">${i.sev === "bad" ? "Problem" : i.sev === "warn" ? "Warning" : "Note"}</span><div><a href="#/${esc(i.href)}" class="mono">${esc(i.where)}</a> ${esc(i.msg)}</div></div>`).join("") : `<p class="empty"><b>Clean.</b> Every quote is verbatim, every tier is justified, and every AI rating says what it rests on.</p>`}</div>
   ${sheetFoot("")}</div>`;
 }
+/* ---------------- section pages: what each sidebar group is for ---------------- */
+const SECTIONS = {
+  snapshot: {title:"Snapshot of your business", lede:"What you believe about your business, written down before the interviews so the interviews can test it.",
+    "for":["Everything in this section is a belief, not a finding: the problems you think people have, who you think has them worst, what you'd build, what they use today, and why they'd switch. Writing it down first is what turns an interview into a test instead of a chat.",
+           "These sheets are yours. Your AI rates and proposes; it never changes what you wrote."],
+    items:() => [...(snapshotDone() < 7 ? [["start","Start: your snapshot","The five sheets as seven questions, in one sitting."]] : []),
+      ["compass/canvas","01 Leaner Canvas","Problems, a solution for each, every customer segment with the ideal one labelled 1, and the existing alternatives."],
+      ["compass/value","02 Value proposition","One sentence: if we help [customer] solve [problem] with [approach], they will choose it over [competitors] because [differentiation]."],
+      ["compass/problem","03 Problem statement","When [context], it leads to [complication], which matters because [consequence]. The first two parts become your opening question."],
+      ["compass/map","04 Assumptions map","Every line of the canvas as a point. Up is catastrophic if wrong, left is likely wrong; top-left gets tested first."],
+      ["compass/leads","05 Leads list","People you could talk to. Your AI proposes more; you accept or dismiss each."]],
+    ai:["Say <span class=\"kbd\">Diagnose my snapshot</span>. Your AI rates every point on the map for impact and confidence, on its own side of the page, and says which confirmed quotes it relied on, or that it had none. It proposes the assumptions you missed (a buyer who isn't the user, a channel, a switching cost), lists the statements no interview can test, and names the two interviews to run first.",
+         "Say <span class=\"kbd\">Find leads</span> and it proposes people to talk to, each with the interview or quote they resemble. Everything arrives as a suggestion for you to accept or dismiss."],
+    expect:["In week one the sheets are guesses and every point is untested. That is the right starting point. As interviews are confirmed, each point's status is read from the evidence, never typed in.",
+            "Expect to rewrite the value proposition and the problem statement more than once, and expect some points to end up contradicted. That is this section doing its job."]},
+  evidence: {title:"Evidence", lede:"Customers' exact words and what they did, confirmed by you. The only thing in the app that counts.",
+    "for":["An interview becomes evidence only as exact quotes from its transcript, each typed by what it shows (past behaviour, a workaround, a cost, how often, strong language, or only an opinion) and marked for or against the problem. A pain score per interview and problem is set by what the person did, not how they talked.",
+           "Nothing here counts until you confirm it. A quote your AI suggested is a candidate; a quote you confirmed is evidence."],
+    items:() => [["interviews","Interviews","One record per conversation: who, how you found them, the transcript, and how the interview was run (leading questions, a pitch, a recent instance)."],
+      ["quotes","Quotes","What your AI pulled out, one decision at a time with the transcript beside it; then every confirmed and rejected quote across your interviews."],
+      ["problems","Problems","The problems you believe exist, each with its confirmed quotes and pain scores."],
+      ["persona","Persona","Your draft of who the customer is, line by line, each line linked to the quotes that back it."],
+      ["jobs","Jobs","Jobs to be done, kept for later, for when the problem holds up."]],
+    ai:["Paste a transcript, then say <span class=\"kbd\">Review interview INT-003</span> with that interview's ID. Your AI pulls out every quote word for word, marks each for or against the problem, counts the leading questions and notes a pitch or demo, scores the pain for each problem by what the person did, and writes a short note on the interview. Each quote and score lands under Quotes, to be confirmed; the app checks every quote against the transcript and flags any it can't find.",
+         "Say <span class=\"kbd\">Happy ears check</span> and it points at the confirmed quotes that are only opinion. Say <span class=\"kbd\">Audit the persona</span> and it says which lines no quote backs."],
+    expect:[`Early interviews are often friends, pitched, or short on a specific recent instance; the app marks those so they can't carry an assumption on their own. Most quotes will be Nice to Have, and “I would use it” never moves a score.`,
+            `The number that matters is confirmed interviews scored Hair on Fire or Incremental Improvement, per problem. The bar is ${MIN_INTERVIEWS} confirmed interviews with ${Math.round(STRONG_SHARE * 100)}% or more in those two tiers.`]},
+  insights: {title:"Insights", lede:"The evidence read back against what you believe, one page per focus area.",
+    "for":["Each page takes the assumptions of one kind and shows what the confirmed evidence says about them. A status (Contradicted, Shaky, Untested, Holding up) is computed, never typed: a problem point from the share of confirmed interviews that score it in the top two tiers; a customer or early-adopter point by comparing pain across segments; a solution, alternative or competition point from the confirmed quotes you tag for or against it.",
+           "The same status shows on the map and on the home page; these pages show the evidence behind it."],
+    items:() => [["insights/problem","Problem","Pain per problem: the share bar, one slot per interview needed, and the quotes against."],
+      ["insights/customers","Customers","Which segment feels it most, where your interviews came from, which places find real pain, where to look next, and the persona."],
+      ["insights/solution","Solution","Workaround and past-behaviour quotes: what people already do about it. Jobs and MVP scope are parked here."],
+      ["insights/alternatives","Alternatives and competition","Each alternative, the gap you believe it leaves, and what the evidence says."]],
+    ai:["Say <span class=\"kbd\">Poke holes</span> after every two interviews. For your three riskiest assumptions your AI writes the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. When the evidence has turned on an assumption it proposes a pivot you accept or dismiss on the map.",
+         "Say <span class=\"kbd\">Find where to interview next</span> and it suggests places, each with the quote it rests on; a place with no quote is stamped a guess. Its objection always comes before its number."],
+    expect:["Nothing reads until interviews are confirmed: every page starts Untested, and with two or three interviews a status is Shaky at best.",
+            "The useful moment is when a page disagrees with the canvas: a segment you didn't label 1 showing more pain, or an alternative that leaves no gap. Weeks in, this is where you decide to persevere or pivot, from the evidence on the page rather than from the room."]}
+};
+function sectionView(key){
+  const s = SECTIONS[key]; if (!s) return `<div class="sheet"><p class="empty">No such section. <a href="#/home">Where you stand</a></p></div>`;
+  const row = (label, body, hair) => `<div class="lrow ${hair ? "hair" : ""}"><div class="lbl">${label}</div><div>${body}</div></div>`;
+  const prose = ps => ps.map(p => `<p class="prose">${p}</p>`).join("");
+  return `<div class="sheet">${docHead("Section", esc(s.title), esc(s.lede))}
+  ${row("What it's for", prose(s["for"]))}
+  ${row("What's in it", `<ul class="seclist">${s.items().map(([h, l, d]) => `<li><a href="#/${h}">${esc(l)}</a><span>${esc(d)}</span></li>`).join("")}</ul>`)}
+  ${row("How your AI helps", prose(s.ai))}
+  ${row("What to expect", prose(s.expect))}
+  ${sheetFoot("")}</div>`;
+}
 /* ---------------- routing + rendering ---------------- */
+/* Old routes keep working: Suggestions merged into Quotes, AI notes moved into their sections. */
+const REDIRECTS = {review:"quotes", notes:"home"};
 function route(){
   const h = location.hash.replace(/^#\/?/, "") || "home"; let [page, id, sub] = h.split("/");
   if (page === "validate") page = "insights";
+  if (REDIRECTS[page]){ page = REDIRECTS[page]; id = sub = undefined; }
   return {page, id: id ? decodeURIComponent(id) : null, sub: sub ? decodeURIComponent(sub) : null};
 }
 function go(h){ location.hash = "#/" + h; }
@@ -1866,9 +1954,11 @@ document.addEventListener("keydown", ev => { if (ev.key === "Escape" && (ui.draw
 function shell(content, bare){
   const m = metrics(); const r = route(); const demo = store.kind === "demo";
   const link = (h, label, badge) => { const on = h.includes("/") ? (r.page + "/" + (r.id || "")) === h : r.page === h; return `<a href="#/${h}" class="${on ? "on" : ""}"><span>${label}</span>${badge || ""}</a>`; };
-  const group = (key, title, items, pending) => {
+  /* The heading is a link to the section's own page (what it's for, what's in it, how the AI helps); the chevron beside it collapses the list. */
+  const group = (key, title, items, pending, section) => {
     const closed = !!ui.collapsed[key]; const active = items.some(([h]) => h.split("/")[0] === r.page);
-    return `<button class="grp ${closed ? "closed" : ""} ${closed && active ? "has-active" : ""}" data-act="toggleGroup" data-grp="${key}" aria-expanded="${!closed}"><span class="chev">▾</span>${esc(title)}${closed && pending ? `<span class="pill">${pending}</span>` : ""}</button>
+    const onSection = section && r.page === "section" && r.id === section;
+    return `<div class="grp ${closed ? "closed" : ""} ${closed && active ? "has-active" : ""}"><button class="chev" data-act="toggleGroup" data-grp="${key}" aria-expanded="${!closed}" aria-label="${closed ? "Expand" : "Collapse"} ${esc(title)}" title="${closed ? "Expand" : "Collapse"}">▾</button>${section ? `<a class="gt ${onSection ? "on" : ""}" href="#/section/${section}">${esc(title)}</a>` : `<span>${esc(title)}</span>`}${closed && pending ? `<span class="pill">${pending}</span>` : ""}</div>
       ${closed ? "" : items.map(([h, l, b]) => link(h, l, b)).join("")}`;
   };
   const c = compassReadout();
@@ -1884,15 +1974,14 @@ function shell(content, bare){
           ["compass/canvas","<span class=num>01</span>Leaner Canvas"], ["compass/value","<span class=num>02</span>Value Proposition"], ["compass/problem","<span class=num>03</span>Problem Statement"],
           ["compass/map","<span class=num>04</span>Assumptions Map", c.candidates ? `<span class="pill">${c.candidates}</span>` : c.counts.Contradicted ? `<span class="chip bad">${c.counts.Contradicted}</span>` : ""],
           ["compass/leads","<span class=num>05</span>Leads List"]
-        ], c.candidates)}
+        ], c.candidates, "snapshot")}
         ${group("evidence", "Evidence", [
           ["interviews","Interviews", `<span class="count">${S.interviews.length}</span>`],
-          ["review","Suggestions", m.candidates ? `<span class="pill">${m.candidates}</span>` : ""],
-          ["quotes","Quotes", `<span class="count">${m.confirmed}</span>`]
-        ], m.candidates)}
-        ${group("insights", "Insights", Object.entries(AREAS).map(([k, v]) => { const ar = areaReadout(k); return ["insights/" + k, v.title, ar.counts.Contradicted ? `<span class="chip bad">${ar.counts.Contradicted}</span>` : ar.counts["Holding up"] ? `<span class="chip ok">${ar.counts["Holding up"]}</span>` : ""]; }))}
-        ${group("ai", "Your AI", [["ask","Ask your AI"], ["notes","AI notes", S.notes.length ? `<span class="count">${S.notes.length}</span>` : ""]])}
-        ${group("help", "Help", [["guide","Pain Scale"], ["ledger","Ledger check", (() => { const n = ledgerChecks().filter(i => i.sev !== "info").length; return n ? `<span class="chip warn">${n}</span>` : ""; })()], ["report","Coach report"], ["settings","Settings"]])}
+          ["quotes","Quotes", m.toConfirm ? `<span class="pill">${m.toConfirm}</span>` : `<span class="count">${m.confirmed}</span>`]
+        ], m.toConfirm, "evidence")}
+        ${group("insights", "Insights", Object.entries(AREAS).map(([k, v]) => { const ar = areaReadout(k); return ["insights/" + k, v.title, ar.counts.Contradicted ? `<span class="chip bad">${ar.counts.Contradicted}</span>` : ar.counts["Holding up"] ? `<span class="chip ok">${ar.counts["Holding up"]}</span>` : ""]; }), 0, "insights")}
+        ${group("ai", "Your AI", [["ask","How to use AI"]])}
+        ${group("help", "Help", [["guide","Pain Scale"], ["settings","Settings"]])}
       </nav>
       <div class="sidefoot">${foot}</div>
     </aside>
@@ -1900,20 +1989,26 @@ function shell(content, bare){
   </div>`;
 }
 
+let needleSettled = false;
 function render(){
   const root = $("#root");
   if (!store){ root.innerHTML = welcomeView(); return; }
   if (store.wrongFolder){ root.innerHTML = wrongFolderView(); return; }
   if (store.needsSetup){ root.innerHTML = setupView(); return; }
   const r = route();
+  if (REDIRECTS[location.hash.replace(/^#\/?/, "").split("/")[0]]) history.replaceState(null, "", "#/" + r.page);
   if (r.page === "compass" && r.id === "map" && r.sub && !ui.selNote) ui.selNote = r.sub;
-  const views = {home:dashView, start:startSheet, compass:compassView, insights:insightsView, ledger:ledgerView, interviews:r.id ? interviewView : interviewsView, review:reviewView, quotes:quotesView, problems:r.id ? problemView : () => insightsView("problem"), persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, notes:notesView, guide:guideView, report:reportView, settings:settingsView};
+  const views = {home:dashView, start:startSheet, compass:compassView, insights:insightsView, section:sectionView, ledger:ledgerView, interviews:r.id ? interviewView : interviewsView, quotes:quotesView, problems:r.id ? problemView : () => insightsView("problem"), persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, guide:guideView, settings:settingsView};
   const scrollEl = document.querySelector(".main"); const keep = scrollEl && root.dataset.page === location.hash ? scrollEl.scrollTop : 0;
   const bare = r.page === "compass" && r.id === "map";
   root.innerHTML = shell((views[r.page] || dashView)(r.id), bare) + (ui.drawer ? drawerView() : "") + (ui.askFor ? askPanel() : "");
   root.dataset.page = location.hash;
+  /* The gauge needle slides once, the first time a gauge is drawn in this page load; after that it holds still across re-renders. */
+  if (!needleSettled && root.querySelector(".gauge .needle")){ needleSettled = true; setTimeout(() => document.documentElement.classList.add("settled"), 600); }
   const m2 = document.querySelector(".main"); if (m2) m2.scrollTop = keep;
   if (ui.drawer && ui.drawerScroll){ const f = document.querySelector(".drawer .focus-mark, .drawer .near"); if (f) f.scrollIntoView({block:"center"}); ui.drawerScroll = false; }
+  /* On the Quotes page the transcript box scrolls itself to the quote being decided, without moving the page. */
+  const rvm = document.querySelector(".rvt .focus-mark, .rvt .near"); if (rvm){ const box = rvm.closest(".rvt"); box.scrollTop = Math.max(0, rvm.offsetTop - box.clientHeight / 2); }
   mountMap();
 }
 
@@ -1933,7 +2028,7 @@ function quoteCard(e, transcript, opts = {}){
   const editing = ui.editQuote === e.id;
   return `<div class="q s-${esc(e.status)} ${opts.compact ? "compact" : ""}" id="q-${esc(e.id)}">
     <div class="spread" style="align-items:flex-start"><div class="words" style="flex:1">${esc(e.quote)}</div>
-      <div class="acts">${e.status !== "Rejected" ? `<button class="btn icon no" title="Reject" data-act="setStatus" data-kind="evidence" data-id="${esc(e.id)}" data-val="Rejected">✕</button>` : ""}${e.status !== "Confirmed" ? `<button class="btn icon yes" title="Confirm" data-act="setStatus" data-kind="evidence" data-id="${esc(e.id)}" data-val="Confirmed">✓</button>` : ""}</div></div>
+      ${opts.noActs ? "" : `<div class="acts">${e.status !== "Rejected" ? `<button class="btn icon no" title="Reject" data-act="setStatus" data-kind="evidence" data-id="${esc(e.id)}" data-val="Rejected">✕</button>` : ""}${e.status !== "Confirmed" ? `<button class="btn icon yes" title="Confirm" data-act="setStatus" data-kind="evidence" data-id="${esc(e.id)}" data-val="Confirmed">✓</button>` : ""}</div>`}</div>
     <div class="meta">
       ${opts.showInterview ? `<a href="#/interviews/${esc(e.interviewId)}"><b>${esc(e.interviewId)}</b>${who ? " · " + esc(who) : ""}</a>${sep}` : ""}
       ${statusChip(e.status)}${e.status === "Candidate" ? sourceChip(e.foundBy) : ""}
@@ -1959,7 +2054,7 @@ function painCard(p, opts = {}){
   const ev = (p.evidenceIds || []).map(id => byId(S.evidence, id)).filter(Boolean);
   const c = painCheck(p);
   return `<div class="box soft" style="margin-bottom:10px"><div class="spread"><div>${opts.showInterview ? `<a href="#/interviews/${esc(p.interviewId)}"><b>${esc(p.interviewId)}</b>${iv && iv.interviewee ? " · " + esc(iv.interviewee) : ""}</a> on ` : ""}<b>${esc(p.problemId)}</b> <span class="muted">${esc(pr ? pr.text : "")}</span></div>
-    <div class="row">${statusChip(p.status)}${p.status === "Candidate" ? sourceChip(p.scoredBy) : ""}${p.status !== "Rejected" ? `<button class="btn icon no" title="Reject" data-act="setStatus" data-kind="pains" data-id="${esc(p.id)}" data-val="Rejected">✕</button>` : ""}${p.status !== "Confirmed" ? `<button class="btn icon yes" title="Confirm" data-act="setStatus" data-kind="pains" data-id="${esc(p.id)}" data-val="Confirmed">✓</button>` : ""}</div></div>
+    <div class="row">${statusChip(p.status)}${p.status === "Candidate" ? sourceChip(p.scoredBy) : ""}${opts.noActs ? "" : `${p.status !== "Rejected" ? `<button class="btn icon no" title="Reject" data-act="setStatus" data-kind="pains" data-id="${esc(p.id)}" data-val="Rejected">✕</button>` : ""}${p.status !== "Confirmed" ? `<button class="btn icon yes" title="Confirm" data-act="setStatus" data-kind="pains" data-id="${esc(p.id)}" data-val="Confirmed">✓</button>` : ""}`}</div></div>
     <div class="row" style="margin:10px 0 4px;gap:6px">${TIERS.map(t => `<button class="btn sm ${p.tier === t ? "on" : ""}" data-act="setTier" data-id="${esc(p.id)}" data-val="${esc(t)}">${esc(t)}</button>`).join("")}</div>
     <div class="hint">${esc(TIER_DEF[p.tier] || "Pick the tier this person's behavior supports. When unsure, the lower one.")}</div>
     <div class="notice ${c.ok ? "ok" : "bad"}" style="margin-top:8px">${c.ok ? `The cited quotes justify this tier${c.types.length ? ` (${c.types.map(esc).join(", ")})` : ""}.` : c.issues.map(esc).join(" ")}</div>
@@ -2036,11 +2131,10 @@ function wrongFolderView(){
 function setupView(){
   return `<div class="welcome"><div class="card" style="padding:22px 24px">
     <h1 style="font-size:22px">Set up your DRM</h1><p class="lede">In the folder “${esc(store.name)}”.</p>
-    ${store.noGit ? `<div class="notice warn" style="margin-bottom:14px">This folder isn't a GitHub repository, so nothing is backed up and your coach can't see it. See the <a href="${SETUP_URL}" target="_blank" rel="noopener">setup guide</a> unless you meant this.</div>` : ""}
+    ${store.noGit ? `<div class="notice warn" style="margin-bottom:14px">This folder isn't a GitHub repository, so nothing is backed up. See the <a href="${SETUP_URL}" target="_blank" rel="noopener">setup guide</a> unless you meant this.</div>` : ""}
     <form data-form="setup">
       <label class="f">Your name<input type="text" name="founder" required></label>
       <label class="f">Your venture or idea, in a few words<input type="text" name="venture" required></label>
-      <label class="f">Your coach's name (optional)<input type="text" name="coach"></label>
       <h3 style="margin-top:18px">The problem you believe exists</h3>
       <p class="hint" style="margin:-4px 0 10px">A guess for now; your interviews will test it. Write it the way a customer would say it, not as your solution.</p>
       <label class="f">Problem<input type="text" name="problem" required placeholder="Chasing club members for receipts before reimbursing them"></label>
@@ -2058,7 +2152,7 @@ function checklist(m){
     ["List who you could talk to", (S.compass.leads||[]).length >= 5, "compass/leads", "More than five names. Not everyone will say yes."],
     ["Connect your AI to this folder", aiReady !== false && (S.notes.length > 0 || S.evidence.some(e => e.foundBy && e.foundBy !== "Founder")), "ask", "So it can review interviews and rate assumptions straight into your DRM."],
     ["Log your first interview and paste the transcript", S.interviews.length > 0, "interviews", "Lead with their past, not your idea."],
-    ["Review the suggestions and confirm what's real", S.evidence.some(e => e.status !== "Candidate"), "review", "Only confirmed quotes count."]
+    ["Confirm what's real under Quotes", S.evidence.some(e => e.status !== "Candidate"), "quotes", "Only confirmed quotes count."]
   ];
   const done = items.filter(i => i[1]).length;
   if (ui.hideChecklist || done === items.length) return "";
@@ -2066,14 +2160,15 @@ function checklist(m){
     <div style="margin-top:6px">${items.map(([t, ok, h, d]) => `<div class="check ${ok ? "done" : ""}"><div class="dot">${ok ? "✓" : ""}</div><div><a class="t" href="#/${h}" style="text-decoration:none">${esc(t)}</a><div class="d">${esc(d)}</div></div></div>`).join("")}</div></div>`;
 }
 function nextStep(m){
-  if (!S.problems.length || !idealCustomer()) return ["Get your snapshot down in one sitting: the problems you believe exist and who you'd bet has them.", "start", "Start"];
+  if (!S.problems.length || !idealCustomer()) return ["Get your snapshot down in one sitting: the problems you believe exist and who you believe has them.", "start", "Start"];
   if (!S.compass.valueProp.why) return ["Write your value proposition. It's the claim you'll have to earn.", "compass/value", "Write it"];
   if (!S.assumptions.length) return ["Turn your canvas into points and put them on the map.", "compass/map", "Open the map"];
   if (!S.assumptions.some(a => assumptionPriority(a))) return ["Drag your points into the grid. Top-left is what you test first.", "compass/map", "Open the map"];
   const c = compassReadout();
   if (c.riskiestOpen && !S.interviews.length) return [`Your riskiest untested assumption: ${c.riskiestOpen.a.text}. Interviews will test it.`, (S.compass.leads||[]).length ? "compass/leads" : "interviews", (S.compass.leads||[]).length ? "Pick a lead" : "Log an interview"];
   if (!S.interviews.length) return ["Log your first customer interview and paste the transcript.", "interviews", "Log an interview"];
-  if (m.candidates) return [`Review ${m.candidates} suggestion${m.candidates>1?"s":""} from your AI. Only confirmed items count.`, "review", "Review now"];
+  if (m.toConfirm) return [`${m.toConfirm} quote${m.toConfirm>1?"s and scores":" or score"} from your AI to be confirmed. Only confirmed items count.`, "quotes", "Decide now"];
+  if (m.candidates) return [`${m.candidates} place${m.candidates>1?"s or leads":" or lead"} suggested by your AI. Accept or dismiss them.`, "insights/customers", "See them"];
   const noRubric = S.interviews.find(i => !i.rubricRun);
   if (noRubric) return [`${noRubric.id} hasn't been reviewed by your AI yet.`, "interviews/" + noRubric.id, "Open " + noRubric.id];
   const reviewed = S.interviews.filter(i => i.rubricRun).length, holes = S.notes.filter(n => /poke-holes/i.test(n.name)).length;
@@ -2092,19 +2187,20 @@ function dashView(){
   const m = metrics(); const [msg, h, btn] = nextStep(m); const c = compassReadout();
   const tot = Object.values(m.tierCounts).reduce((a, b) => a + b, 0);
   const fact = (n, l, sub, href) => `<div><a href="#/${href}"><div class="lbl">${l}</div><div class="n">${n}</div><div class="s">${sub || "&nbsp;"}</div></a></div>`;
-  const statusLine = ["Untested","Shaky","Holding up","Contradicted"].map(k => `${c.counts[k]} ${k === "Untested" ? "untested" : k.toLowerCase()}`).join(", ");
+  const statusLine = ["Contradicted","Shaky","Untested","Holding up"].map(k => `${c.counts[k]} ${k === "Untested" ? "untested" : k.toLowerCase()}`).join(", ");
   return `<div class="sheet">
-  <div class="spread" style="align-items:flex-end"><div class="tool">Where you stand · ${esc(S.config.venture || "Your venture")}${S.config.founder ? " · " + esc(S.config.founder) : ""}${S.config.coach ? ", coached by " + esc(S.config.coach) : ""}</div>${wordmark()}</div><div class="rule" style="margin-bottom:0"></div>
+  <div class="spread" style="align-items:flex-end"><div class="tool">Where you stand · ${esc(S.config.venture || "Your venture")}${S.config.founder ? " · " + esc(S.config.founder) : ""}</div>${wordmark()}</div><div class="rule" style="margin-bottom:0"></div>
   <div class="vrow"><div><h1 class="verdict">${esc(c.verdict)}</h1>${c.rated ? postureGauge(c, true) : ""}</div>
-    <div class="facts">${fact(m.n, "Interviews", m.ff ? `${m.ff} from friends or family` : m.n ? "none from friends or family" : "none yet", "interviews")}${fact(m.confirmed, "Confirmed quotes", m.opinion ? `${m.opinion} only an opinion` : m.confirmed ? "all behaviour or cost" : "", "quotes")}${fact(m.hof, "Hair on Fire", m.n ? `of ${m.n} interview${m.n === 1 ? "" : "s"}` : "", "insights/problem")}${fact(m.candidates, "Awaiting review", m.candidates ? "quotes, scores, places, leads" : "nothing waiting", "review")}</div></div>
+    <div class="facts">${fact(m.n, "Interviews", m.ff ? `${m.ff} from friends or family` : m.n ? "none from friends or family" : "none yet", "interviews")}${fact(m.confirmed, "Confirmed quotes", m.opinion ? `${m.opinion} only an opinion` : m.confirmed ? "all behaviour or cost" : "", "quotes")}${fact(m.hof, "Hair on Fire", m.n ? `of ${m.n} interview${m.n === 1 ? "" : "s"}` : "", "insights/problem")}${fact(m.toConfirm, "To be confirmed", m.toConfirm ? "quotes and scores from your AI" : "nothing waiting", "quotes")}</div></div>
   <div class="nextline"><span class="lbl">Next</span><span>${esc(msg)}</span><span class="a"><a class="btn pri" href="#/${h}">${esc(btn)}</a></span></div>
   ${S.unreadable.length ? `<div class="notice bad" style="margin:14px 0">${S.unreadable.length} file${S.unreadable.length > 1 ? "s" : ""} in your folder couldn't be read and ${S.unreadable.length > 1 ? "were" : "was"} skipped: ${S.unreadable.map(esc).join(", ")}</div>` : ""}
   ${S.problems.length ? sortById([...S.problems]).map(shareBar).join("") : `<div class="lrow"><div class="lbl">Problem</div><div><p style="margin:0">No problem written yet. <a href="#/start">Start your snapshot.</a></p></div></div>`}
   ${S.assumptions.length ? `<div class="lrow"><div class="lbl">Riskiest<br>assumptions<span class="sub">Priority = impact × (6 − confidence). ${statusLine}.</span></div><div>${c.top.length ? betsTable(c.top) : `<p style="margin:0">Drag your points into the grid to find the riskiest. <a href="#/compass/map">Open the map.</a></p>`}
-    <p class="hint" style="margin:10px 0 0">Your AI's objection comes before its number, so you have to dismiss it on purpose. <a href="#/compass/map">Open the map</a>${c.pivots ? ` · <a href="#/compass/map">${c.pivots} pivot${c.pivots === 1 ? "" : "s"} in play</a>: a bet is shaky or contradicted and your AI has proposed what you'd change` : ""}.</p></div></div>`
+    <p class="hint" style="margin:10px 0 0">Your AI's objection comes before its number, so you have to dismiss it on purpose. <a href="#/compass/map">Open the map</a>${c.pivots ? ` · <a href="#/compass/map">${c.pivots} pivot${c.pivots === 1 ? "" : "s"} in play</a>: an assumption is shaky or contradicted and your AI has proposed what you'd change` : ""}.</p></div></div>`
     : `<div class="lrow"><div class="lbl">Riskiest<br>assumptions</div><div><p style="margin:0">No points on the map yet. <a href="#/compass/map">Make them from your canvas.</a></p></div></div>`}
   ${tot ? `<div class="lrow hair"><div class="lbl">Confirmed scores<span class="sub">by tier, all problems</span></div><div><div class="bar tiers">${TIERS.map(t => m.tierCounts[t] ? `<div class="${TIER_CLASS[t]}" style="width:${m.tierCounts[t]/tot*100}%" title="${esc(t)}">${m.tierCounts[t]}</div>` : "").join("")}</div>
     <div class="row small" style="margin-top:8px;gap:6px">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${m.tierCounts[t]}</span>`).join("")}</div></div></div>` : ""}
+  ${notesFor("home").length ? `<div class="lrow"><div class="lbl">Notes from<br>your AI<span class="sub">Not about one page in particular</span></div><div>${noteBlocks(notesFor("home"))}</div></div>` : ""}
   ${checklist(m)}
   ${sheetFoot("")}</div>`;
 }
@@ -2119,7 +2215,7 @@ function interviewsView(){
     ${W(m.hygiene ? "warn" : m.n ? "good" : "", m.hygiene, "with an interviewing mistake", `${m.pitched} pitched, ${m.demoed} demoed, ${m.leading} leading question${m.leading === 1 ? "" : "s"}`)}
     ${W(m.n && m.recent < m.n ? "warn" : "", `${m.recent}/${m.n}`, "described a specific, recent instance")}
   </div>
-  ${rows.length ? `<div class="boxes g2">${rows.map(i => { const h = hygieneIssues(i); const seg = byId(S.compass.customers||[], i.customerId); return `<div class="tile click" data-href="interviews/${esc(i.id)}">
+  ${rows.length ? `<div class="boxes fit">${rows.map(i => { const h = hygieneIssues(i); const seg = byId(S.compass.customers||[], i.customerId); return `<div class="tile click" data-href="interviews/${esc(i.id)}">
       <div class="spread"><div><b style="font-size:15px">${esc(i.interviewee || "Unnamed")}</b><div class="h">${[i.role, i.date].filter(Boolean).map(esc).join(" · ")}</div></div><span class="mono muted">${esc(i.id)}</span></div>
       <div class="row small" style="margin-top:10px;gap:6px">${tierChip(topTier(i.id))}${seg ? `<span class="chip blue">${esc(seg.text)}</span>` : (S.compass.customers||[]).length ? `<span class="chip warn">No segment</span>` : ""}${i.source === "Friend or family" ? `<span class="chip warn">Friend or family</span>` : ""}${h ? `<span class="chip bad">${h} interviewing issue${h>1?"s":""}</span>` : ""}${i.rubricRun ? `<span class="chip ok">Reviewed by AI</span>` : `<span class="chip gray">Not reviewed yet</span>`}${S.transcripts[i.id] ? "" : `<span class="chip warn">No transcript</span>`}</div></div>`; }).join("")}</div>`
     : `<div class="empty"><b>No interviews yet.</b><br>After your first conversation, click New interview and paste the transcript.</div>`}
@@ -2139,7 +2235,7 @@ function interviewView(id){
   const seg = byId(S.compass.customers||[], iv.customerId);
   const header = docHead("Evidence · Interview", `${esc(iv.interviewee || "New interview")} <span class="muted mono" style="font-size:14px;font-weight:400">${esc(iv.id)}</span>`,
     `${[iv.role, iv.date, iv.source].filter(Boolean).map(esc).join(" · ")}${iv.role || iv.date ? " · " : ""}${tierChip(topTier(id))} ${seg ? `<span class="chip blue">${esc(seg.text)}</span>` : (S.compass.customers||[]).length ? `<button class="btn link small" data-act="tab" data-tab="details">Set the segment</button>` : ""}${!iv.interviewee ? ` · <button class="btn link small" data-act="tab" data-tab="details">Add who it was</button>` : ""}`,
-    `<div class="row">${iv.rubricRun ? `<span class="chip ok">Reviewed by AI</span>` : ""}<button class="btn ${transcript ? "pri" : ""}" data-act="askFor" data-id="${esc(id)}">Ask your AI to review</button></div>`,
+    `<div class="row">${iv.rubricRun ? `<span class="chip ok">Reviewed by AI</span>` : ""}<button class="btn ${transcript ? "pri" : ""}" data-act="askFor" data-id="${esc(id)}">Ask your AI to review</button><button class="btn sm" data-act="deleteInterview" title="Delete this interview, its transcript, quotes and pain scores">Delete</button></div>`,
     `<a href="#/interviews">Interviews</a>`);
   const note = iv.coachingNote ? `<div class="aside" style="margin-bottom:14px"><h4>From your AI</h4><p style="margin:0;max-width:72ch">${esc(iv.coachingNote)}</p></div>` : "";
   const tabs = `<div class="tabs">${[["quotes",`Transcript and quotes (${quotes.length})`],["pains",`Pain scores (${pains.length})`],["details",`About this interview${h ? ` · ${h} issue${h>1?"s":""}` : ""}`]].map(([k,l]) => `<button class="${tab === k ? "on" : ""}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div>`;
@@ -2161,8 +2257,7 @@ function interviewView(id){
         <tr><td>Pitched or sold the idea?</td><td class="right">${hygieneSeg(iv,"pitched")}</td></tr>
         <tr><td>Demoed a product?</td><td class="right">${hygieneSeg(iv,"demoed")}</td></tr>
         <tr><td>Asked “Is there anything I should have asked?”</td><td class="right">${hygieneSeg(iv,"closing")}</td></tr>
-      </table>
-      <div style="margin-top:14px"><button class="btn sm" data-act="deleteInterview">Delete this interview</button></div></div></div>`;
+      </table></div></div>`;
   } else if (tab === "quotes"){
     body = `<div class="split"><div class="box soft"><div class="spread"><h3>Transcript</h3>${transcript && !ui.editTranscript ? `<button class="btn sm" data-act="editTranscript">Edit</button>` : ""}</div>
       ${transcript && !ui.editTranscript ? `<div class="transcript">${highlight(transcript, quotes)}</div><p class="legend">Highlights: <mark class="s-Confirmed">confirmed</mark> <mark class="s-Candidate">suggested</mark>. Click one to find its card.</p>`
@@ -2171,7 +2266,8 @@ function interviewView(id){
       <div class="spread" style="margin-bottom:8px"><h3 style="margin:0">Their words</h3><button class="btn sm" data-act="addQuote">Add a quote by hand</button></div>
       ${ui.addQuote === id ? addQuoteForm(iv) : ""}
       ${quotes.length ? sortById(quotes).map(e => quoteCard(e, transcript, {inInterview:true})).join("") : transcript ? `<div class="empty"><b>No quotes yet.</b><br>Ask your AI to review this interview, or add quotes by hand.<div style="margin-top:10px"><button class="btn pri sm" data-act="askFor" data-id="${esc(id)}">Ask your AI to review</button></div></div>` : `<div class="empty">Save the transcript first.</div>`}
-      </div></div>`;
+      </div></div>
+      ${notesFor("review", id).length ? `<h2>How this interview went, from your AI</h2>${noteBlocks(notesFor("review", id), {lead:true})}` : ""}`;
   } else if (tab === "pains"){
     body = `<p class="lede">One score per problem this person talked about. Score by what they did, not how they talk. When unsure, pick the lower tier.</p>
     ${pains.length ? pains.map(p => painCard(p)).join("") : `<div class="empty">No pain scores yet. Your AI suggests them when it reviews, or add one below.</div>`}
@@ -2185,19 +2281,19 @@ function addQuoteForm(iv){
   <div class="row"><button class="btn pri" type="submit">Add as confirmed</button><button class="btn" type="button" data-act="cancelQuote">Cancel</button></div></form></div>`;
 }
 
-/* ---------------- ask your AI ---------------- */
+/* ---------------- how to use AI ---------------- */
+/* The one-line asks. The rules file (CLAUDE.md / AGENTS.md) carries every prompt, so these are the whole instruction. */
 function aiCommands(iv){
   return [
-    [`Review interview ${iv ? iv.id : "INT-001"}`, "Pulls out every quote word for word, checks how the interview was run, scores the pain for each problem, and writes a short note. Everything arrives here as a suggestion for you to confirm."],
-    ["Diagnose my snapshot", "Rates every point on your map for impact and confidence and says which confirmed quotes it relied on (flagging any it rated with none), lists what's stated but untestable, proposes the assumptions hiding in your canvas (a buyer, a channel, a switching cost), and names the two interviews to run first."],
-    ["Poke holes", "For your three riskiest assumptions: the strongest case each is wrong, from confirmed quotes only, the move you'd make if it is, and the one question that would settle it. When the evidence has turned on a bet (shaky or contradicted), it proposes a pivot you accept or dismiss on the map; otherwise it says how many interviews short the signal is. Run it after every two interviews."],
-    ["Find where to interview next", "Reads every transcript for where these people gather, checks which places have already produced real pain, and suggests places to look, each with the quote it rests on."],
-    ["Find leads", "Proposes people to talk to for your ideal segment and one other, with where to find them and the interview or quote each one resembles. You accept or dismiss each on the Leads List."],
-    [`Research a segment ${(idealCustomer() || {}).id || "C-01"}`, "Who these people are, what they already use, where they gather and what they call the problem in their own words, every claim linked to a page it opened and dated. Swap in the segment id."],
-    ["Happy ears check", "Points out where you may be hearing what you want to hear."],
-    ["Audit the persona", "Checks that every persona line is backed by a confirmed quote."],
-    ["Prepare for a coach meeting", "A one-page brief of where you stand and what your coach will push on."],
-    ["Rank the jobs", "Later: checks each job's qualifiers and suggests the wedge and the say-no list."]
+    [`Review interview ${iv ? iv.id : "INT-003"}`, "Every quote word for word, how the interview was run, a pain score per problem and a short review note, all arriving under Quotes to be confirmed."],
+    ["Diagnose my snapshot", "Its own impact and confidence for every point on the map with the quotes it relied on, the assumptions you missed, the statements no interview can test, and the two interviews to run first."],
+    ["Poke holes", "For your three riskiest assumptions, the strongest case each is wrong from confirmed quotes only, the move you'd make if it is, and the one question that settles it; run it after every two interviews."],
+    ["Find where to interview next", "Places to find more of the right people, each resting on a transcript or stamped a guess, with which places have already found real pain."],
+    ["Find leads", "People to talk to for your ideal segment and one other, each with where to find them and the interview they resemble, for you to accept or dismiss on the Leads List."],
+    [`Research segment ${(idealCustomer() || {}).id || "C-01"}`, "Who these people are, what they use, where they gather and what they call the problem, every claim linked to a page it opened; swap in the segment id."],
+    ["Happy ears check", "Where you may be hearing what you want to hear: confirmed quotes that are only opinion, tiers the quotes don't justify, signal that rests on friends."],
+    ["Audit the persona", "Which persona lines the linked quotes support, which are guesses, and which confirmed quotes they could cite."],
+    ["Rank the jobs", "Each job against its five qualifiers, a suggested frequency and consequence, and which job looks like the wedge."]
   ];
 }
 function askPanel(){
@@ -2211,16 +2307,17 @@ function askPanel(){
       <p>Open this folder in your AI assistant (Claude Code, Claude Desktop, Cursor, or any tool that can read and write files) and say:</p>
       <pre class="code">Review interview ${esc(iv.id)}</pre>
       <div class="row" style="margin-bottom:14px"><button class="btn sm" data-act="copyText" data-text="Review interview ${esc(iv.id)}">Copy</button><span class="hint">In Claude Code you can also type <span class="kbd">/review-interview ${esc(iv.id)}</span></span></div>
-      <p class="small muted" style="max-width:62ch">It will read the transcript and your problem list, then write its suggestions into your folder. They show up here within a few seconds, marked as suggestions. Nothing counts until you confirm it. Haven't connected an AI yet? See <a href="#/ask" data-act="closeAsk">Ask your AI</a>.</p>
+      <p class="small muted" style="max-width:62ch">It will read the transcript and your problem list, then write its suggestions into your folder. They show up here within a few seconds, marked as suggestions. Nothing counts until you confirm it. Haven't connected an AI yet? See <a href="#/ask" data-act="closeAsk">How to use AI</a>.</p>
       ${fallback}
     </div></aside>`;
 }
-function fallbackPaste(iv){
+/* The copy-paste fallback for an AI that can't read the folder. `bare` returns the body without its own fold, for the How to use AI page. */
+function fallbackPaste(iv, bare){
   const prev = ui.importPreview && ui.importPreview.ivId === iv.id ? ui.importPreview : null;
   let preview = "";
   if (prev){
     const p = prev.plan; const notFound = p.evidence.filter(e => !e._verbatim).length;
-    preview = `<div class="card" style="margin-top:12px"><h3>Ready to import</h3>
+    preview = `<div class="box soft" style="margin-top:12px"><h3>Ready to import</h3>
       <div class="row" style="margin-bottom:10px">
         <span class="chip ${p.hygiene ? "ok" : "warn"}">${p.hygiene ? "Interview check found" : "No interview check line"}</span>
         <span class="chip blue">${p.evidence.length} quotes</span><span class="chip blue">${p.pains.filter(x => !x._skip).length} pain scores</span>
@@ -2230,65 +2327,85 @@ function fallbackPaste(iv){
       ${p.evidence.slice(0, 50).map(e => `<div class="small" style="margin:5px 0">${e._verbatim ? `<span class="chip ok">verbatim</span>` : `<span class="chip bad">not in transcript</span>`} ${esc(e.quote)} <span class="hint">${esc(e.type || "unknown type")}</span></div>`).join("")}
       <div class="row" style="margin-top:8px"><button class="btn pri" data-act="doImport">Import as suggestions</button><button class="btn" data-act="cancelImport">Cancel</button></div></div>`;
   }
-  return `<details class="fold" ${prev ? "open" : ""}><summary>No AI connected to this folder? Paste its reply instead</summary>
-    <p class="small">Copy the full prompt, paste it into any AI chat, then paste the whole reply here.</p>
+  const body = `<p class="small" style="max-width:66ch">Copy the full prompt, paste it into any AI chat, then paste the whole reply here. Each quote is checked against the transcript before it's imported as a suggestion.</p>
     <div class="row"><button class="btn sm" data-act="copyPrompt">Copy the prompt for ${esc(iv.id)}</button></div>
     <textarea id="rubricBox" data-iv="${esc(iv.id)}" style="width:100%;min-height:140px;margin-top:10px" placeholder="Paste the AI's full reply here">${esc(ui.drafts.rubric[iv.id] ?? (prev ? prev.raw : ""))}</textarea>
-    <div class="row" style="margin-top:8px"><button class="btn" data-act="previewImport">Check it</button></div>${preview}</details>`;
+    <div class="row" style="margin-top:8px"><button class="btn" data-act="previewImport">Check it</button></div>${preview}`;
+  return bare ? body : `<details class="fold" ${prev ? "open" : ""}><summary>No AI connected to this folder? Paste its reply instead</summary>${body}</details>`;
 }
+/* Which interview the fallback prompt is for: the one being asked about, the one on the page, the one picked on the How to use AI page, else the latest. */
+function fallbackInterview(){ const r = route(); return byId(S.interviews, ui.askFor || r.id) || byId(S.interviews, ui.fallbackIv) || sortById([...S.interviews]).slice(-1)[0] || null; }
 function askView(){
   const latest = sortById([...S.interviews]).slice(-1)[0];
-  return `<div class="sheet">${docHead("Your AI", "Ask your AI", "This app is where you enter evidence and judge it. The thinking happens in your own AI assistant, working directly on the same folder. Nothing you ask it leaves your repository.")}
-  <div class="boxes g2"><div class="box soft"><h3>Connect once</h3>
-    <ol style="margin:0;padding-left:20px;max-width:66ch">
-      <li><b>Claude Code:</b> open a terminal in your DRM folder and run <span class="kbd">claude</span>. It reads <span class="mono">CLAUDE.md</span> automatically.</li>
-      <li><b>Claude Desktop:</b> start a conversation and add your DRM folder to it, or make a Project with the folder connected.</li>
-      <li><b>Cursor, Windsurf, Codex and others:</b> open the DRM folder as the workspace. They read <span class="mono">AGENTS.md</span>.</li>
-    </ol>
-    <p class="hint" style="margin:10px 0 0">The rules file tells your AI the three rules, the file format, and that it may only ever suggest: it leans slightly sceptical, so every rating comes with the case against it. ${aiReady === false ? `<span style="font-weight:800">It's missing from this folder. If you opened the <span class="mono">drm</span> folder inside your repository, switch to the repository folder itself (Settings → Switch folder); otherwise copy CLAUDE.md and AGENTS.md from the <a href="${TEMPLATE_URL}" target="_blank" rel="noopener">template</a>.</span>` : ""}</p></div>
-  <div class="box soft"><h3>What comes back</h3><ul style="margin:0;padding-left:20px;max-width:66ch">
-    <li>Quotes and pain scores appear under <a href="#/review">Suggestions</a> within a few seconds, marked with which tool suggested them. The app checks each quote against the transcript.</li>
-    <li>Ratings land on the <a href="#/compass/map">Assumptions Map</a> as the AI's own points, each saying what evidence it rests on.</li>
-    <li>Written reviews appear under <a href="#/notes">AI notes</a>.</li>
-    <li>Your AI never confirms anything and never touches a quote you've already confirmed or rejected. That's your job.</li>
-  </ul></div></div>
-  <h2>Things to ask</h2>
-  ${aiCommands(latest).map(([c, d]) => `<div class="box soft" style="padding:10px 16px 12px;margin-bottom:8px"><div class="spread"><div><div class="mono" style="font-size:13.5px"><b>${esc(c)}</b></div><div class="small muted" style="max-width:66ch">${esc(d)}</div></div><button class="btn sm" data-act="copyText" data-text="${esc(c)}">Copy</button></div></div>`).join("")}
-  ${sheetFoot("")}</div>`;
-}
-function notesView(){
-  return `<div class="sheet">${docHead("Your AI", "AI notes", "Reviews your AI wrote into your folder. Newest first.")}
-  ${S.notes.length ? S.notes.map(n => `<div class="box soft"><div class="spread"><span class="mono muted">${esc(n.name)}</span><span class="hint">${ago(n.modified)}</span></div><div class="md">${renderMd(n.text)}</div></div>`).join("") : `<div class="empty"><b>Nothing yet.</b><br>Ask your AI to review an interview, run a happy-ears check, or prepare for a coach meeting. See <a href="#/ask">Ask your AI</a>.</div>`}
+  const row = (label, body, hair) => `<div class="lrow ${hair ? "hair" : ""}"><div class="lbl">${label}</div><div>${body}</div></div>`;
+  const connect = [
+    ["Claude Code", `Open a terminal in the repository folder and run <span class="kbd">claude</span>. It reads <span class="mono">CLAUDE.md</span> on its own.`],
+    ["Claude Desktop", `Add the repository folder to a project or a conversation, then ask it to read <span class="mono">CLAUDE.md</span> once.`],
+    ["Cursor, Windsurf, Codex", `Open the repository folder as the workspace. They read <span class="mono">AGENTS.md</span>.`],
+    ["Which folder", `Always the repository folder, the one with <span class="mono">CLAUDE.md</span> in it; never the <span class="mono">drm</span> folder inside it.${aiReady === false ? ` <b>CLAUDE.md is missing from the folder you opened.</b> If that's the <span class="mono">drm</span> folder, switch to the repository folder itself (Settings → Switch folder); otherwise copy CLAUDE.md and AGENTS.md from the <a href="${TEMPLATE_URL}" target="_blank" rel="noopener">template</a>.` : ""}`]
+  ];
+  const fb = fallbackInterview();
+  return `<div class="sheet">${docHead("Your AI", "How to use AI", "Your AI works directly on the repository folder, and the rules file in it already carries every prompt: the three rules, the record formats, each task step by step, and that it may only ever suggest. There is nothing to copy. Point it at the folder once, then say one line.")}
+  ${row("Connect it", `<ul class="say">${connect.map(([l, d]) => `<li><b>${esc(l)}</b><span>${d}</span></li>`).join("")}</ul>`)}
+  ${row("What to say", `<ul class="say">${aiCommands(latest).map(([c, d]) => `<li><span class="cmd">${esc(c)}</span><span>${esc(d)}</span><button class="btn sm" data-act="copyText" data-text="${esc(c)}">Copy</button></li>`).join("")}</ul>`)}
+  ${row("Then, in the app", `<p class="prose">Quotes and pain scores arrive under <a href="#/quotes">Quotes</a>, to be confirmed one at a time with the transcript beside them. Ratings land on the <a href="#/compass/map">Assumptions Map</a> as your AI's own points, each saying what evidence it rests on; places and leads under <a href="#/insights/customers">Customers</a> and the <a href="#/compass/leads">Leads List</a>. Its written notes sit on the page they are about: an interview review under that interview, the diagnosis with the map.</p><p class="prose">Only what you confirm counts. Your AI never confirms anything and never touches a quote you have already confirmed or rejected.</p>`)}
+  <details class="fold"><summary>No AI that can read your folder?</summary>
+    ${S.interviews.length && fb ? `<div class="row" style="margin-top:8px"><span class="small">Interview</span><select class="inline" data-act="fallbackIv">${sortById([...S.interviews]).map(i => opt(i.id, fb.id, i.id + (i.interviewee ? ": " + i.interviewee : ""))).join("")}</select></div>${fallbackPaste(fb, true)}` : `<p class="small" style="max-width:66ch">Log an interview and save its transcript first; then copy its prompt here, paste it into any AI chat, and paste the reply back.</p>`}
+    <div class="row" style="margin-top:12px"><button class="btn sm" data-act="copyGeneric">Copy the generic prompt</button><span class="hint">The same prompt without a transcript; paste one in yourself.</span></div>
+  </details>
   ${sheetFoot("")}</div>`;
 }
 
-/* ---------------- suggestions, quotes, problems ---------------- */
-function reviewView(){
-  const ev = S.evidence.filter(e => e.status === "Candidate");
-  const ps = S.pains.filter(p => p.status === "Candidate");
-  const notFound = ev.filter(e => S.transcripts[e.interviewId] && !findInTranscript(e.quote, S.transcripts[e.interviewId])).length;
-  const byIv = {}; for (const e of ev) (byIv[e.interviewId] = byIv[e.interviewId] || []).push(e);
-  return `<div class="sheet">${docHead("Evidence", "Suggestions", "Your AI suggests; you decide. Confirm what's real and in their own words. Reject paraphrases and anything you can't find in the transcript.")}
-  <div class="tiles" style="grid-template-columns:repeat(3,minmax(0,1fr))">${W(ev.length ? "warn" : "", ev.length, "quotes waiting")}${W(ps.length ? "warn" : "", ps.length, "pain scores waiting")}${W(notFound ? "bad" : "", notFound, "not in the transcript word for word", notFound ? "Read before you confirm." : "")}</div>
-  ${!ev.length && !ps.length ? `<div class="empty"><b>Nothing waiting.</b><br>Ask your AI to review an interview and its suggestions will land here.</div>` : ""}
-  ${Object.keys(byIv).sort().map(ivId => { const iv = byId(S.interviews, ivId) || {}; return `<div class="spread" style="margin-top:18px"><h2 style="margin:0 0 8px"><a href="#/interviews/${esc(ivId)}" style="text-decoration:none;color:inherit">${esc(iv.interviewee || ivId)}</a>${iv.interviewee ? ` <span class="muted mono" style="font-weight:400;font-size:13px">${esc(ivId)}</span>` : ""}</h2><a class="btn sm" href="#/interviews/${esc(ivId)}">Open interview</a></div>${byIv[ivId].map(e => quoteCard(e, S.transcripts[ivId] ?? null)).join("")}`; }).join("")}
-  ${ps.length ? `<h2>Pain scores</h2>${ps.map(p => painCard(p, {showInterview:true})).join("")}` : ""}
-  ${sheetFoot("")}</div>`;
+/* ---------------- quotes: one page, three filters ---------------- */
+/* Everything the AI pulled out and the founder hasn't decided on yet, quotes first, then pain scores. */
+function reviewQueue(){
+  return sortById(S.evidence.filter(e => e.status === "Candidate")).map(e => ({kind:"evidence", rec:e}))
+    .concat(sortById(S.pains.filter(p => p.status === "Candidate")).map(p => ({kind:"pains", rec:p})));
 }
-function quotesView(){
-  const f = ui.filters;
-  let list = S.evidence.filter(e => (f.status === "All" || e.status === f.status) && (f.problem === "All" || e.problemId === f.problem) && (f.type === "All" || e.type === f.type));
-  return `<div class="sheet">${docHead("Evidence", "Quotes", "Every piece of evidence across your interviews, in their own words.")}
-  <div class="spread" style="margin-bottom:12px"><div class="tabs filters">${[["All","All"],["Confirmed","Confirmed"],["Candidate","Suggested"],["Rejected","Rejected"]].map(([v, l]) => `<button class="${f.status === v ? "on" : ""}" data-act="setFilter" data-key="status" data-val="${v}">${l}</button>`).join("")}</div>
-    <div class="row"><select class="inline" data-act="filter" data-key="problem">${opt("All", f.problem, "Any problem")}${S.problems.map(p => opt(p.id, f.problem, p.id + ": " + p.text.slice(0, 40))).join("")}</select>
-    <select class="inline" data-act="filter" data-key="type">${opt("All", f.type, "Any type")}${EVIDENCE_TYPES.map(t => opt(t, f.type)).join("")}</select>
-    <span class="muted small">${list.length} quote${list.length === 1 ? "" : "s"}</span></div></div>
-  ${list.length ? sortById(list).map(e => quoteCard(e, S.transcripts[e.interviewId] ?? null, {showInterview:true})).join("") : `<div class="empty">No quotes match.</div>`}
+/* One decision at a time: the quote (or score), its interview, and the transcript scrolled to it. A decision removes it from the queue, so the next one takes its place; Next skips. */
+function reviewOne(queue){
+  if (!queue.length) return `<div class="empty"><b>Nothing to confirm.</b><br>Ask your AI to review an interview and its quotes and pain scores land here, one at a time. <a href="#/quotes/confirmed">See what's confirmed.</a></div>`;
+  const i = Math.min(Math.max(0, ui.reviewIdx || 0), queue.length - 1); const x = queue[i]; const rec = x.rec;
+  const iv = byId(S.interviews, rec.interviewId) || {id:rec.interviewId}; const text = S.transcripts[rec.interviewId] || "";
+  const who = [iv.interviewee, iv.role].filter(Boolean).join(", ");
+  let card, focusId = null, near = null;
+  if (x.kind === "evidence"){
+    const found = !!findInTranscript(rec.quote, text); near = text && !found ? nearRange(rec, text) : null; focusId = rec.id;
+    card = quoteCard(rec, text || null, {inInterview:true, noActs:true}) + (text && !found ? `<div class="notice bad" style="margin-top:10px">These exact words aren't in the transcript, so the AI may have changed them. ${near ? "The dashed line is where it said the quote came from." : "Read the transcript before confirming."}</div>` : "");
+  } else { focusId = (rec.evidenceIds || [])[0] || null; card = painCard(rec, {noActs:true}); }
+  return `<div class="rv">
+    <div class="rvh"><div class="tool">${x.kind === "evidence" ? "Quote" : "Pain score"} ${i + 1} of ${queue.length} · <a href="#/interviews/${esc(iv.id)}">${esc(iv.id)}</a>${who ? ` · <span class="who">${esc(who)}</span>` : ""}</div>
+      <div class="row">${queue.length > 1 ? `<button class="btn sm" data-act="reviewNext">Next, decide later</button>` : ""}</div></div>
+    <div class="split">
+      <div>${card}
+        <div class="decide"><button class="btn pri" data-act="setStatus" data-kind="${x.kind}" data-id="${esc(rec.id)}" data-val="Confirmed">✓ Confirm</button><button class="btn" data-act="setStatus" data-kind="${x.kind}" data-id="${esc(rec.id)}" data-val="Rejected">✕ Reject</button><span class="hint">${x.kind === "evidence" ? "Confirm only their exact words. When unsure, reject; your AI can try again." : "Confirm only a tier the cited quotes justify. When unsure between two, the lower."}</span></div></div>
+      <div class="box soft" style="margin:0"><h3>Transcript</h3>${text ? `<div class="transcript rvt">${highlight(text, S.evidence.filter(e => e.interviewId === rec.interviewId), focusId, near)}</div><p class="legend">Highlights: <mark class="s-Confirmed">confirmed</mark> <mark class="s-Candidate">suggested</mark>. The outlined one is this ${x.kind === "evidence" ? "quote" : "score's first quote"}.</p>` : `<p class="empty">No transcript saved for this interview. <a href="#/interviews/${esc(iv.id)}">Paste it</a> before you confirm anything from it.</p>`}</div>
+    </div></div>`;
+}
+function quotesView(sub){
+  const queue = reviewQueue(); const f = ui.filters;
+  const counts = {Candidate:queue.length, Confirmed:S.evidence.filter(e => e.status === "Confirmed").length, Rejected:S.evidence.filter(e => e.status === "Rejected").length};
+  const st = sub === "confirmed" ? "Confirmed" : sub === "rejected" ? "Rejected" : sub === "to-confirm" ? "Candidate" : queue.length ? "Candidate" : "Confirmed";
+  const filters = `<div class="tabs filters" style="margin-bottom:18px">${[["to-confirm","Candidate","To be confirmed"],["confirmed","Confirmed","Confirmed"],["rejected","Rejected","Rejected"]].map(([h, k, l]) => `<button class="${st === k ? "on" : ""}" data-act="go" data-href="quotes/${h}">${l} <span class="n">${counts[k]}</span></button>`).join("")}</div>`;
+  let body;
+  if (st === "Candidate") body = reviewOne(queue);
+  else {
+    const list = sortById(S.evidence.filter(e => e.status === st && (f.problem === "All" || e.problemId === f.problem) && (f.type === "All" || e.type === f.type)));
+    const pains = st === "Rejected" ? sortById(S.pains.filter(p => p.status === "Rejected")) : [];
+    body = `${st === "Confirmed" && notesFor("quotes").length ? `<div class="notice warn" style="margin-bottom:18px">${noteBlocks(notesFor("quotes"), {bare:true})}</div>` : ""}
+    <div class="row" style="margin-bottom:12px"><select class="inline" data-act="filter" data-key="problem">${opt("All", f.problem, "Any problem")}${S.problems.map(p => opt(p.id, f.problem, p.id + ": " + p.text.slice(0, 40))).join("")}</select>
+      <select class="inline" data-act="filter" data-key="type">${opt("All", f.type, "Any type")}${EVIDENCE_TYPES.map(t => opt(t, f.type)).join("")}</select>
+      <span class="muted small">${list.length} quote${list.length === 1 ? "" : "s"}</span></div>
+    ${list.length ? list.map(e => quoteCard(e, S.transcripts[e.interviewId] ?? null, {showInterview:true})).join("") : `<div class="empty">No ${st.toLowerCase()} quotes${f.problem !== "All" || f.type !== "All" ? " match" : " yet"}.</div>`}
+    ${pains.length ? `<h2>Rejected pain scores</h2>${pains.map(p => painCard(p, {showInterview:true})).join("")}` : ""}`;
+  }
+  return `<div class="sheet">${docHead("Evidence", "Quotes", "Your AI suggests; you decide. Confirm what's real and in their own words; reject paraphrases and anything you can't find in the transcript. Only what you confirm counts.")}
+  ${filters}${body}
   ${sheetFoot("")}</div>`;
 }
 function problemView(id){
   const p = byId(S.problems, id); if (!p) return `<div class="sheet"><p class="empty">Problem not found.</p></div>`;
-  const s = problemStats(p); const minN = Number(S.config.minInterviews ?? 5);
+  const s = problemStats(p); const minN = MIN_INTERVIEWS;
   const quotes = S.evidence.filter(e => e.problemId === id && e.status !== "Rejected");
   const pains = S.pains.filter(x => x.problemId === id);
   return `<div class="sheet">${docHead("Insights · Problem", `${esc(p.text)} <span class="muted mono" style="font-size:14px;font-weight:400">${esc(p.id)}</span>`, "", `<div class="row">${signalChip(s.signal)}<button class="btn sm" data-act="newInterview">Log an interview</button></div>`, `<a href="#/insights/problem">Insights: Problem</a>`)}
@@ -2365,24 +2482,16 @@ function guideView(){
   <p class="hint" style="margin-top:14px">Method adapted from Darren Yee, <a href="https://darrenyee.substack.com/p/the-discovery-ladder" target="_blank" rel="noopener">The Discovery Ladder</a> and <a href="https://darrenyee.substack.com/p/how-to-actually-talk-to-customers" target="_blank" rel="noopener">How to Actually Talk to Customers</a>. Job scoring scales and signal thresholds are IIE defaults.</p>
   ${sheetFoot("")}</div>`;
 }
-function reportView(){
-  return `<div class="sheet">${docHead("Help", "Coach report", "What your coach sees on your repository's front page. It's rebuilt every time you save. Push in GitHub Desktop so they get the latest.")}<div class="box soft md">${renderMd(buildReport())}</div>${sheetFoot("")}</div>`;
-}
 function settingsView(){
   const c = S.config;
-  return `<div class="sheet">${docHead("Help", "Settings", "")}<div class="boxes g2"><div class="box soft"><h3>About you</h3><form data-form="config">
+  return `<div class="sheet">${docHead("Help", "Settings", "")}<div class="boxes fit" style="--col:320px"><form data-form="config" style="display:contents"><div class="box soft"><h3>About you</h3>
     <label class="f">Your name<input type="text" name="founder" value="${esc(c.founder||"")}"></label>
-    <label class="f">Venture or idea<input type="text" name="venture" value="${esc(c.venture||"")}"></label>
-    <label class="f">Coach<input type="text" name="coach" value="${esc(c.coach||"")}"></label>
-    <h3 style="margin-top:14px">Program (printed on every sheet)</h3>
+    <label class="f">Venture or idea<input type="text" name="venture" value="${esc(c.venture||"")}"></label></div>
+    <div class="box soft"><h3>Program (printed on every sheet)</h3>
     <label class="f">Program<input type="text" name="program" value="${esc(c.program||"Ideas Lab")}"></label>
     <label class="f">Sub-brand<input type="text" name="programSub" value="${esc(c.programSub||"LaunchPad")}"></label>
-    <label class="f">Cohort<input type="text" name="cohort" value="${esc(c.cohort||"")}" placeholder="Fall 2026"></label>
-    <h3 style="margin-top:14px">Signal thresholds</h3>
-    <label class="f">Minimum confirmed interviews per problem<input type="number" min="1" name="minInterviews" value="${esc(c.minInterviews ?? 5)}"></label>
-    <label class="f">Share in the top two tiers needed for a strong signal (%)<input type="number" min="1" max="100" name="strongPct" value="${Math.round((c.strongShare ?? .5)*100)}"></label>
-    <p class="hint">IIE coaching defaults, not from Darren Yee's posts. Agree on them with your coach.</p></form></div>
-    <div class="box soft"><h3>Your data</h3><p class="small">${store.kind === "demo" ? "Demo: nothing is saved." : `Saving to <b>${esc(store.name)}</b>. Records live in <span class="mono">drm/</span> as plain files; the coach report is <span class="mono">README.md</span>.`}</p>
+    <label class="f">Cohort<input type="text" name="cohort" value="${esc(c.cohort||"")}" placeholder="Fall 2026"></label></div></form>
+    <div class="box soft"><h3>Your data</h3><p class="small">${store.kind === "demo" ? "Demo: nothing is saved." : `Saving to <b>${esc(store.name)}</b>. Records live in <span class="mono">drm/</span> as plain files.`}</p>
     <div class="row"><button class="btn" data-act="exportJson">Download a backup</button><button class="btn" data-act="leave">Switch folder</button></div>
     <p class="hint" style="margin-top:12px">Show the getting-started checklist again: <button class="btn link small" data-act="showChecklist">show it</button></p>
     <h3 style="margin-top:14px">On your computer</h3>
@@ -2426,12 +2535,12 @@ document.addEventListener("click", async ev => {
   else if (a === "askFor"){ ui.askFor = el.dataset.id; render(); }
   else if (a === "closeAsk"){ ui.askFor = null; render(); }
   else if (a === "copyText") await copy(el.dataset.text, "Copied. Paste it into your AI assistant.");
-  else if (a === "copyPrompt"){ const iv = byId(S.interviews, ui.askFor || r.id); if (!S.transcripts[iv.id]){ toast("Save the transcript first, so the prompt can include it."); return; } await copy(rubricPrompt(iv), "Copied. Paste it into any AI chat."); }
+  else if (a === "copyPrompt"){ const iv = fallbackInterview(); if (!iv) return; if (!S.transcripts[iv.id]){ toast("Save the transcript first, so the prompt can include it."); return; } await copy(rubricPrompt(iv), "Copied. Paste it into any AI chat."); }
   else if (a === "copyGeneric") await copy(rubricPrompt(null), "Copied.");
-  else if (a === "previewImport"){ const iv = byId(S.interviews, ui.askFor || r.id); const raw = $("#rubricBox").value; const parsed = parseRubric(raw);
+  else if (a === "previewImport"){ const iv = fallbackInterview(); if (!iv) return; const raw = $("#rubricBox").value; const parsed = parseRubric(raw);
     if (!parsed.evidence.length && !parsed.pains.length && !parsed.hygiene){ toast("Couldn't find any review rows. Paste the AI's full reply, including the code blocks."); return; }
     ui.importPreview = {ivId:iv.id, raw, plan:planImport(iv, parsed)}; render(); }
-  else if (a === "cancelImport"){ ui.importPreview = null; delete ui.drafts.rubric[ui.askFor || r.id]; render(); }
+  else if (a === "cancelImport"){ const iv = fallbackInterview(); ui.importPreview = null; if (iv) delete ui.drafts.rubric[iv.id]; render(); }
   else if (a === "doImport"){ const iv = byId(S.interviews, ui.importPreview.ivId); const p = ui.importPreview.plan; applyImport(iv, p, ui.importPreview.raw); ui.importPreview = null; delete ui.drafts.rubric[iv.id]; ui.askFor = null; ui.tab[iv.id] = "quotes"; go("interviews/" + iv.id); render();
     toast(`Imported ${p.evidence.length} quotes and ${p.pains.filter(x => !x._skip).length} pain scores as suggestions.`); }
   else if (a === "setStatus"){ const kind = el.dataset.kind; const rec = byId(S[kind], el.dataset.id); const prev = rec.status; upsert(kind, {...rec, status:el.dataset.val}); render();
@@ -2459,7 +2568,7 @@ document.addEventListener("click", async ev => {
   else if (a === "leadDismiss"){ const ld = byId(S.leads, el.dataset.id); upsert("leads", {...ld, status:"Dismissed"}); render(); toast(`Dismissed ${ld.id}.`, () => upsert("leads", {...byId(S.leads, ld.id), status:"Candidate"})); }
   else if (a === "placeLead"){ const pl = byId(S.places, el.dataset.id); const list = S.compass.leads = S.compass.leads || []; list.push({id:nextId("L-", list, 2), name:"", org:"", why:pl.who ? `${pl.who}: ${pl.how || ""}`.trim() : (pl.how || ""), how:pl.name, done:false}); persist("compass"); go("compass/leads"); setTimeout(() => focusLast('[data-kind="leads"][data-field="name"]'), 50); }
   else if (a === "editQuote"){ ui.editQuote = ui.editQuote === el.dataset.id ? null : el.dataset.id; render(); }
-  else if (a === "setFilter"){ ui.filters[el.dataset.key] = el.dataset.val; render(); }
+  else if (a === "reviewNext"){ const n = reviewQueue().length; if (!n) return; ui.reviewIdx = (Math.min(ui.reviewIdx || 0, n - 1) + 1) % n; render(); }
   else if (a === "mapZoom"){ const vp = document.getElementById("vp"); if (!vp) return; if (el.dataset.val === "fit"){ fitMap(vp); applyView(); } else { const r = vp.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, el.dataset.val === "in" ? 1.25 : 0.8); } }
   else if (a === "cAdd"){
     const k = el.dataset.kind;
@@ -2499,6 +2608,7 @@ document.addEventListener("change", ev => {
   else if (a === "aTag"){ if (!el.value) return; const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:[...(x.evidence||[]), {id:el.value, stance:"supports"}]}); render(); }
   else if (a === "evField"){ const e = byId(S.evidence, el.dataset.id); upsert("evidence", {...e, [el.dataset.field]: el.value}); render(); }
   else if (a === "filter"){ ui.filters[el.dataset.key] = el.value; render(); }
+  else if (a === "fallbackIv"){ ui.fallbackIv = el.value; ui.importPreview = null; render(); }
   else if (a === "personaProblem"){ S.persona.problemId = el.value; persist("persona"); render(); }
   else if (a === "personaLink"){ if (!el.value) return; const f = S.persona.fields[el.dataset.key]; f.evidence = [...(f.evidence||[]), el.value]; persist("persona"); render(); }
   else if (a === "jobField"){ const j = byId(S.jobs, el.dataset.id); upsert("jobs", {...j, [el.dataset.field]: el.value}); render(); }
@@ -2525,7 +2635,7 @@ function saveTextField(el){
   else if (a === "recField"){ const rec = byId(S[el.dataset.kind] || [], el.dataset.id); if (rec) upsert(el.dataset.kind, {...rec, [el.dataset.field]: v}); }
   else if (form && form.dataset.form === "interview"){ const iv = byId(S.interviews, r.id); if (iv) upsert("interviews", {...iv, ...Object.fromEntries(new FormData(form))}); }
   else if (form && form.dataset.form === "problem"){ const p = byId(S.problems, r.id); if (p) upsert("problems", {...p, ...Object.fromEntries(new FormData(form))}); }
-  else if (form && form.dataset.form === "config"){ const d = Object.fromEntries(new FormData(form)); S.config = {...S.config, founder:d.founder, venture:d.venture, coach:d.coach, program:d.program, programSub:d.programSub, cohort:d.cohort, minInterviews:Number(d.minInterviews) || 5, strongShare:(Number(d.strongPct) || 50) / 100}; persist("config"); }
+  else if (form && form.dataset.form === "config"){ const d = Object.fromEntries(new FormData(form)); S.config = {...S.config, founder:d.founder, venture:d.venture, program:d.program, programSub:d.programSub, cohort:d.cohort}; persist("config"); }
 }
 const isTextField = el => el.isContentEditable || el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && ["text","date","number"].includes(el.type));
 function focusLast(sel){ const els = document.querySelectorAll(sel); const last = els[els.length - 1]; if (last) last.focus(); }
@@ -2553,7 +2663,7 @@ document.addEventListener("change", ev => {
 document.addEventListener("submit", async ev => {
   ev.preventDefault(); const f = ev.target; const d = Object.fromEntries(new FormData(f)); const r = route();
   if (f.dataset.form === "setup"){
-    S = emptyState(); S.config = {founder:d.founder, venture:d.venture, coach:d.coach, minInterviews:5, strongShare:0.5, createdAt:new Date().toISOString()};
+    S = emptyState(); S.config = {founder:d.founder, venture:d.venture, createdAt:new Date().toISOString()};
     await persist("config"); await persist("persona");
     if ((d.problem || "").trim()) upsert("problems", {id:"PR-01", text:d.problem.trim(), who:(d.who || "").trim()});
     if ((d.who || "").trim()){ S.compass.customers = [{id:"C-01", text:d.who.trim(), why:"", ideal:true}]; await persist("compass"); }
@@ -2708,7 +2818,7 @@ async function enterRoot(){
   S = await store.loadAll();
   lastPush = await store.lastPush();
   if (!location.hash || location.hash === "#") go("home");
-  render(); scheduleReport(); startWatching();
+  render(); startWatching();
 }
 async function openFolder(reopen){
   try {
@@ -2738,7 +2848,7 @@ function registerWorker(demo){
 /* ---------------- start ---------------- */
 (async function init(){
   const params = new URLSearchParams(location.search);
-  window.__drm = {get S(){ return S; }, get store(){ return store; }, get ui(){ return ui; }, buildReport, parseRubric, checkFolder};
+  window.__drm = {get S(){ return S; }, get store(){ return store; }, get ui(){ return ui; }, parseRubric, checkFolder};
   registerWorker(params.get("demo") === "1");
   if (params.get("test") === "opfs"){ const root = await navigator.storage.getDirectory(); await useRoot(root); return; }
   if (params.get("demo") === "1"){ store = new MemoryStore(); S = demoState(); aiReady = true; render(); return; }

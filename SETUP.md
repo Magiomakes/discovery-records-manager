@@ -2,7 +2,7 @@
 
 About 15 minutes, once. You don't need to know how to code.
 
-**What you're setting up:** your own private copy of the DRM on GitHub. Your interview notes live in a folder on your laptop and in that private copy. Nobody sees them unless you invite them, and your coach only sees them because you add them.
+**What you're setting up:** your own private copy of the DRM on GitHub. Your interview notes live in a folder on your laptop and in that private copy. Nobody sees them unless you invite them.
 
 **What you need:**
 - A laptop (Mac or Windows)
@@ -16,7 +16,7 @@ About 15 minutes, once. You don't need to know how to code.
 Skip this if you already have one.
 
 1. Go to [github.com/signup](https://github.com/signup) and create a free account.
-2. Write down your username. Your coach will need it.
+2. Write down your username.
 
 ## Step 2. Make your private copy
 
@@ -29,25 +29,19 @@ Skip this if you already have one.
 
 > Use **Use this template**, not **Fork**. A fork of this template would be public, and so would your interviews.
 
-## Step 3. Give your coach access
-
-1. In your new repository, click **Settings** (top bar), then **Collaborators** (left side).
-2. Click **Add people** and type your coach's GitHub username.
-3. Your coach gets an email and accepts the invite.
-
-## Step 4. Put the folder on your laptop
+## Step 3. Put the folder on your laptop
 
 1. Download **GitHub Desktop** from [desktop.github.com](https://desktop.github.com) and install it.
 2. Open it and sign in with your GitHub account.
 3. Click **File → Clone repository**, pick your new repository (for example `my-drm`) and choose where to save it, such as your Documents folder.
 4. Click **Clone**. You now have a folder called `my-drm` on your laptop. Remember where it is.
 
-## Step 5. Open the DRM app
+## Step 4. Open the DRM app
 
 1. In **Chrome or Edge**, go to **[magiomakes.github.io/discovery-records-manager](https://magiomakes.github.io/discovery-records-manager/)**. Bookmark it.
-2. Click **Open my DRM repository** and choose the `my-drm` folder from Step 4: the folder GitHub Desktop made, the one that contains `index.html` and `CLAUDE.md`. Pick that folder itself, not a file inside it, and not the `drm` folder inside it: that is where the app keeps your data, and if you open it the app will tell you to go up one level.
+2. Click **Open my DRM repository** and choose the `my-drm` folder from Step 3: the folder GitHub Desktop made, the one that contains `index.html` and `CLAUDE.md`. Pick that folder itself, not a file inside it, and not the `drm` folder inside it: that is where the app keeps your data, and if you open it the app will tell you to go up one level.
 3. When the browser asks whether the site can edit files, click **Edit files** (or **Allow**).
-4. Type your name, your idea and your coach's name.
+4. Type your name and your idea.
 5. Write down **the problem you believe exists**, the way a customer would say it (not your solution). It's a guess for now, and your interviews will test it. Then click **Create my DRM**.
 
 Done. Next time, open the bookmark and click **Reopen**.
@@ -86,27 +80,25 @@ No AI tool that can read your folder? Every interview page has a fallback where 
 4. Read the AI's note under **AI notes**. It will tell you what to ask next time.
 5. Level 1: fill in **Customer persona**, linking a confirmed quote to every line. Level 2: add **Jobs**, mark one as the wedge, and check **MVP scope**.
 
-Other things to ask your AI, any time: **Diagnose my snapshot**, **Happy ears check**, **Audit the persona**, **Rank the jobs**, **Prepare for a coach meeting**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
+Other things to ask your AI, any time: **Diagnose my snapshot**, **Happy ears check**, **Audit the persona**, **Rank the jobs**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
 
 The three rules: **quotes, not summaries**, **behavior, not interpretation**, and **argue against it**: your AI leans slightly sceptical, so every rating comes with the strongest case against it and you dismiss the objection on purpose. It never confirms anything on your behalf.
 
-## Before every coach meeting: push
+## Push to GitHub as a backup
 
-Your coach only sees what you've pushed to GitHub.
+Your private copy on GitHub only has what you've pushed.
 
 1. Open **GitHub Desktop**. On the left you'll see the files that changed.
 2. Bottom left, type a short summary like `Interviews 4 and 5`, then click **Commit to main**.
 3. Click **Push origin** at the top.
-
-Your coach opens your repository on GitHub and sees your **coach report** on the front page. It's rebuilt every time you save. You can preview it any time under **Coach report** in the app.
 
 ---
 
 ## Good to know
 
 - **Where your data is:** everything is in the `drm` folder inside your repository, as plain text files. Use the app or your AI to change them rather than editing by hand. The app and your AI both open the repository folder (the one above `drm`), never the `drm` folder itself.
-- **Back it up by pushing.** If you don't push and lose your laptop, your notes are gone. Pushing weekly is a good habit even without a meeting.
-- **Using another computer:** clone the repository there too (Step 4). Before you start, click **Fetch origin** then **Pull** in GitHub Desktop. When you're done, commit and push. Don't edit on two computers at the same time.
+- **Back it up by pushing.** If you don't push and lose your laptop, your notes are gone. Pushing weekly is a good habit.
+- **Using another computer:** clone the repository there too (Step 3). Before you start, click **Fetch origin** then **Pull** in GitHub Desktop. When you're done, commit and push. Don't edit on two computers at the same time.
 - **Interviewee names:** use first names or aliases like "Treasurer A". Ask people before you record or transcribe them.
 - **Browser says it can't save:** you're in Safari or Firefox. Switch to Chrome or Edge.
 - **Make it an app:** in Chrome or Edge, open **Settings → Install as an app**; it goes in your dock and opens full screen. Nothing about where your data lives changes: it is still the folder you picked.
@@ -114,4 +106,4 @@ Your coach opens your repository on GitHub and sees your **coach report** on the
 
 ## Credit
 
-The method is adapted from Darren Yee's [The Discovery Ladder](https://darrenyee.substack.com/p/the-discovery-ladder) and [How to Actually Talk to Customers](https://darrenyee.substack.com/p/how-to-actually-talk-to-customers). This version covers Level 1 (Problem Discovery) and Level 2 (Jobs Discovery). The job scoring scales and signal thresholds are IIE coaching defaults, not from Darren's posts.
+The method is adapted from Darren Yee's [The Discovery Ladder](https://darrenyee.substack.com/p/the-discovery-ladder) and [How to Actually Talk to Customers](https://darrenyee.substack.com/p/how-to-actually-talk-to-customers). This version covers Level 1 (Problem Discovery) and Level 2 (Jobs Discovery). The job scoring scales and signal thresholds are IIE program defaults, not from Darren's posts.
