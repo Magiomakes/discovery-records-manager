@@ -89,33 +89,50 @@ for (const l of leads) {
   if (l.customerId && !((compass.customers || []).some(c => c.id === l.customerId))) warn(l.file, `customerId ${l.customerId} isn't a segment in compass.json`);
   if (l.placeId && !byId(places, l.placeId)) warn(l.file, `placeId ${l.placeId} doesn't exist`);
 }
-/* The pivot gate, computed the way the app computes assumption status (CLAUDE.md, Poke holes): a pivot is in play only when every trigger is Shaky or Contradicted. */
-/* Fixed thresholds (not founder-adjustable): five confirmed pain scores per problem before it counts as tested; half of them in the top two tiers for a strong signal. */
-const MIN_INTERVIEWS = 5, STRONG_SHARE = 0.5;
+/* The pivot gate, computed the way the app computes assumption status (CLAUDE.md, The Compass and Poke holes): a pivot is in play only when every trigger is Shaky or Contradicted.
+   Five statuses, fixed thresholds (not founder-adjustable). Per problem, from confirmed scores: Untested under 2; Contradicted at 5 or more with 20% or fewer in the top two tiers;
+   Shaky when the top-two share is under 50%, or reaches it only with weak interviews; Weak signal when clean interviews clear 50% on fewer than 5 (or with no clean Hair on Fire);
+   Strong signal at 5 or more, clean, with at least one clean Hair on Fire. Segments use the same shape with a floor of 3. Other kinds count quotes tagged for and against. */
+const MIN_INTERVIEWS = 5, STRONG_SHARE = 0.5, MIN_SCORED = 2, MIN_SEGMENT = 3, CONTRADICTED_SHARE = 0.2;
 const confirmedPains = pains.filter(p => p.status === "Confirmed" && !p._unreadable);
 const weak = iv => !iv || Number(iv.leading) > 0 || iv.pitched === "Yes" || iv.demoed === "Yes" || iv.source === "Friend or family" || iv.recentInstance === "No";
-const share = ps => { const top = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)); const w = top.filter(p => weak(byId(interviews, p.interviewId))).length; return {n:ps.length, s:ps.length ? top.length / ps.length : 0, clean:ps.length ? (top.length - w) / ps.length : 0}; };
-function triggerState(a) {
-  if (a.kind === "problem" && a.problemId) {
-    const r = share(confirmedPains.filter(p => p.problemId === a.problemId));
-    if (r.n < MIN_INTERVIEWS) return {open:false, why:`${r.n} of ${MIN_INTERVIEWS} confirmed scores`};
-    if (r.s >= STRONG_SHARE && r.clean >= STRONG_SHARE) return {open:false, why:`holding up, ${Math.round(r.s*100)}% show real pain`};
-    return {open:true};
-  }
+const share = ps => { const isWeak = p => weak(byId(interviews, p.interviewId)); const top = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)); const w = top.filter(isWeak).length; return {n:ps.length, s:ps.length ? top.length / ps.length : 0, clean:ps.length ? (top.length - w) / ps.length : 0, cleanN:ps.filter(p => !isWeak(p)).length, cleanHof:ps.filter(p => p.tier === "Hair on Fire" && !isWeak(p)).length}; };
+function problemStatus(r) {
+  const pct = Math.round(r.s * 100);
+  if (r.n < MIN_SCORED) return ["Untested", `${r.n} of ${MIN_SCORED} confirmed scores`];
+  if (r.n >= MIN_INTERVIEWS && r.s <= CONTRADICTED_SHARE) return ["Contradicted", `only ${pct}% show real pain`];
+  if (r.clean < STRONG_SHARE) return ["Shaky", r.s >= STRONG_SHARE ? `${pct}% show real pain, but only with weak interviews counted` : `${pct}% show real pain, under the 50% bar`];
+  if (r.n < MIN_INTERVIEWS) return ["Weak signal", `${pct}% show real pain on ${r.n} of ${MIN_INTERVIEWS} scores`];
+  if (!r.cleanHof) return ["Weak signal", `${pct}% show real pain but no clean Hair on Fire`];
+  return ["Strong signal", `${pct}% show real pain, ${r.cleanHof} clean Hair on Fire`];
+}
+function assumptionStatus(a) {
+  if (a.kind === "problem" && a.problemId) return problemStatus(share(confirmedPains.filter(p => p.problemId === a.problemId)));
   if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId) {
     const seg = id => confirmedPains.filter(p => { const iv = byId(interviews, p.interviewId); return iv && iv.customerId === id; });
-    const r = share(seg(a.customerId));
-    if (r.n < 3) return {open:false, why:`${r.n} of 3 confirmed scores from this segment`};
-    if (a.kind === "early-adopters") { const others = (compass.customers || []).filter(c => c.id !== a.customerId).map(c => share(seg(c.id))).filter(o => o.n >= 3); if (others.some(o => o.s >= r.s + 0.25)) return {open:true}; }
-    if (r.s >= STRONG_SHARE && r.clean >= STRONG_SHARE) return {open:false, why:`holding up, ${Math.round(r.s*100)}% of this segment's scores show real pain`};
-    return {open:true};
+    const r = share(seg(a.customerId)); const pct = Math.round(r.s * 100);
+    if (r.n < MIN_SEGMENT) return ["Untested", `${r.n} of ${MIN_SEGMENT} confirmed scores from this segment`];
+    const others = a.kind === "early-adopters" ? (compass.customers || []).filter(c => c.id !== a.customerId).map(c => share(seg(c.id))).filter(o => o.n >= MIN_SEGMENT) : [];
+    const best = others.sort((x, y) => y.s - x.s)[0];
+    if (best && best.s >= r.s + 0.25) return ["Contradicted", `another segment shows more pain (${Math.round(best.s*100)}% vs ${pct}%)`];
+    if (a.kind === "customers" && r.s <= CONTRADICTED_SHARE) return ["Contradicted", `only ${pct}% of this segment's scores show real pain`];
+    if (r.clean < STRONG_SHARE) return ["Shaky", r.s >= STRONG_SHARE ? `${pct}% of this segment's scores show real pain, but only with weak interviews counted` : `only ${pct}% of this segment's scores show real pain`];
+    if (r.cleanN < MIN_SEGMENT) return ["Weak signal", `${pct}% show real pain on ${r.cleanN} clean scores of ${MIN_SEGMENT}`];
+    if (a.kind === "early-adopters" && !best) return ["Weak signal", `${pct}% show real pain, no other segment to compare against`];
+    return ["Strong signal", `${pct}% of this segment's scores show real pain`];
   }
   const ev = (a.evidence || []).map(x => ({...x, e:byId(evidence, x.id)})).filter(x => x.e && x.e.status === "Confirmed");
   const sup = ev.filter(x => x.stance === "supports").length, con = ev.filter(x => x.stance === "contradicts").length;
-  if (!ev.length) return {open:false, why:"no confirmed quotes tagged for or against it"};
-  if (con >= sup) return {open:true};
-  if (sup >= 3 && sup >= 2 * con) return {open:false, why:`holding up, ${sup} quotes for and ${con} against`};
-  return {open:true};
+  if (!ev.length) return ["Untested", "no confirmed quotes tagged for or against it"];
+  if (con >= sup) return ["Contradicted", `${con} against, ${sup} for`];
+  if (sup < 2) return ["Shaky", `${sup} for, ${con} against`];
+  if (sup >= 3 && sup >= 2 * con) return ["Strong signal", `${sup} quotes for and ${con} against`];
+  return ["Weak signal", `${sup} quotes for and ${con} against`];
+}
+function triggerState(a) {
+  const [status, why] = assumptionStatus(a);
+  if (status === "Shaky" || status === "Contradicted") return {open:true, status, why};
+  return {open:false, status, why:`${status.toLowerCase()}: ${why}`};
 }
 for (const pv of pivots) {
   if (pv._unreadable || !pv.id) continue;
@@ -133,9 +150,9 @@ for (const pv of pivots) {
   if (!pv.why) warn(pv.file, "Pivot has no `why`: say which quotes point to this move, or that it's a guess.");
 }
 for (const iv of interviews) { if (iv._unreadable || !iv.id) continue; if (!transcripts[iv.id]) warn(iv.file, "No transcript saved"); if (iv.rubricRun && !["Yes","No"].includes(iv.recentInstance)) warn(iv.file, "Reviewed but recentInstance isn't Yes or No"); if (iv.placeId && !byId(places, iv.placeId)) warn(iv.file, `placeId ${iv.placeId} doesn't exist`); }
-/* Notes: no verdict words, and every note says what would overturn it. */
+/* Notes: no praise words (a status is named only by its computed word), and every note says what would overturn it. */
 const ndir = path.join(root, "notes"); if (fs.existsSync(ndir)) for (const f of fs.readdirSync(ndir)) if (f.endsWith(".md")) {
-  const t = fs.readFileSync(path.join(ndir, f), "utf8"); const m = t.match(/\b(validated|proven|strong signal)\b/gi);
+  const t = fs.readFileSync(path.join(ndir, f), "utf8"); const m = t.match(/\b(validated|proven)\b/gi);
   if (m) warn("notes/" + f, `Uses ${[...new Set(m.map(x => x.toLowerCase()))].map(x => `"${x}"`).join(", ")}. Say what the evidence shows instead.`);
   if (!/what would make this wrong/i.test(t)) note("notes/" + f, "No 'What would make this wrong' section.");
 }

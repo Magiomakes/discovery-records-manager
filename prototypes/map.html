@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assumptions map · whiteboard prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,200..800&display=swap" rel="stylesheet">
+<style>
+/* Throwaway prototype of plan C (docs/review-plan-2026-10-28.md): the map as a whiteboard. Look per DESIGN.md. */
+:root{--stone:#eeeeea;--stone-top:#f3f3ef;--inset:#f6f6f3;--paper:#ffffff;--ink:#111111;--grey:#8c8c88;--hair:#c9c9c4;--acc:#1438d8;
+  --hatch:repeating-linear-gradient(45deg,var(--ink) 0 1px,transparent 1px 3.5px);
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;--w:300;--wb:800;--t:.15s ease-out}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);font-weight:var(--w);font-variation-settings:"wdth" 100;font-size:15px;line-height:1.45;color:var(--ink);background:var(--stone);
+  -webkit-font-smoothing:antialiased;overflow:hidden;display:flex;flex-direction:column}
+b{font-weight:var(--wb)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.lab{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
+
+/* the slim band */
+.band{display:flex;align-items:center;gap:24px;padding:0 16px 0 24px;height:44px;border-bottom:2px solid var(--ink);flex-shrink:0;background:var(--stone-top)}
+.band .title{white-space:nowrap}
+.band .title span{color:var(--grey);font-weight:var(--w);text-transform:none;letter-spacing:0;margin-left:8px}
+.band .help{margin-left:auto;font-size:12px;color:var(--grey);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;border:1px solid var(--ink);flex-shrink:0}
+.seg button,.btn{font:inherit;font-size:11px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;color:var(--ink);background:none;border:none;padding:5px 10px;cursor:pointer;line-height:1.2;transition:opacity var(--t)}
+.seg button{border-right:1px solid var(--ink)} .seg button:last-child{border-right:none}
+.seg button:hover{background:var(--ink);color:var(--stone)} .seg button.on{background:var(--ink);color:var(--stone)}
+.seg button:active,.btn:active{opacity:.7}
+.seg button:disabled,.btn:disabled{color:var(--grey);cursor:default;background:none}
+.btn{border:1px solid var(--ink);flex-shrink:0} .btn:hover{background:var(--ink);color:var(--stone)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--stone)} .btn.pri:hover{background:var(--stone);color:var(--acc)}
+.grp{display:inline-flex;align-items:center;gap:8px;flex-shrink:0} .grp .lab{color:var(--grey)}
+
+/* the board: the whole stage, no frame */
+.stage{flex:1;display:flex;min-height:0}
+#vp{flex:1;position:relative;overflow:hidden;min-width:0;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;
+  background:linear-gradient(180deg,var(--stone-top) 0,var(--stone) 480px)}
+#vp.panning{cursor:grabbing} #vp.space{cursor:grab}
+#world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;--ik:1}
+#world svg.geo{position:absolute;left:0;top:0;overflow:visible;width:1px;height:1px}
+#world svg.geo *{vector-effect:non-scaling-stroke}
+/* words that keep their screen size at any zoom: scale(1/k) on the anchor, offset on the span */
+.wl{position:absolute;width:0;height:0;transform:scale(var(--ik));transform-origin:0 0;pointer-events:none}
+.wl span{position:absolute;white-space:nowrap;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;color:var(--ink);line-height:1}
+.wl.conf span{transform:translate(-50%,0)} .wl.conf.first span{transform:translate(-100%,0)} .wl.conf.last span{transform:translate(0,0)}   /* the edge words straddle outward so they never collide with their neighbours */
+.wl.imp span{transform:translate(-100%,-50%)}
+.wl.axname span{color:var(--grey);font-weight:var(--w);text-transform:none;letter-spacing:0;font-size:12px}
+.wl.axname.v span{transform:translate(-100%,0) rotate(-90deg);transform-origin:100% 0}
+.wl.note span{color:var(--grey);font-weight:var(--w);text-transform:none;letter-spacing:0;font-size:12px;line-height:1.25}
+.wl.note small{display:block;font-size:12px}
+
+/* points: a shape and a word, no label */
+.pt{position:absolute;width:0;height:0;transform:scale(var(--ik));transform-origin:0 0;cursor:grab}
+.pt:before{content:"";position:absolute;left:-14px;top:-14px;width:28px;height:28px}
+.pt i{position:absolute;left:-8px;top:-8px;width:16px;height:16px;border:2px solid var(--ink);background:var(--paper);display:block;transition:transform var(--t)}
+.pt:hover i{transform:scale(1.25)}
+.pt.dragging{z-index:9;cursor:grabbing} .pt.dragging i{transform:scale(1.25)}
+.pt.sel i{outline:2px solid var(--acc);outline-offset:3px}
+i.s-unt{background:var(--paper)}
+i.s-shk{background:linear-gradient(90deg,var(--ink) 50%,var(--paper) 50%)}
+i.s-str{background:var(--ink)}
+i.s-con{background:var(--hatch),var(--paper)}
+i.s-weak{background:linear-gradient(var(--ink),var(--ink)) center/2px 100% no-repeat,linear-gradient(var(--ink),var(--ink)) center/100% 2px no-repeat,var(--paper)}
+.pt.ai i{left:-7px;top:-7px;width:14px;height:14px;border:1px dashed var(--grey);background:transparent}
+.pt.ai{cursor:pointer}
+#vp.f-mine .pt.ai,#vp.f-mine .tie,#vp.f-ai .pt.me,#vp.f-ai .tie{display:none}
+
+/* the card on click; the legend; the hud */
+.card{position:absolute;z-index:5;width:272px;background:rgba(238,238,234,.97);border:2px solid var(--ink);padding:10px 12px 12px;cursor:default;opacity:0;transition:opacity .15s ease-out;pointer-events:none}
+.card.in{opacity:1;pointer-events:auto}
+.card .head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.card .head .st{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.card .txt{font-size:15px;line-height:1.35} .card .txt.empty{color:var(--grey);font-style:italic}
+.card .ag{margin-top:8px;padding-top:6px;border-top:1px dashed var(--grey);font-size:12px;color:var(--grey);line-height:1.35}
+.card .ag b{color:var(--ink);text-transform:uppercase;letter-spacing:.02em;font-size:11px;margin-right:4px}
+.card .more{margin-top:8px;font-size:12px;color:var(--grey)}
+.g{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);vertical-align:-1px;flex-shrink:0}
+.g.ai{border:1px dashed var(--grey);background:transparent}
+.legend{position:absolute;left:16px;bottom:12px;z-index:3;display:flex;gap:14px;flex-wrap:wrap;background:rgba(238,238,234,.92);padding:4px 8px;font-size:11px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .sep{width:1px;background:var(--hair);align-self:stretch}
+.hud{position:absolute;right:14px;bottom:12px;z-index:3;display:flex;gap:4px}
+.hud .btn{background:var(--stone)} .hud .btn:hover{background:var(--ink)}
+
+/* the side panel on double-click: a column, not an overlay */
+.panel{width:320px;flex-shrink:0;border-left:2px solid var(--ink);overflow:auto;padding:16px 20px 24px;display:none;background:var(--stone)}
+.panel.open{display:block}
+.panel .spread{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.panel h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase}
+.panel label{display:block;font-size:12px;color:var(--grey);margin:12px 0 4px}
+.panel textarea,.panel select{font:inherit;font-size:15px;width:100%;border:1px solid var(--ink);background:var(--inset);padding:6px 8px;color:var(--ink);border-radius:0}
+.panel textarea{min-height:88px;resize:vertical;line-height:1.35}
+.panel .ai{margin-top:20px;padding-top:14px;border-top:2px dashed var(--grey)}
+.panel .nums{display:flex;gap:24px;margin:8px 0 4px}
+.panel .nums b{display:block;font-size:24px;font-weight:var(--wb);line-height:1.1}
+.panel .nums small{font-size:12px;color:var(--grey)}
+.panel p{font-size:15px;line-height:1.4;margin-top:6px} .panel p.sm{font-size:12px;color:var(--grey)}
+.panel .ag{border-left:2px solid var(--ink);padding-left:10px;margin-top:10px}
+@media (max-width:900px){.band{gap:12px;padding:0 12px}.band .help{display:none}.panel{width:260px}}
+@media (prefers-reduced-motion:reduce){.pt:hover i,.pt.dragging i{transform:none}}
+</style>
+</head>
+<body>
+<div class="band">
+  <div class="lab title">Assumptions map<span>whiteboard prototype</span></div>
+  <div class="grp"><span class="lab">Move</span><div class="seg" id="variantSeg"><button data-variant="1" title="Drag a point to move it (4px threshold)">Drag</button><button data-variant="2" title="Hold ⌘ or Ctrl while dragging to move a point">⌘-drag</button></div></div>
+  <div class="grp"><span class="lab">Show</span><div class="seg" id="filterSeg"><button data-filter="mine">Mine</button><button data-filter="ai">AI</button><button data-filter="all">All</button></div></div>
+  <button class="btn pri" id="reset" title="Fit the grid and the shelf to the window">Reset view</button>
+  <div class="help" id="help"></div>
+</div>
+<div class="stage">
+  <div id="vp" class="f-all">
+    <div id="world"></div>
+    <div class="card" id="card"></div>
+    <div class="legend" id="legend"></div>
+    <div class="hud"><button class="btn" data-zoom="out" title="Zoom out">−</button><button class="btn" data-zoom="in" title="Zoom in">+</button></div>
+  </div>
+  <div class="panel" id="panel"></div>
+</div>
+<script>
+/* ---- geometry. pos is {x:0..1 likely wrong → likely right, y:0..1 not an issue → catastrophic}, or null on the shelf. ---- */
+const G = 600, GAP = 56, SHELF_H = 96, PAD = 0.04, SHELF_TOP = G / 2 + GAP;
+const BOX = {x0:-G / 2, x1:G / 2, y0:-G / 2, y1:SHELF_TOP + SHELF_H};         // what "fit" must show: the grid plus the shelf
+const SCREEN_PAD = {l:168, r:104, t:28, b:48};                                 // room on screen for the axis words (they don't scale with zoom)
+const KINDS = {problem:"Problem", solution:"Solution", customers:"Customers", "early-adopters":"Early adopters", alternatives:"Alternatives", competition:"Competition", other:"Other"};
+const STATUSES = ["Contradicted", "Shaky", "Untested", "Weak signal", "Strong signal"];
+const GLYPH = {"Contradicted":"con", "Shaky":"shk", "Untested":"unt", "Weak signal":"weak", "Strong signal":"str"};
+const IMPACT_WORDS = ["Not an issue if wrong", "Kind of fine", "Neutral", "Kind of bad", "Catastrophic if wrong"];
+const CONF_WORDS = ["Likely wrong", "Probably wrong", "Untested", "Probably right", "Likely right"];
+
+/* ---- sample data: the demo's student-treasurer idea. AI placements carry numbers; the founder's points carry a position only. ---- */
+let A = [
+  {id:"A-01", kind:"problem", text:"Student club treasurers have this problem: chasing members for receipts before reimbursing them", pos:{x:0.58, y:0.9}, status:"Weak signal",
+   ai:{impact:5, confidence:2, reason:"Everything rests on this. Two confirmed quotes from one treasurer show real cost and a kept workaround; one person is not a pattern.", would:"Three more treasurers from cold outreach who each describe a recent instance and a workaround they keep."},
+   against:"Both quotes come from one treasurer who chose to answer a poll; the second interview, a friend, called it not a big deal (INT-002-Q02)."},
+  {id:"A-02", kind:"early-adopters", text:"Student club treasurers feel this more than presidents or finance staff and are the right first customer", pos:{x:0.42, y:0.74}, status:"Shaky",
+   ai:{impact:4, confidence:2, reason:"No interview from the other segments yet, so the comparison this point makes can't be made.", would:"Three president or finance-staff interviews scored on the same problem."},
+   against:"Only treasurers have been interviewed, so nothing yet compares them with presidents or finance staff."},
+  {id:"A-03", kind:"alternatives", text:"Free expense apps don't solve it: members won't install another app", pos:{x:0.66, y:0.52}, status:"Untested", ai:null,
+   against:"No interviewee has tried an expense app; this rests on the founder's own guess, with no quote behind it."},
+  {id:"A-04", kind:"solution", text:"Treasurers would switch from the group chat to an app where members snap receipts", pos:{x:0.3, y:0.82}, status:"Contradicted",
+   ai:{impact:5, confidence:1, reason:"The one club that tried an app dropped it. This is the claim the evidence has already pushed against.", would:"A club that kept an app through a full term."},
+   against:"INT-001-Q03: the club tried an app and went back to the group chat, where the photos already are."},
+  {id:"A-05", kind:"customers", text:"Student union finance staff would pay for this on behalf of clubs", pos:{x:0.2, y:0.58}, status:"Untested", ai:null,
+   against:"No finance-staff interview exists and nobody has been asked who pays; nothing has tested this."},
+  {id:"A-06", kind:"other", text:"Clubs reimburse by e-transfer, so matching a payment to a photo is a step done by hand", pos:{x:0.8, y:0.34}, status:"Strong signal", ai:null,
+   against:"Three workaround quotes (INT-001-Q02, INT-002-Q01, INT-003-Q02), but every club is at the same university."},
+  {id:"A-07", kind:"competition", text:"No student-union software vendor offers receipt capture today", pos:null, status:"Untested", ai:null,
+   against:"Nothing has tested this; a student-union vendor could add receipt capture as a feature in a term."},
+  {id:"A-08", kind:"problem", text:"Members forget event payment deadlines", pos:null, status:"Untested", ai:null,
+   against:"No quote mentions deadlines; this came from the founder's canvas, not from an interview."}
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+const byId = id => A.find(a => a.id === id);
+const worldOf = pos => ({x:(pos.x - 0.5) * G, y:(0.5 - pos.y) * G});
+const posOf = w => ({x:w.x / G + 0.5, y:0.5 - w.y / G});
+const inGrid = pos => !!pos && pos.x >= -PAD && pos.x <= 1 + PAD && pos.y >= -PAD && pos.y <= 1 + PAD;
+const clampPos = pos => ({x:Math.min(1, Math.max(0, pos.x)), y:Math.min(1, Math.max(0, pos.y))});
+const shelf = () => A.filter(a => !inGrid(a.pos));
+const shelfWorld = i => ({x:-G / 2 + 40 + i * 48, y:SHELF_TOP + SHELF_H / 2 + 8});
+const worldPos = a => inGrid(a.pos) ? worldOf(a.pos) : shelfWorld(shelf().indexOf(a));
+const aiWorld = a => a.ai ? worldOf({x:(a.ai.confidence - 1) / 4, y:(a.ai.impact - 1) / 4}) : null;
+
+/* ---- state ---- */
+const params = new URLSearchParams(location.search);
+let variant = params.get("variant") === "2" ? 2 : 1, filter = "all", sel = null, panelOpen = false;
+let view = {k:1, x:0, y:0}, kmin = 1, spaceDown = false;
+const vp = $("vp"), world = $("world"), card = $("card"), panel = $("panel");
+
+/* ---- render the world once per data change; the view transform is separate ---- */
+function wl(x, y, cls, html){ return `<div class="wl ${cls}" style="left:${x}px;top:${y}px"><span>${html}</span></div>`; }
+function renderWorld(){
+  const h = G / 2, q = G / 4;
+  const ticks = [0, 1, 2, 3, 4].map(i => `<line x1="${-h + i * q}" y1="${h}" x2="${-h + i * q}" y2="${h + 6}" stroke="#111"/><line x1="${-h - 6}" y1="${h - i * q}" x2="${-h}" y2="${h - i * q}" stroke="#111"/>`).join("");
+  const ties = A.filter(a => a.ai && inGrid(a.pos)).map(a => { const w = worldOf(a.pos), v = aiWorld(a); return `<line class="tie" data-tie="${a.id}" x1="${w.x}" y1="${w.y}" x2="${v.x}" y2="${v.y}" stroke="#8c8c88" stroke-dasharray="3 3" stroke-width="1.2"/>`; }).join("");
+  const geo = `<svg class="geo">
+    <rect x="${-h}" y="${-h}" width="${G}" height="${G}" fill="#fff" stroke="none"/>
+    <rect x="${-h}" y="${-h}" width="${h}" height="${h}" fill="rgba(17,17,17,.045)" stroke="none"/>
+    <line x1="${-q}" y1="${-h}" x2="${-q}" y2="${h}" stroke="#c9c9c4"/><line x1="${q}" y1="${-h}" x2="${q}" y2="${h}" stroke="#c9c9c4"/>
+    <line x1="${-h}" y1="${-q}" x2="${h}" y2="${-q}" stroke="#c9c9c4"/><line x1="${-h}" y1="${q}" x2="${h}" y2="${q}" stroke="#c9c9c4"/>
+    <rect x="${-h}" y="${-h}" width="${G}" height="${G}" fill="none" stroke="#111" stroke-width="2"/>
+    <line x1="${-h}" y1="0" x2="${h}" y2="0" stroke="#111" stroke-width="2"/><line x1="0" y1="${-h}" x2="0" y2="${h}" stroke="#111" stroke-width="2"/>
+    ${ticks}
+    <rect x="${-h}" y="${SHELF_TOP}" width="${G}" height="${SHELF_H}" fill="none" stroke="#8c8c88" stroke-dasharray="4 3"/>
+    ${ties}</svg>`;
+  const conf = CONF_WORDS.map((t, i) => wl(-h + i * q + (i === 0 ? -6 : i === 4 ? 6 : 0), h + 12, `conf ${i === 0 ? "first" : i === 4 ? "last" : ""}`, esc(t))).join("");
+  const imp = IMPACT_WORDS.map((t, i) => wl(-h - 12, h - i * q, "imp", esc(t))).join("");
+  const names = wl(h, h + 30, "axname", "Confidence →") + wl(-h - 150, -h, "axname v", "Impact →");
+  const notes = wl(-h + 12, -h + 12, "note", "Riskiest<small>test these first</small>") + wl(-h + 12, SHELF_TOP + 8, "note", shelf().length ? "Not rated yet · drag into the grid" : "Nothing waiting · double-click the board to add");
+  const ais = A.filter(a => a.ai).map(a => { const v = aiWorld(a); return `<div class="pt ai ${sel === a.id ? "sel" : ""}" data-pt="${a.id}" data-ai="1" title="${esc(a.status)} · AI's placement" style="left:${v.x}px;top:${v.y}px"><i></i></div>`; }).join("");
+  const pts = A.map(a => { const w = worldPos(a); return `<div class="pt me ${sel === a.id ? "sel" : ""}" data-pt="${a.id}" title="${esc(a.status)}" style="left:${w.x}px;top:${w.y}px"><i class="s-${GLYPH[a.status]}"></i></div>`; }).join("");
+  world.innerHTML = geo + conf + imp + names + notes + ais + pts;
+  $("legend").innerHTML = STATUSES.map(s => `<span><i class="g s-${GLYPH[s]}"></i>${esc(s)}</span>`).join("") + `<i class="sep"></i><span><i class="g ai"></i>AI's placement</span>`;
+}
+
+/* ---- view: zoom in without limit; zoom out stops where the grid plus the shelf just fit the window ---- */
+function fitK(){ const r = vp.getBoundingClientRect(); return Math.max(0.05, Math.min((r.width - SCREEN_PAD.l - SCREEN_PAD.r) / (BOX.x1 - BOX.x0), (r.height - SCREEN_PAD.t - SCREEN_PAD.b) / (BOX.y1 - BOX.y0))); }
+function fitted(){                                                                                  // the view at the zoom-out limit: grid plus shelf centred in the room the axis words leave
+  const r = vp.getBoundingClientRect(); const k = fitK();
+  return {k, x:SCREEN_PAD.l + ((r.width - SCREEN_PAD.l - SCREEN_PAD.r) - (BOX.x1 - BOX.x0) * k) / 2 - BOX.x0 * k,
+             y:SCREEN_PAD.t + ((r.height - SCREEN_PAD.t - SCREEN_PAD.b) - (BOX.y1 - BOX.y0) * k) / 2 - BOX.y0 * k};
+}
+function fitView(){ kmin = fitK(); view = fitted(); applyView(); }
+function clampView(){
+  if (view.k <= kmin + 1e-9){ view = fitted(); return; }                                          // at the limit the board sits exactly fitted
+  const r = vp.getBoundingClientRect(), keep = 80;                                                  // otherwise the grid can't be panned fully off the screen
+  view.x = Math.min(r.width - keep - BOX.x0 * view.k, Math.max(keep - BOX.x1 * view.k, view.x));
+  view.y = Math.min(r.height - keep - BOX.y0 * view.k, Math.max(keep - BOX.y1 * view.k, view.y));
+}
+function applyView(){
+  if (view.k < kmin) view.k = kmin;
+  clampView();
+  world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.k})`;
+  world.style.setProperty("--ik", 1 / view.k);
+  placeCard();
+}
+function zoomAt(cx, cy, f){ const k2 = Math.max(kmin, view.k * f); const wx = (cx - view.x) / view.k, wy = (cy - view.y) / view.k; view.k = k2; view.x = cx - wx * k2; view.y = cy - wy * k2; applyView(); }
+function worldAt(clientX, clientY){ const r = vp.getBoundingClientRect(); return {x:(clientX - r.left - view.x) / view.k, y:(clientY - r.top - view.y) / view.k}; }
+function screenOf(w){ return {x:view.x + w.x * view.k, y:view.y + w.y * view.k}; }
+
+/* ---- the card (click) and the panel (double-click) ---- */
+function statusHtml(s){ return `<span class="st lab"><i class="g s-${GLYPH[s]}"></i>${esc(s)}</span>`; }
+function renderCard(){
+  const a = sel && byId(sel);
+  if (!a || panelOpen){ card.classList.remove("in"); return; }
+  card.innerHTML = `<div class="head"><span class="lab">${esc(KINDS[a.kind])}</span>${statusHtml(a.status)}</div>
+    <div class="txt ${a.text ? "" : "empty"}">${a.text ? esc(a.text) : "Nothing written yet · double-click to edit"}</div>
+    <div class="ag"><b>Against</b>${esc(a.against || "The AI hasn't looked at this point yet.")}</div>
+    <div class="more">Double-click the point to edit it</div>`;
+  card.classList.add("in"); placeCard();
+}
+function placeCard(){
+  const a = sel && byId(sel); if (!a || !card.classList.contains("in")) return;
+  const r = vp.getBoundingClientRect(), s = screenOf(worldPos(a)), cw = card.offsetWidth, ch = card.offsetHeight;
+  let x = s.x + 20, y = s.y - 14;
+  if (x + cw > r.width - 12) x = s.x - 20 - cw;
+  if (y + ch > r.height - 12) y = r.height - 12 - ch;
+  card.style.left = Math.max(12, x) + "px"; card.style.top = Math.max(12, y) + "px";
+}
+function renderPanel(){
+  const a = sel && byId(sel);
+  panel.classList.toggle("open", panelOpen && !!a);
+  if (!panelOpen || !a) return;
+  const kinds = Object.entries(KINDS).map(([k, l]) => `<option value="${k}" ${a.kind === k ? "selected" : ""}>${l}</option>`).join("");
+  const ai = a.ai ? `<div class="nums"><div><b>${a.ai.impact}</b><small>Impact · ${esc(IMPACT_WORDS[a.ai.impact - 1])}</small></div><div><b>${a.ai.confidence}</b><small>Confidence · ${esc(CONF_WORDS[a.ai.confidence - 1])}</small></div></div>
+      <p>${esc(a.ai.reason)}</p><p class="sm"><b>Would change it:</b> ${esc(a.ai.would)}</p>` : `<p class="sm">No placement yet: the AI hasn't rated this point.</p>`;
+  panel.innerHTML = `<div class="spread"><h4>You</h4><button class="btn" id="closePanel" title="Close">✕</button></div>
+    <div class="spread" style="margin:0 0 6px">${statusHtml(a.status)}<span style="font-size:12px;color:var(--grey)">${esc(a.id)}</span></div>
+    <label for="ptext">Assumption</label><textarea id="ptext" placeholder="Type the assumption">${esc(a.text)}</textarea>
+    <label for="pkind">Kind</label><select id="pkind">${kinds}</select>
+    <p class="sm" style="margin-top:12px">${inGrid(a.pos) ? `Placed at ${esc(CONF_WORDS[Math.round(a.pos.x * 4)]).toLowerCase()} · ${esc(IMPACT_WORDS[Math.round(a.pos.y * 4)]).toLowerCase()}. The position is the rating.` : "On the shelf: drag it into the grid to rate it."}</p>
+    <div class="ai"><h4>Your AI</h4><div class="ag"><p class="sm"><b>Against:</b> ${esc(a.against || "nothing yet")}</p></div>${ai}</div>`;
+  $("ptext").addEventListener("input", ev => { a.text = ev.target.value; renderCard(); });
+  $("pkind").addEventListener("change", ev => { a.kind = ev.target.value; renderCard(); });
+  $("closePanel").addEventListener("click", () => { panelOpen = false; renderPanel(); renderCard(); });
+}
+function select(id){ sel = id; renderWorld(); renderCard(); if (panelOpen) renderPanel(); }
+function deselect(){ sel = null; panelOpen = false; renderWorld(); renderCard(); renderPanel(); }
+function openPanel(id){ sel = id; panelOpen = true; renderWorld(); renderCard(); renderPanel(); }
+
+/* ---- band controls ---- */
+function setVariant(v){
+  variant = v; const u = new URL(location.href); u.searchParams.set("variant", v); history.replaceState(null, "", u);
+  document.querySelectorAll("#variantSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.variant) === v));
+  $("help").textContent = "Scroll to zoom · drag the board to pan · double-click the board to add" + (v === 1 ? " · drag a point to rate it" : " · ⌘-drag a point to rate it");
+}
+function setFilter(f){ filter = f; vp.className = "f-" + f; document.querySelectorAll("#filterSeg button").forEach(b => b.classList.toggle("on", b.dataset.filter === f)); placeCard(); }
+$("variantSeg").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b) setVariant(Number(b.dataset.variant)); });
+$("filterSeg").addEventListener("click", ev => { const b = ev.target.closest("button"); if (b) setFilter(b.dataset.filter); });
+$("reset").addEventListener("click", fitView);
+vp.querySelector(".hud").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; const r = vp.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, b.dataset.zoom === "in" ? 1.25 : 0.8); });
+
+/* ---- pointer: pan on empty board (or space+drag), move a point per the variant, snap on release ---- */
+let pan = null, drag = null;
+vp.addEventListener("wheel", ev => {
+  ev.preventDefault(); const r = vp.getBoundingClientRect();
+  const f = Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0015));                                 // trackpad pinch arrives as ctrl+wheel
+  zoomAt(ev.clientX - r.left, ev.clientY - r.top, f);
+}, {passive:false});
+vp.addEventListener("pointerdown", ev => {
+  if (ev.target.closest(".card,.legend,.hud,button")) return;
+  const pt = ev.target.closest(".pt[data-pt]");
+  if (pt && !spaceDown && ev.button === 0){
+    const a = byId(pt.dataset.pt); if (!a) return;
+    const isAi = !!pt.dataset.ai, w = worldPos(a);
+    const allowed = !isAi && (variant === 1 || ev.metaKey || ev.ctrlKey);                        // variant 2: plain drag on a point does nothing but select
+    drag = {id:a.id, el:pt, allowed, moved:false, sx:ev.clientX, sy:ev.clientY, wx:w.x, wy:w.y};
+    vp.setPointerCapture(ev.pointerId); return;
+  }
+  if (ev.button === 0 || ev.button === 1){ pan = {sx:ev.clientX, sy:ev.clientY, vx:view.x, vy:view.y, moved:false, onBoard:!pt}; vp.setPointerCapture(ev.pointerId); }
+});
+vp.addEventListener("pointermove", ev => {
+  if (drag){
+    if (!drag.allowed) return;
+    const dx = ev.clientX - drag.sx, dy = ev.clientY - drag.sy;
+    if (!drag.moved){ if (Math.hypot(dx, dy) < 4) return; drag.moved = true; drag.el.classList.add("dragging"); card.classList.remove("in"); }   // 4px threshold: a click never nudges
+    const x = drag.wx + dx / view.k, y = drag.wy + dy / view.k;
+    drag.el.style.left = x + "px"; drag.el.style.top = y + "px";
+    const tie = world.querySelector(`line[data-tie="${drag.id}"]`); if (tie){ tie.setAttribute("x1", x); tie.setAttribute("y1", y); }
+    return;
+  }
+  if (pan){
+    const dx = ev.clientX - pan.sx, dy = ev.clientY - pan.sy;
+    if (!pan.moved){ if (Math.hypot(dx, dy) < 4) return; pan.moved = true; vp.classList.add("panning"); }
+    view.x = pan.vx + dx; view.y = pan.vy + dy; applyView();
+  }
+});
+function endPointer(ev){
+  if (drag){
+    const d = drag; drag = null; d.el.classList.remove("dragging");
+    if (d.moved){                                                                                 // release: snap into the grid, or onto the shelf
+      const a = byId(d.id); const w = {x:parseFloat(d.el.style.left), y:parseFloat(d.el.style.top)}; const p = posOf(w);
+      a.pos = inGrid(p) ? clampPos(p) : null;
+      renderWorld(); renderCard(); if (panelOpen) renderPanel();
+    } else select(d.id);
+    return;
+  }
+  if (pan){
+    const p = pan; pan = null; vp.classList.remove("panning");
+    if (!p.moved && p.onBoard && ev.type === "pointerup" && ev.button === 0 && !ev.target.closest(".card")) deselect();      // click on empty board closes the card
+  }
+}
+vp.addEventListener("pointerup", endPointer); vp.addEventListener("pointercancel", endPointer);
+vp.addEventListener("dblclick", ev => {
+  if (ev.target.closest(".card,.legend,.hud,button")) return;
+  const pt = ev.target.closest(".pt[data-pt]");
+  if (pt){ openPanel(pt.dataset.pt); return; }
+  const p = posOf(worldAt(ev.clientX, ev.clientY));                                               // double-click on empty board adds a point there
+  const n = A.length + 1; const a = {id:"A-" + String(n).padStart(2, "0"), kind:"other", text:"", pos:inGrid(p) ? clampPos(p) : null, status:"Untested", ai:null, against:""};
+  A.push(a); select(a.id);
+});
+document.addEventListener("keydown", ev => {
+  const typing = /^(TEXTAREA|INPUT|SELECT)$/.test(ev.target.tagName);
+  if (ev.key === " " && !typing){ ev.preventDefault(); spaceDown = true; vp.classList.add("space"); }
+  if (ev.key === "Escape"){ if (panelOpen){ panelOpen = false; renderPanel(); renderCard(); } else if (sel) deselect(); }
+});
+document.addEventListener("keyup", ev => { if (ev.key === " "){ spaceDown = false; vp.classList.remove("space"); } });
+new ResizeObserver(() => { const was = view.k <= kmin + 1e-9; kmin = fitK(); if (was) fitView(); else applyView(); }).observe(vp);   // the zoom-out limit follows the window
+
+/* ---- go ---- */
+setVariant(variant); setFilter("all"); renderWorld(); fitView();
+if (params.get("sel")) params.get("panel") ? openPanel(params.get("sel")) : select(params.get("sel"));   // ?sel=A-01[&panel=1]: open a card or the panel on load, for screenshots
+</script>
+</body>
+</html>

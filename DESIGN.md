@@ -16,8 +16,8 @@ first, then the evidence it rests on, with the AI's objection before the AI's nu
 Signature element, one per page (spend boldness here and nowhere else):
 - Home: the **share bar per problem**, 56px tall across the text column, one slot per interview needed,
   with the counts as 96px numerals under it.
-- Assumptions map: the **posture gauge**, a horizontal scale from Contradicted through Untested to
-  Holding up, with the needle where the evidence puts it (with no evidence: just left of centre).
+- Assumptions map: the **posture gauge**, a horizontal scale in five bands, Contradicted, Shaky, Untested,
+  Weak signal, Strong signal, with the needle where the evidence puts it (with no evidence: at the centre).
 - Interview page (and anywhere quotes are the content): the **pull quote**, Fraunces 300 at 24–28px with
   the behaviour type and interview ID as a margin note.
 - Every other page: the page title row and black rules; nothing else competes.
@@ -31,8 +31,8 @@ What the merge takes from each prototype and what was decided where the proposal
    evidence type plus ID as a small note. Two faces (grotesk for structure, serif only for the customer's
    words) is the whole contrast system.
 3. Gauge and glyphs from B: the gauge on the map and, smaller, under the verdict on the home page. Status
-   glyphs everywhere status appears: hollow square = untested, half = shaky, filled = holding up,
-   hatched = contradicted. The map stays light; B's geometry (quarter grid, axis labels inside the
+   glyphs everywhere status appears: hollow square = untested, half = shaky, ringed = weak signal,
+   filled = strong signal, hatched = contradicted. The map stays light; B's geometry (quarter grid, axis labels inside the
    square) on C's 2px black axes.
 4. One accent, interactive only. **C's blue**, not A's red: red next to "Contradicted" would start to
    mean two things, which the proposal warns against. Contradicted is hatched plus the word.
@@ -80,7 +80,7 @@ Every token carries a boundary:
 - `--grey #8c8c88`: secondary text, captions, disabled text, the quarter-grid lines on the map, AI points.
 - `--acc #1438d8`: the four uses listed above ONLY.
 - `--stone`, `--inset`: surfaces. No other surface colours exist.
-- Status is carried by shape and the word: `■` filled = holding up / confirmed, `◧` half = shaky,
+- Status is carried by shape and the word: `■` filled = strong signal / confirmed, `▣` ringed = weak signal, `◧` half = shaky,
   `□` hollow = untested / suggested, `▨` hatched = contradicted / rejected / not in transcript.
 - Tiers are words. Hair on Fire is set in a filled chip, Incremental hatched, the rest outlined.
 - There is no red, yellow, green, coral, teal, navy, sky or purple anywhere.

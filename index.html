@@ -115,7 +115,8 @@ h3{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:
 @media (max-width:900px){.boxes.g2,.boxes.g3,.boxes.fit{grid-template-columns:1fr}}
 /* counts: label / big thin numeral / caption, on a hairline */
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 24px;margin-bottom:24px}
-@media (max-width:1000px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tiles.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1000px){.tiles,.tiles.five{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .tile{border:none;border-top:1px solid var(--ink);padding:10px 0 12px;background:none}
 .tile .n{font-size:48px;font-weight:var(--wl);letter-spacing:-.02em;line-height:1;margin:2px 0 4px}
 .tile .n .muted{font-size:15px;font-weight:var(--w)}
@@ -156,17 +157,19 @@ h1.verdict.sm{font-size:24px;line-height:1.15;letter-spacing:-.02em;max-width:no
 .gauge .scale{position:relative;height:28px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
 .gauge .tick{position:absolute;top:0;bottom:0;width:1px;background:var(--hair)}
 .gauge .tick.c{background:var(--ink)}
-.gauge .needle{position:absolute;left:0;top:-10px;width:100%;height:48px;background:none;margin:0;pointer-events:none;transform:translateX(calc(var(--p,0) * 50%));animation:needle .24s ease-out both}
+.gauge .needle{position:absolute;left:0;top:-10px;width:100%;height:48px;background:none;margin:0;pointer-events:none;transform:translateX(calc(var(--p,0) * 40%));animation:needle .24s ease-out both}
 /* the slide happens once per page load; after that every re-render draws the needle in place (same transform, no animation) */
 .settled .gauge .needle{animation:none}
 .gauge .needle:before{content:"";position:absolute;left:50%;top:0;width:2px;height:100%;margin-left:-1px;background:var(--ink)}
 .gauge .needle:after{content:"";position:absolute;left:50%;top:-6px;border:6px solid transparent;border-top-color:var(--ink);transform:translateX(-50%)}
-@keyframes needle{from{transform:translateX(0)}to{transform:translateX(calc(var(--p,0) * 50%))}}
+@keyframes needle{from{transform:translateX(0)}to{transform:translateX(calc(var(--p,0) * 40%))}}
 @media (prefers-reduced-motion:reduce){@keyframes needle{from{opacity:0}to{opacity:1}}}
 .chip.st:before{display:none}
 .q .meta .etype{font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;color:var(--ink);font-size:11px}
 .btn.on{background:var(--ink);color:var(--stone)}
-.gauge .gl{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase}
+/* five readings, five bands: each label sits under its band, the needle lands on a band's centre */
+.gauge .gl{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:6px;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;text-align:center;line-height:1.2}
+.gauge .gl span:first-child{text-align:left} .gauge .gl span:last-child{text-align:right}
 .gauge .read{display:block;margin-top:8px;font-size:12px;color:var(--grey)}
 .gauge.sm .scale{height:18px} .gauge.sm .needle{height:36px;top:-8px}
 /* the share bar per problem: one slot per interview needed */
@@ -183,10 +186,11 @@ h1.verdict.sm{font-size:24px;line-height:1.15;letter-spacing:-.02em;max-width:no
 .share-n .n{display:block;font-weight:var(--wl);font-size:96px;line-height:.9;letter-spacing:-.03em;margin:4px 0 6px}
 .share-n .g{color:var(--grey)}
 @media (max-width:900px){.share{height:40px}.share-n .n{font-size:48px}}
-/* status glyph and word: shape, never colour */
+/* status glyph and word: shape, never colour. Hollow = untested, half = shaky, ringed = weak signal, filled = strong signal, hatched = contradicted. */
 .gy{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);vertical-align:0;margin-right:6px;flex-shrink:0;background:transparent}
 .gy.shaky{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)}
-.gy.holding{background:var(--ink)}
+.gy.weak{box-shadow:inset 0 0 0 2px var(--ink)}
+.gy.strong{background:var(--ink)}
 .gy.contradicted{background:var(--hatch)}
 .gy.ai{border-style:dashed;border-color:var(--grey)}
 .stw{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
@@ -363,12 +367,13 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .mapband{display:grid;grid-template-columns:minmax(0,7fr) minmax(280px,5fr);column-gap:48px;align-items:end;padding:12px 24px 12px;border-bottom:1px solid var(--ink);flex-shrink:0}
 .mapband .lab{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
 @media (max-width:1100px){.mapband{grid-template-columns:1fr;row-gap:12px}}
+@media (max-width:1500px){.mapband .gauge .gl{font-size:10px}}
 @media (max-width:900px){.mapband .gauge .scale{height:20px}.mapband .gauge .needle{height:38px;top:-8px}}
 @media (max-width:900px){.tabstrip{flex-wrap:wrap;padding:0 16px}.tabstrip .tabs{width:100%;order:2;gap:14px}.tabstrip>.row{width:100%;padding:8px 0 4px;justify-content:flex-start}.mapband{padding:10px 16px}}
 .counts{display:inline-flex;gap:10px;align-items:center;font-size:12px;margin-right:6px}
 .counts .cnt{display:inline-flex;align-items:center;gap:0;font-weight:var(--wb)}
 .counts .dotp{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);background:transparent;margin-right:5px}
-.counts .dotp.s-ok{background:var(--ink)} .counts .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)} .counts .dotp.s-bad{background:var(--hatch)}
+.counts .dotp.s-ok{background:var(--ink)} .counts .dotp.s-weak{box-shadow:inset 0 0 0 2px var(--ink)} .counts .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)} .counts .dotp.s-bad{background:var(--hatch)}
 .vp.full{flex:1;height:auto;border:none;min-height:0}
 /* With a point selected the stage becomes three columns: You | the map | Your AI. Columns, not overlays, so nothing sits on the grid. */
 .mapstage{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
@@ -402,7 +407,7 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .world .region.shelf{border:1px dashed var(--grey);background:transparent}
 .world .wlab{position:absolute;width:0;height:0;transform:scale(var(--ik));transform-origin:0 0;pointer-events:none}
 .world .wlab span{position:absolute;transform:translate(0,-50%);white-space:nowrap;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;color:var(--ink);background:rgba(255,255,255,.85);padding:1px 5px}
-.world .wlab.l span{transform:translate(0,-50%)} .world .wlab.r span{transform:translate(-100%,-50%)}
+.world .wlab.l span{transform:translate(0,-50%)} .world .wlab.r span{transform:translate(-100%,-50%)} .world .wlab.c span{transform:translate(-50%,-50%)}
 .world .wlab.risk span{transform:none;color:var(--grey);text-align:left;line-height:1.2;background:none;font-weight:var(--w);text-transform:none;letter-spacing:0;font-size:12px}
 .world .wlab.risk small{display:block;font-size:12px}
 .world .wlab.shelf span{transform:none;color:var(--grey);font-weight:var(--w);letter-spacing:0;text-transform:none;background:none;font-size:12px}
@@ -411,7 +416,7 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .pt:active{cursor:grabbing}
 .pt .dotp{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border:2px solid var(--ink);background:var(--paper);transition:transform var(--t)}
 .pt:hover .dotp{transform:scale(1.25)}
-.pt .dotp.s-ok{background:var(--ink)} .pt .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,var(--paper) 50%)} .pt .dotp.s-bad{background:var(--hatch),var(--paper)} .pt .dotp.s-none{background:var(--paper)}
+.pt .dotp.s-ok{background:var(--ink)} .pt .dotp.s-weak{background:linear-gradient(var(--paper),var(--paper)) center/4px 4px no-repeat,var(--ink)} .pt .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,var(--paper) 50%)} .pt .dotp.s-bad{background:var(--hatch),var(--paper)} .pt .dotp.s-none{background:var(--paper)}
 .pt.cand .dotp{border-style:dashed}
 .pt.sel .dotp{outline:2px solid var(--acc);outline-offset:3px}
 .pt.piv .dotp{box-shadow:0 0 0 3px var(--paper),0 0 0 4px var(--grey)}
@@ -563,6 +568,10 @@ const SETUP_URL = TEMPLATE_URL + "/blob/main/SETUP.md";
 /* Signal thresholds. Fixed in the app and in CLAUDE.md, not a setting: a problem is tested once this many confirmed
    interviews score it, and the signal is strong when at least this share land in Hair on Fire or Incremental Improvement. */
 const MIN_INTERVIEWS = 5, STRONG_SHARE = 0.5;
+/* Two more fixed thresholds: a problem reads nothing under 2 confirmed scores (one story is not a pattern); a segment reads nothing under 3. Contradicted needs MIN_INTERVIEWS scores with 20% or fewer in the top two tiers. */
+const MIN_SCORED = 2, MIN_SEGMENT = 3, CONTRADICTED_SHARE = 0.2;
+/* The five readings, left to right on the gauge and everywhere else. */
+const STATUSES = ["Contradicted","Shaky","Untested","Weak signal","Strong signal"];
 const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent","Not a Problem"];
 const TIER_CLASS = {"Hair on Fire":"tier-hof","Incremental Improvement":"tier-inc","Nice to Have":"tier-nth","Latent":"tier-lat","Not a Problem":"tier-nap"};
 const TIER_DEF = {
@@ -758,10 +767,32 @@ function hygieneIssues(iv){ return (Number(iv.leading) > 0 ? 1 : 0) + (iv.pitche
 /* An interview that can't carry an assumption on its own: a friend or family member, leading questions, a pitch or demo, or no recent instance. It still counts; it just can't be what holds the assumption up. */
 function weakInterview(iv){ return !iv || hygieneIssues(iv) > 0 || iv.source === "Friend or family" || iv.recentInstance === "No"; }
 function painShare(ps){
+  const isWeak = p => weakInterview(byId(S.interviews, p.interviewId));
   const top2 = ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier));
-  const weak = top2.filter(p => weakInterview(byId(S.interviews, p.interviewId))).length;
+  const weak = top2.filter(isWeak).length;
   const n = ps.length;
-  return {n, top2:top2.length, weak, share:n ? top2.length / n : 0, cleanShare:n ? (top2.length - weak) / n : 0};
+  const cleanN = ps.filter(p => !isWeak(p)).length;
+  const cleanHof = ps.filter(p => p.tier === "Hair on Fire" && !isWeak(p)).length;
+  return {n, top2:top2.length, weak, cleanN, cleanHof, share:n ? top2.length / n : 0, cleanShare:n ? (top2.length - weak) / n : 0};
+}
+/* The reading on one problem, from its confirmed scores. Five statuses, fixed thresholds:
+   Untested: under MIN_SCORED scores. Contradicted: MIN_INTERVIEWS or more and 20% or fewer in the top two tiers.
+   Shaky: the top-two share is under the bar, or reaches it only when weak interviews count.
+   Weak signal: clean interviews alone clear the bar, but under MIN_INTERVIEWS scores (or no clean Hair on Fire among them).
+   Strong signal: MIN_INTERVIEWS or more, clean interviews alone clear the bar, and at least one clean Hair on Fire. */
+function problemSignal(ps, extra){
+  const minN = MIN_INTERVIEWS, strong = STRONG_SHARE;
+  const {n, top2, weak, cleanHof, share, cleanShare} = painShare(ps);
+  const q = extra || "";
+  const w = weak ? `; ${weak} of those ${weak === 1 ? "is" : "are"} from a friend, a leading interview, a pitch or no recent instance` : "";
+  const pct = Math.round(share * 100);
+  if (n < MIN_SCORED) return {status:"Untested", why:`${n} of ${MIN_SCORED} confirmed interviews scored on this problem${q}`, n, share};
+  if (n >= minN && share <= CONTRADICTED_SHARE) return {status:"Contradicted", why:`Only ${top2} of ${n} interviews show real pain (${pct}%)${q}`, n, share};
+  if (share >= strong && cleanShare < strong) return {status:"Shaky", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, so only interviews that can't carry it clear your bar${q}`, n, share};
+  if (share < strong) return {status:"Shaky", why:`${top2} of ${n} interviews show real pain (${pct}%), below your ${Math.round(strong * 100)}% bar${q}`, n, share};
+  if (n < minN) return {status:"Weak signal", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, but ${n} of ${minN} is too few to lean on${q}`, n, share};
+  if (!cleanHof) return {status:"Weak signal", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, but none of the clean ones is Hair on Fire, so there is nobody to build for first${q}`, n, share};
+  return {status:"Strong signal", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${pct}%)${w}, ${cleanHof} clean Hair on Fire${q}`, n, share};
 }
 /* Pain yield per place: of the interviews that came from a place, how many scored (confirmed) Hair on Fire or Incremental. Only confirmed scores count; a strong score from a weak interview is flagged. */
 function placeYield(pl){
@@ -780,11 +811,10 @@ function problemStats(pr){
   const counts = Object.fromEntries(TIERS.map(t => [t, ps.filter(p => p.tier === t).length]));
   const n = ps.length; const top2 = counts["Hair on Fire"] + counts["Incremental Improvement"];
   const share = n ? top2 / n : 0;
-  const minN = MIN_INTERVIEWS, strong = STRONG_SHARE;
-  const signal = n < minN ? "Need more interviews" : share >= strong ? "Strong signal" : "Weak signal";
+  const sig = problemSignal(ps); const signal = sig.status;
   const confirmedQuotes = S.evidence.filter(e => e.problemId === pr.id && e.status === "Confirmed");
   const quotes = confirmedQuotes.length, against = confirmedQuotes.filter(e => stanceOf(e) === "against").length;
-  return {n, counts, share, signal, quotes, against};
+  return {n, counts, share, signal, why:sig.why, quotes, against};
 }
 /* Deterministic rubric check: does the cited evidence justify the tier? Same rule the AI is told to follow. */
 function painCheck(p){
@@ -894,7 +924,7 @@ Interview ID|Problem ID|Pain tier|Supporting evidence IDs|Scored by|Status
 - Status: Candidate
 
 PART 4: COACHING NOTE
-In three or four plain sentences: which problem looks strongest and which weakest so far, and why; the single strongest reason this interview should not count (who the person is to the founder, leading questions, a pitch, no specific recent instance); and what the founder should ask next time to get past opinions to behavior. Do not use the words validated, proven or strong signal.
+In three or four plain sentences: which problem looks strongest and which weakest so far, and why; the single strongest reason this interview should not count (who the person is to the founder, leading questions, a pitch, no specific recent instance); and what the founder should ask next time to get past opinions to behavior. Do not use the words validated or proven as praise; name a status only by its computed word.
 
 MY INPUTS
 Interview ID: ${iv ? iv.id : "[for example INT-003]"}
@@ -1122,9 +1152,9 @@ Three treasurers from cold outreach who each describe a recent instance and a wo
   ];
   D.assumptions = [
     {id:"A-01", seed:"problem:PR-01", kind:"problem", problemId:"PR-01", customerId:"", alternativeId:"", text:"Student club treasurers have this problem: chasing members for receipts before reimbursing them", impact:5, confidence:3, pos:{x:0.55, y:0.95}, aiImpact:5, aiConfidence:2, aiEvidence:["INT-001-Q01","INT-001-Q02"], aiReason:"Everything rests on this. Two confirmed quotes from one treasurer show real cost and a workaround she keeps; the second interview was a pitch, so it adds nothing. One person is not a pattern yet.", aiAgainst:"Both quotes come from one treasurer who chose to answer a poll about receipts; the only other treasurer, a friend, said it isn't a big deal (INT-002-Q02).", aiWouldChange:"Three more treasurers from cold outreach who each describe a recent instance and a workaround they keep.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
-    {id:"A-02", seed:"customer:C-01", kind:"early-adopters", customerId:"C-01", problemId:"", alternativeId:"", text:"Student club treasurers feel this more than presidents or finance staff and are the right first customer", impact:4, confidence:2, pos:{x:0.25, y:0.72}, aiImpact:4, aiConfidence:2, aiEvidence:[], aiReason:"No interviews with presidents or finance staff yet, so there is nothing to compare against.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-02", seed:"customer:C-01", kind:"early-adopters", customerId:"C-01", problemId:"", alternativeId:"", text:"Student club treasurers feel this more than presidents or finance staff and are the right first customer", impact:4, confidence:2, pos:{x:0.25, y:0.72}, label:{dx:18, dy:56}, aiImpact:4, aiConfidence:2, aiEvidence:[], aiReason:"No interviews with presidents or finance staff yet, so there is nothing to compare against.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
     {id:"A-03", seed:"alt:ALT-02", kind:"alternatives", alternativeId:"ALT-02", problemId:"", customerId:"", text:"Free expense apps don't solve it: members won't install another app", impact:3, confidence:4, pos:{x:0.78, y:0.45}, aiImpact:3, aiConfidence:3, aiEvidence:["INT-001-Q03"], aiReason:"One confirmed quote: her club tried an app for a month and nobody uploaded. One club's experience, so I'd be less sure than you are.", aiAgainst:"Nobody uploaded to the free app for a month, which may say the problem isn't worth a new habit, not that the app was wrong (INT-001-Q03).", aiWouldChange:"A club that tried an app and kept using it, or one that dropped it for a reason other than members not bothering.", evidence:[{id:"INT-001-Q03", stance:"supports"}], note:"", status:"Active", foundBy:"Founder"},
-    {id:"A-04", seed:"solution:PR-01", kind:"solution", problemId:"PR-01", customerId:"", alternativeId:"", text:"Treasurers would switch from the group chat to an app where members snap receipts", impact:4, confidence:1, pos:{x:0.12, y:0.78}, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"Nobody has been asked about switching. The solution hasn't come up in any interview.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
+    {id:"A-04", seed:"solution:PR-01", kind:"solution", problemId:"PR-01", customerId:"", alternativeId:"", text:"Treasurers would switch from the group chat to an app where members snap receipts", impact:4, confidence:1, pos:{x:0.12, y:0.78}, label:{dx:100, dy:0}, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"Nobody has been asked about switching. The solution hasn't come up in any interview.", evidence:[], note:"", status:"Active", foundBy:"Founder"},
     {id:"A-05", seed:"", kind:"other", problemId:"", customerId:"C-03", alternativeId:"", text:"Student union finance staff would pay for this on behalf of clubs", impact:4, confidence:"", pos:null, aiImpact:4, aiConfidence:1, aiEvidence:[], aiReason:"A buyer assumption hiding in the value proposition. The treasurer isn't the one with budget. Worth one conversation.", evidence:[], note:"", status:"Candidate", foundBy:"Claude Code"}
   ];
   D.pivots = [
@@ -1168,7 +1198,7 @@ const PIVOT_KINDS = {
   "value-capture":    {label:"Value capture",    meaning:"same product, different buyer or pricing"},
   "platform":         {label:"Platform",         meaning:"the tool becomes the product or the product becomes a tool"}
 };
-const STATUS_ORDER = {"Contradicted":0, "Shaky":1, "Untested":2, "Holding up":3};
+const STATUS_ORDER = Object.fromEntries(STATUSES.map((s, i) => [s, i]));
 // Ad-libs from the Ideas Lab Week 1 Toolkit.
 const VP_PARTS = [["who","If we help","Type your customer here"],["what","solve","Type your problem here"],["how","with","Type your approach here"],["over","they will choose it over","Type your competitors here"],["why","because our solution is","Type your differentiation here"]];
 const PS_PARTS = [["context","When","Type your context here"],["complication","it leads to","Type your complication here"],["consequence","which matters because","Type your consequence here"]];
@@ -1230,7 +1260,8 @@ function seedAssumptions(){
 /* ---- map geometry. pos is {x: 0..1 likely wrong -> likely right, y: 0..1 inconvenient -> catastrophic}, or null when
    the point hasn't been rated. The canvas is bounded: the grid's edge is the farthest a point can go on either axis,
    and unrated points wait on a shelf strip below the grid, inside the same bounds. ---- */
-const MAP = {size:600, shelfTop:370, shelfH:120, pad:0.04, margin:90};
+/* margin leaves room for the axis words, which sit just outside the square so no point or label ever covers them */
+const MAP = {size:600, shelfTop:370, shelfH:120, pad:0.04, margin:320};
 const WORLD = {x0:-MAP.size / 2 - MAP.margin, x1:MAP.size / 2 + MAP.margin, y0:-MAP.size / 2 - 50, y1:MAP.shelfTop + MAP.shelfH + 20};
 function worldOf(pos){ return {x:(pos.x - 0.5) * MAP.size, y:(0.5 - pos.y) * MAP.size}; }
 function posOf(w){ return {x:w.x / MAP.size + 0.5, y:0.5 - w.y / MAP.size}; }
@@ -1238,50 +1269,50 @@ function clampWorld(w){ return {x:Math.min(WORLD.x1, Math.max(WORLD.x0, w.x)), y
 function inGrid(pos){ return !!pos && pos.x >= -MAP.pad && pos.x <= 1 + MAP.pad && pos.y >= -MAP.pad && pos.y <= 1 + MAP.pad; }
 function clampPos(pos){ return {x:Math.min(1, Math.max(0, pos.x)), y:Math.min(1, Math.max(0, pos.y))}; }
 function ratingOf(pos){ if (!inGrid(pos)) return {impact:"", confidence:""}; const c = v => Math.min(5, Math.max(1, Math.round(1 + v * 4))); return {impact:c(pos.y), confidence:c(pos.x)}; }
+/* The founder rates by where the point sits, and reads it back in words, never numbers. Bottom to top of the grid, then left to right. */
+const IMPACT_WORDS = ["Not an issue if wrong","Kind of fine","Neutral","Kind of bad","Catastrophic if wrong"];
+const CONFIDENCE_WORDS = ["Likely wrong","Probably wrong","Untested","Probably right","Likely right"];
+const impactWord = v => IMPACT_WORDS[Math.min(5, Math.max(1, Number(v) || 0)) - 1] || "";
+const confidenceWord = v => CONFIDENCE_WORDS[Math.min(5, Math.max(1, Number(v) || 0)) - 1] || "";
 function shelfWorld(i){ const cols = 4; return {x:-MAP.size / 2 + 40 + (i % cols) * 150, y:MAP.shelfTop + 58 + Math.floor(i / cols) * 36}; }
 
 /* Evidence-based status. The reading comes from discovery data, never from a typed score. */
 function segShare(ps){ return ps.length ? ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)).length / ps.length : 0; }
 function assumptionStatus(a){
-  const minN = MIN_INTERVIEWS, strong = STRONG_SHARE;
+  const strong = STRONG_SHARE;
   const confirmed = confirmedPains();
   if (a.kind === "problem" && a.problemId){
     const ps = confirmed.filter(p => p.problemId === a.problemId);
-    const {n, top2, weak, share, cleanShare} = painShare(ps);
     const shaky = ps.filter(p => !painCheck(p).ok).length;
-    const q = shaky ? ` (${shaky} of those fail the rubric check)` : "";
-    const w = weak ? `; ${weak} of those ${weak === 1 ? "is" : "are"} from a friend, a leading interview, a pitch or no recent instance` : "";
-    if (n < minN) return {status:"Untested", why:`${n} of ${minN} confirmed interviews scored on this problem${q}`, n, share};
-    if (share >= strong && cleanShare < strong) return {status:"Shaky", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${Math.round(share*100)}%)${w}, so only interviews that can't carry it clear your bar${q}`, n, share};
-    if (share >= strong) return {status:"Holding up", why:`${top2} of ${n} interviews are Hair on Fire or Incremental (${Math.round(share*100)}%)${w}${q}`, n, share};
-    if (share <= 0.2) return {status:"Contradicted", why:`Only ${top2} of ${n} interviews show real pain (${Math.round(share*100)}%)${q}`, n, share};
-    return {status:"Shaky", why:`${top2} of ${n} interviews show real pain (${Math.round(share*100)}%), below your ${Math.round(strong*100)}% bar${q}`, n, share};
+    return problemSignal(ps, shaky ? ` (${shaky} of those fail the rubric check)` : "");
   }
   if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId){
+    /* Same shape on the segment's scores, with MIN_SEGMENT as the floor. An early-adopter point is also contradicted when another
+       segment with MIN_SEGMENT or more scores shows 25 points more pain, and reads only Weak signal until another segment has been interviewed. */
     const bySeg = {};
     for (const p of confirmed){ const iv = byId(S.interviews, p.interviewId); const seg = iv && iv.customerId ? iv.customerId : "?"; (bySeg[seg] = bySeg[seg] || []).push(p); }
     const mine = bySeg[a.customerId] || []; const untagged = (bySeg["?"] || []).length;
-    if (mine.length < 3) return {status:"Untested", why:`${mine.length} of 3 confirmed scores from this segment${untagged ? ` (${untagged} interviews have no segment set)` : ""}`, n:mine.length};
-    const ms = painShare(mine); const s = ms.share;
+    if (mine.length < MIN_SEGMENT) return {status:"Untested", why:`${mine.length} of ${MIN_SEGMENT} confirmed scores from this segment${untagged ? ` (${untagged} interviews have no segment set)` : ""}`, n:mine.length};
+    const ms = painShare(mine); const s = ms.share; const pct = Math.round(s * 100);
     const w = ms.weak ? `, ${ms.weak} of them from friends, leading interviews, pitches or no recent instance` : "";
-    if (s >= strong && ms.cleanShare < strong) return {status:"Shaky", why:`${Math.round(s*100)}% of this segment's scores show real pain${w}, so only interviews that can't carry it clear your bar`, n:mine.length, share:s};
-    if (a.kind === "customers"){
-      if (s >= strong) return {status:"Holding up", why:`${Math.round(s*100)}% of this segment's scores show real pain${w}`, n:mine.length, share:s};
-      if (s <= 0.2) return {status:"Contradicted", why:`Only ${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
-      return {status:"Shaky", why:`${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
-    }
-    const others = Object.entries(bySeg).filter(([k]) => k !== a.customerId && k !== "?").map(([k, ps]) => ({k, share:segShare(ps), n:ps.length})).filter(o => o.n >= 3);
+    const others = a.kind === "early-adopters" ? Object.entries(bySeg).filter(([k]) => k !== a.customerId && k !== "?").map(([k, ps]) => ({k, share:segShare(ps), n:ps.length})).filter(o => o.n >= MIN_SEGMENT) : [];
     const best = others.sort((x, y) => y.share - x.share)[0];
-    if (best && best.share >= s + 0.25){ const c = byId(S.compass.customers, best.k); return {status:"Contradicted", why:`${c ? c.text : best.k} show more pain (${Math.round(best.share*100)}% vs ${Math.round(s*100)}%)`, n:mine.length, share:s}; }
-    if (s >= strong) return {status:"Holding up", why:`${Math.round(s*100)}% of this segment's scores show real pain${best ? `, ahead of ${Math.round(best.share*100)}% elsewhere` : ", no other segment interviewed yet"}`, n:mine.length, share:s};
-    return {status:"Shaky", why:`Only ${Math.round(s*100)}% of this segment's scores show real pain`, n:mine.length, share:s};
+    if (best && best.share >= s + 0.25){ const c = byId(S.compass.customers, best.k); return {status:"Contradicted", why:`${c ? c.text : best.k} show more pain (${Math.round(best.share*100)}% vs ${pct}%)`, n:mine.length, share:s}; }
+    if (a.kind === "customers" && s <= CONTRADICTED_SHARE) return {status:"Contradicted", why:`Only ${pct}% of this segment's scores show real pain`, n:mine.length, share:s};
+    if (s >= strong && ms.cleanShare < strong) return {status:"Shaky", why:`${pct}% of this segment's scores show real pain${w}, so only interviews that can't carry it clear your bar`, n:mine.length, share:s};
+    if (s < strong) return {status:"Shaky", why:`Only ${pct}% of this segment's scores show real pain, below your ${Math.round(strong * 100)}% bar`, n:mine.length, share:s};
+    if (ms.cleanN < MIN_SEGMENT) return {status:"Weak signal", why:`${pct}% of this segment's scores show real pain${w}, but only ${ms.cleanN} clean score${ms.cleanN === 1 ? "" : "s"} of the ${MIN_SEGMENT} needed`, n:mine.length, share:s};
+    if (a.kind === "early-adopters" && !best) return {status:"Weak signal", why:`${pct}% of this segment's scores show real pain${w}, but no other segment has been interviewed to compare against`, n:mine.length, share:s};
+    return {status:"Strong signal", why:`${pct}% of this segment's scores show real pain${w}${best ? `, ahead of ${Math.round(best.share*100)}% elsewhere` : ""}`, n:mine.length, share:s};
   }
+  /* Everything else is read from the confirmed quotes the founder tags for or against it. */
   const ev = (a.evidence || []).map(x => ({...x, e:byId(S.evidence, x.id)})).filter(x => x.e && x.e.status === "Confirmed");
   const sup = ev.filter(x => x.stance === "supports").length, con = ev.filter(x => x.stance === "contradicts").length;
   if (!ev.length) return {status:"Untested", why:"No confirmed quotes tagged to this yet", n:0};
   if (con >= sup) return {status:"Contradicted", why:`${con} quote${con === 1 ? "" : "s"} against, ${sup} for`, n:ev.length};
-  if (sup >= 3 && sup >= 2 * con) return {status:"Holding up", why:`${sup} quotes for, ${con} against`, n:ev.length};
-  return {status:"Shaky", why:`${sup} for, ${con} against; not enough yet`, n:ev.length};
+  if (sup < 2) return {status:"Shaky", why:`${sup} for, ${con} against; one quote is not a pattern`, n:ev.length};
+  if (sup >= 3 && sup >= 2 * con) return {status:"Strong signal", why:`${sup} quotes for, ${con} against`, n:ev.length};
+  return {status:"Weak signal", why:`${sup} quotes for, ${con} against; ${sup < 3 ? "fewer than 3 for" : "not yet twice the quotes against"}`, n:ev.length};
 }
 /* The pivot gate: a pivot is in play only when every trigger assumption is Shaky or Contradicted by confirmed evidence. Otherwise it's shown, stamped, and never counted. */
 function pivotGate(pv){
@@ -1293,7 +1324,7 @@ function pivotGate(pv){
     if (!a) return {open:false, why:`Not in play: ${id} doesn't exist`};
     if (a.status === "Retired") return {open:false, why:`Not in play: ${id} is retired`};
     const s = assumptionStatus(a);
-    if (!["Contradicted","Shaky"].includes(s.status)) return {open:false, why:`Not in play: ${id} is ${s.status === "Untested" ? "untested" : "holding up"} (${s.why})`};
+    if (!["Contradicted","Shaky"].includes(s.status)) return {open:false, why:`Not in play: ${id} is ${s.status === "Untested" ? "untested" : "a " + s.status.toLowerCase()} (${s.why})`};
     states.push(`${id} is ${s.status.toLowerCase()}`);
   }
   return {open:true, why:`In play: ${states.join(", ")}`};
@@ -1301,11 +1332,14 @@ function pivotGate(pv){
 function pivotsInPlay(){ return (S.pivots || []).filter(pv => pv.status !== "Retired" && pivotGate(pv).open); }
 function pivotsFor(aId){ return sortById((S.pivots || []).filter(pv => pv.status !== "Retired" && (pv.triggerAssumptionIds || []).includes(aId))).map(pv => ({pv, g:pivotGate(pv)})); }
 function pivotTriggerIds(){ const set = new Set(); for (const pv of pivotsInPlay()) for (const id of pv.triggerAssumptionIds || []) set.add(id); return set; }
-/* How many confirmed interviews an untested assumption is short of its gate; null when the assumption isn't counted that way. */
+/* How many confirmed interviews an assumption is short: an untested one, of its first reading; a weak signal, of a strong one. Null when it isn't counted that way. */
 function interviewsShort(a, s){
-  if (s.status !== "Untested") return null;
-  if (a.kind === "problem" && a.problemId) return Math.max(0, MIN_INTERVIEWS - (s.n || 0));
-  if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId) return Math.max(0, 3 - (s.n || 0));
+  if (a.kind === "problem" && a.problemId){
+    if (s.status === "Untested") return Math.max(0, MIN_SCORED - (s.n || 0));
+    if (s.status === "Weak signal") return Math.max(0, MIN_INTERVIEWS - (s.n || 0));
+    return null;
+  }
+  if ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId && s.status === "Untested") return Math.max(0, MIN_SEGMENT - (s.n || 0));
   return null;
 }
 function assumptionPriority(a){ const i = Number(a.impact) || 0, c = Number(a.confidence) || 0; return i && c ? i * (6 - c) : null; }
@@ -1333,33 +1367,36 @@ function disagreement(a){
 function compassReadout(){
   const r = rankedAssumptions(); const active = r.filter(x => x.a.status === "Active");
   const rated = active.filter(x => x.p);
-  const counts = {Contradicted:0, Shaky:0, Untested:0, "Holding up":0}; for (const x of active) counts[x.s.status]++;
+  const counts = Object.fromEntries(STATUSES.map(s => [s, 0])); for (const x of active) counts[x.s.status]++;
   const top = rated.slice(0, 3);
   const riskiestOpen = rated.find(x => x.s.status === "Untested") || null;
   let verdict, cls;
   if (!active.length) verdict = "No points on the map yet.", cls = "gray";
   else if (!rated.length) verdict = "Drag your points into the grid to find the riskiest.", cls = "gray";
   else if (top.some(x => x.s.status === "Contradicted")) verdict = "One of your riskiest assumptions is contradicted by your interviews. Time to rethink that part.", cls = "bad";
-  else if (top.every(x => x.s.status === "Holding up")) verdict = "Your three riskiest assumptions are holding up so far. Before you lean on them, ask your AI to poke holes.", cls = "ok";
+  else if (top.every(x => x.s.status === "Strong signal")) verdict = "Your three riskiest assumptions show a strong signal so far. Before you lean on them, ask your AI to poke holes.", cls = "ok";
   else if (top.some(x => x.s.status === "Shaky")) verdict = "One of your riskiest assumptions is shaky. More interviews with the right people will settle it.", cls = "warn";
+  else if (top.every(x => x.s.status === "Weak signal" || x.s.status === "Strong signal")) verdict = "Your riskiest assumptions show a signal, but a weak one. More clean interviews before you lean on them.", cls = "warn";
   else verdict = "Your riskiest assumptions are still untested. That's where the next interviews go.", cls = "warn";
   return {counts, top, riskiestOpen, verdict, cls, total:active.length, rated:rated.length, candidates:S.assumptions.filter(a => a.status === "Candidate").length, pivots:pivotsInPlay().length};
 }
-/* Posture: the priority-weighted mean of the three riskiest statuses, in [-1, 1]. Untested is a slight negative, so with no evidence the needle sits just left of centre. */
-function posture(top){ const v = {Contradicted:-1, Shaky:-0.4, Untested:-0.12, "Holding up":1}; let n = 0, d = 0; for (const x of top){ n += v[x.s.status] * (x.p || 1); d += (x.p || 1); } return d ? n / d : -0.12; }
+/* Posture: the priority-weighted mean of the three riskiest statuses, in [-1, 1]: the five readings sit at -1, -0.5, 0, 0.5 and 1, so no evidence reads at the centre. */
+const POSTURE = {Contradicted:-1, Shaky:-0.5, Untested:0, "Weak signal":0.5, "Strong signal":1};
+function posture(top){ let n = 0, d = 0; for (const x of top){ n += POSTURE[x.s.status] * (x.p || 1); d += (x.p || 1); } return d ? n / d : 0; }
+/* Five bands on the scale, one per reading; the needle lands on a band's centre (translateX of p × 40%). */
 function postureGauge(c, small){
   const p = posture(c.top);
-  return `<div class="gauge ${small ? "sm" : ""}" aria-label="Posture ${p.toFixed(2)}"><div class="scale">${[0, 25, 50, 75, 100].map(t => `<i class="tick ${t === 50 ? "c" : ""}" style="left:${t}%"></i>`).join("")}<i class="needle" style="--p:${p.toFixed(3)}"></i></div>
-    <div class="gl"><span>Contradicted</span><span>Shaky</span><span>Untested</span><span>Holding up</span></div>${small ? "" : `<span class="read">Posture ${p >= 0 ? "+" : ""}${p.toFixed(2)} · ${c.top.length || "no"} riskiest, priority-weighted · no evidence reads just left of centre</span>`}</div>`;
+  return `<div class="gauge ${small ? "sm" : ""}" aria-label="Posture ${p.toFixed(2)}"><div class="scale">${[20, 40, 60, 80].map(t => `<i class="tick" style="left:${t}%"></i>`).join("")}<i class="needle" style="--p:${p.toFixed(3)}"></i></div>
+    <div class="gl">${STATUSES.map(s => `<span>${s}</span>`).join("")}</div>${small ? "" : `<span class="read">Posture ${p >= 0 ? "+" : ""}${p.toFixed(2)} · ${c.top.length || "no"} riskiest, priority-weighted · no evidence reads at the centre</span>`}</div>`;
 }
-/* Status as a shape, never a colour: hollow = untested, half = shaky, filled = holding up, hatched = contradicted. */
-const glyphCls = s => s === "Holding up" ? "holding" : s === "Shaky" ? "shaky" : s === "Contradicted" ? "contradicted" : "";
+/* Status as a shape, never a colour: hollow = untested, half = shaky, ringed = weak signal, filled = strong signal, hatched = contradicted. */
+const glyphCls = s => s === "Strong signal" ? "strong" : s === "Weak signal" ? "weak" : s === "Shaky" ? "shaky" : s === "Contradicted" ? "contradicted" : "";
 function statusWord(s, why){ return `<span class="stw"><i class="gy ${glyphCls(s)}"></i>${esc(s === "Untested" ? "No evidence yet" : s)}</span>${why ? `<span class="why">${esc(why)}.</span>` : ""}`; }
 /* The riskiest-assumptions table: priority, the assumption, its status, then the AI's objection before the AI's numbers. */
 function betsTable(list){
   if (!list.length) return "";
   const rows = list.map(x => { const a = x.a; const b = aiBasis(a); const ap = aiPriority(a); const obj = a.aiAgainst || a.aiReason; const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind};
-    return `<tr class="click" data-act="openPoint" data-id="${esc(a.id)}"><td class="p">${x.p ?? "–"}</td><td class="id">${esc(a.id)}</td><td class="t">${esc(a.text || "untitled point")}<span class="why">${esc(k.label)}${a.status === "Candidate" ? " · suggested by " + esc(a.foundBy || "AI") : ""}</span></td><td>${statusWord(x.s.status, x.s.why)}</td><td class="obj">${b.kind === "none" ? `<span class="muted">Not rated by your AI yet.</span>` : `${esc(obj || "No objection written.")}<span class="why">${esc(b.label)}</span>`}</td><td class="rat">${b.kind === "none" ? "–" : `I ${esc(a.aiImpact || "–")} · C ${esc(a.aiConfidence || "–")}<br><span>P</span> ${ap ?? "–"}`}</td><td class="rat">I ${esc(a.impact || "–")} · C ${esc(a.confidence || "–")}<br><span>P</span> ${x.p ?? "–"}</td></tr>`; });
+    return `<tr class="click" data-act="openPoint" data-id="${esc(a.id)}"><td class="p">${x.p ?? "–"}</td><td class="id">${esc(a.id)}</td><td class="t">${esc(a.text || "untitled point")}<span class="why">${esc(k.label)}${a.status === "Candidate" ? " · suggested by " + esc(a.foundBy || "AI") : ""}</span></td><td>${statusWord(x.s.status, x.s.why)}</td><td class="obj">${b.kind === "none" ? `<span class="muted">Not rated by your AI yet.</span>` : `${esc(obj || "No objection written.")}<span class="why">${esc(b.label)}</span>`}</td><td class="rat">${b.kind === "none" ? "–" : `I ${esc(a.aiImpact || "–")} · C ${esc(a.aiConfidence || "–")}<br><span>P</span> ${ap ?? "–"}`}</td><td class="rat">${a.impact && a.confidence ? `${esc(impactWord(a.impact))}<br>${esc(confidenceWord(a.confidence))}` : "Not placed"}<br><span>P</span> ${x.p ?? "–"}</td></tr>`; });
   return `<div class="tscroll"><table class="bets"><tr><th>Priority</th><th>Point</th><th>Assumption</th><th>Status</th><th>AI objection</th><th>AI rates</th><th>You rate</th></tr>${rows.join("")}</table></div>`;
 }
 /* The share bar: one slot per interview needed, filled by tier as confirmed scores come in, with the counts as numerals under it. */
@@ -1376,7 +1413,7 @@ function shareBar(p){
 function areaOf(a){ return (ASSUMPTION_KINDS[a.kind] || {}).area || "alternatives"; }
 function areaReadout(area){
   const list = rankedAssumptions().filter(x => x.a.status === "Active" && areaOf(x.a) === area);
-  const counts = {Contradicted:0, Shaky:0, Untested:0, "Holding up":0}; for (const x of list) counts[x.s.status]++;
+  const counts = Object.fromEntries(STATUSES.map(s => [s, 0])); for (const x of list) counts[x.s.status]++;
   return {list, counts};
 }
 
@@ -1538,7 +1575,7 @@ function problemSheet(){
 
 /* 04 Assumptions Map: the whole screen is the canvas. Left click adds a point, drag a point to rate it,
    drag its label to tidy up, right-drag to pan, scroll to zoom. The grid's edge is as far as a point goes. */
-const statusDot = s => s === "Holding up" ? "ok" : s === "Shaky" ? "warn" : s === "Contradicted" ? "bad" : "none";
+const statusDot = s => s === "Strong signal" ? "ok" : s === "Weak signal" ? "weak" : s === "Shaky" ? "warn" : s === "Contradicted" ? "bad" : "none";
 const LABEL_DEFAULT = {dx:18, dy:0};
 function labelOf(a){ const l = a.label && typeof a.label === "object" ? a.label : LABEL_DEFAULT; return {dx:Number(l.dx) || 0, dy:Number(l.dy) || 0}; }
 function pointHtml(x, w, extra){
@@ -1555,11 +1592,12 @@ function mapView(){
   const sel = ui.selNote ? byId(S.assumptions, ui.selNote) : null;
   const h = MAP.size / 2;
   const ai = active.filter(x => x.a.aiImpact && x.a.aiConfidence).map(x => ({x, w:worldOf({x:(Number(x.a.aiConfidence) - 1) / 4, y:(Number(x.a.aiImpact) - 1) / 4})}));
-  const lab = (x, y, cls, text) => `<div class="wlab ${cls || ""}" style="left:${x}px;top:${y}px"><span>${text}</span></div>`;
+  /* dy is a screen-pixel row offset on the caption (the span is inside the zoom-corrected label), so stacked captions stay apart at every zoom */
+  const lab = (x, y, cls, text, dy) => `<div class="wlab ${cls || ""}" style="left:${x}px;top:${y}px"><span${dy ? ` style="margin-top:${dy}px"` : ""}>${text}</span></div>`;
   const worldPos = x => inGrid(x.a.pos) ? worldOf(x.a.pos) : shelfWorld(shelf.indexOf(x));
   const leaders = active.concat(cands).map(x => { const w = worldPos(x); const l = labelOf(x.a); return `<line x1="${w.x}" y1="${w.y}" x2="${w.x + l.dx}" y2="${w.y + l.dy}" stroke="#c9c9c4" stroke-width="1.2"/>`; }).join("");
   const steps = [["canvas","01 Leaner Canvas"],["value","02 Value Proposition"],["problem","03 Problem Statement"],["map","04 Assumptions Map"],["leads","05 Leads List"]];
-  const counts = ["Contradicted","Shaky","Untested","Holding up"].map(k => `<span class="cnt" title="${k === "Untested" ? "No evidence yet" : k}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
+  const counts = STATUSES.map(k => `<span class="cnt" title="${k === "Untested" ? "No evidence yet" : k}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
   return `<div class="mapfull">
     <div class="tabstrip"><div class="tabs" style="margin:0;border:none">${steps.map(([k, l]) => `<button class="${k === "map" ? "on" : ""}" data-act="go" data-href="compass/${k}">${l}</button>`).join("")}</div>
       <div class="row" style="gap:6px"><span class="counts">${counts}</span>
@@ -1576,7 +1614,8 @@ function mapView(){
         <div class="quad" style="left:${-h}px;top:${-h}px;width:${h}px;height:${h}px"></div>
         <div class="region grid" style="left:${-h}px;top:${-h}px;width:${MAP.size}px;height:${MAP.size}px"></div>
         <div class="axis h" style="left:${-h}px;top:-1px;width:${MAP.size}px"></div><div class="axis v" style="top:${-h}px;left:-1px;height:${MAP.size}px"></div>
-        ${lab(-h + 10, -h + 14, "", "↑ Catastrophic if wrong")}${lab(-h + 10, h - 32, "", "↓ Inconvenient if wrong")}${lab(-h + 10, h - 14, "l", "← Likely wrong")}${lab(h - 10, h - 14, "r", "Likely right →")}
+        ${IMPACT_WORDS.map((t, i) => lab(-h - 8, (0.5 - i / 4) * MAP.size, "r", t)).join("")}
+        ${CONFIDENCE_WORDS.map((t, i) => lab((i / 4 - 0.5) * MAP.size, h + 12, i === 0 ? "l" : i === 4 ? "r" : "c", t, i % 2 ? 18 : 0)).join("")}
         ${lab(-h + 14, -h + 28, "risk", "Riskiest<small>test these first</small>")}
         <div class="region shelf" style="left:${-h}px;top:${MAP.shelfTop}px;width:${MAP.size}px;height:${Math.max(MAP.shelfH, 76 + Math.ceil(shelf.length / 4) * 36)}px"></div>
         ${lab(-h + 14, MAP.shelfTop + 6, "shelf", shelf.length ? "Not rated yet · drag into the grid" : "Nothing waiting · click anywhere to add a point")}
@@ -1586,7 +1625,7 @@ function mapView(){
         ${placed.map(x => pointHtml(x, worldOf(x.a.pos))).join("")}
       </div>
       <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
-      <div class="legend"><span><i style="background:var(--hatch)"></i>Contradicted</span><span><i style="background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)"></i>Shaky</span><span><i></i>No evidence yet</span><span><i style="background:var(--ink)"></i>Holding up</span><span><i style="border-style:dashed;border-color:var(--grey)"></i>AI's placement</span><span><i style="box-shadow:0 0 0 2px var(--stone),0 0 0 3px var(--grey);margin-left:3px;margin-right:8px"></i>Pivot in play</span></div>
+      <div class="legend"><span><i style="background:var(--hatch)"></i>Contradicted</span><span><i style="background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)"></i>Shaky</span><span><i></i>No evidence yet</span><span><i style="box-shadow:inset 0 0 0 2px var(--ink)"></i>Weak signal</span><span><i style="background:var(--ink)"></i>Strong signal</span><span><i style="border-style:dashed;border-color:var(--grey)"></i>AI's placement</span><span><i style="box-shadow:0 0 0 2px var(--stone),0 0 0 3px var(--grey);margin-left:3px;margin-right:8px"></i>Pivot in play</span></div>
       <div class="hint2">Click to add a point · drag a point to rate it · drag its label to tidy · right-drag to pan · scroll to zoom</div>
       ${ui.mapShelf && !sel ? notesShelf(r) : ""}
     </div>
@@ -1617,7 +1656,7 @@ function selCard(a){
   return `<div class="selstrip">
     <div class="spread"><div class="row" style="gap:6px"><span class="mono muted">${esc(a.id)}</span><span class="chip blue">${esc(k.label)}</span>${where}${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
       <div class="row">${a.status === "Candidate" ? `<button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Dismiss</button><button class="btn pri sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">Accept</button>` : ""}<button class="btn icon" data-act="closeNote" title="Close (Esc)">✕</button></div></div>
-    <div class="notice ${x.s.status === "Holding up" ? "ok" : x.s.status === "Contradicted" ? "bad" : x.s.status === "Shaky" ? "warn" : "plain"}" style="margin-top:8px"><b>${esc(x.s.status === "Untested" ? "No evidence yet" : x.s.status)}.</b> ${esc(x.s.why)}. <span class="muted">Read from ${esc(k.test)}.</span> ${link}</div>
+    <div class="notice ${x.s.status === "Strong signal" ? "ok" : x.s.status === "Contradicted" ? "bad" : x.s.status === "Shaky" || x.s.status === "Weak signal" ? "warn" : "plain"}" style="margin-top:8px"><b>${esc(x.s.status === "Untested" ? "No evidence yet" : x.s.status)}.</b> ${esc(x.s.why)}. <span class="muted">Read from ${esc(k.test)}.</span> ${link}</div>
     ${taggable ? `<details class="fold" style="margin-top:8px;padding:6px 12px"><summary>Quotes for and against (${tagged.length})</summary>
       ${tagged.map(t => `<div class="q compact s-${esc(t.e.status)}" style="margin:8px 0 6px"><div class="spread"><span class="words">${esc(t.e.quote)}</span><div class="row"><span class="seg"><button class="${t.stance === "supports" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="supports">For</button><button class="${t.stance === "contradicts" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="contradicts">Against</button></span><button class="btn icon no" title="Untag" data-act="aUntag" data-id="${esc(a.id)}" data-eid="${esc(t.id)}">✕</button></div></div><div class="meta"><a href="#/interviews/${esc(t.e.interviewId)}">${esc(t.e.interviewId)}</a>${t.e.status !== "Confirmed" ? statusChip(t.e.status) : ""}</div></div>`).join("")}
       <select data-act="aTag" data-id="${esc(a.id)}" style="max-width:100%;margin-top:6px"><option value="">Tag a confirmed quote…</option>${confirmedQuotes.filter(e => !(a.evidence||[]).some(t => t.id === e.id)).map(e => opt(e.id, "", `${e.id}: ${e.quote.slice(0, 90)}`)).join("")}</select></details>` : ""}
@@ -1644,15 +1683,13 @@ function pivotsSection(a, s){
   if (!list.length) return ["Contradicted","Shaky"].includes(s.status) ? `<div class="h" style="margin-top:8px"><b>If this is wrong:</b> no pivot proposed yet. In your AI assistant, say <span class="kbd">Poke holes</span>; it proposes what you'd change, from confirmed quotes only.</div>` : "";
   return `<div class="lab" style="font-size:12.5px;color:var(--ink-2);margin:10px 0 4px">If this is wrong</div>${list.map(x => pivotCard(x, {showTriggers:false})).join("")}`;
 }
-function scale5(name, id, val){ return `<span class="seg you">${[1,2,3,4,5].map(n => `<button class="${String(val) === String(n) ? "on" : ""}" data-act="aScale" data-id="${esc(id)}" data-field="${name}" data-val="${n}">${n}</button>`).join("")}</span>`; }
 function bar5(val, cls){ const v = Number(val) || 0; return `<div class="rate">${[1,2,3,4,5].map(n => `<i class="${n <= v ? cls : ""}"></i>`).join("")}</div>`; }
-/* Your side of the page. */
+/* Your side of the page. The rating is where the point sits; it reads back in words. The AI alone works in numbers. */
 function youPanel(a){
-  const p = assumptionPriority(a);
+  const placed = !!(a.impact && a.confidence);
   return `<div class="panel p-you"><h4>You</h4>
-    <div class="lab">Impact if wrong</div>${scale5("impact", a.id, a.impact)}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
-    <div class="lab">Likely right?</div>${scale5("confidence", a.id, a.confidence)}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
-    <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b> <span class="small muted">impact × (6 − confidence)</span>` : `<span class="small muted">Pick numbers above or drag the point into the grid.</span>`}</div>
+    <div class="lab">Impact if wrong</div><p class="small" style="margin:0 0 10px">${placed ? esc(impactWord(a.impact)) : `<span class="muted">Not placed yet. Drag the point into the grid: up is catastrophic.</span>`}</p>
+    <div class="lab">Likely right?</div><p class="small" style="margin:0 0 10px">${placed ? esc(confidenceWord(a.confidence)) : `<span class="muted">Not placed yet. Left is likely wrong.</span>`}</p>
     <div class="lab">Kind of assumption</div><select class="inline" data-act="aKind" data-id="${esc(a.id)}">${Object.entries(ASSUMPTION_KINDS).map(([k2, v]) => opt(k2, a.kind, v.label)).join("")}</select>
     ${a.kind === "problem" ? `<div class="lab">Linked problem</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="problemId" style="max-width:100%"><option value="">None</option>${S.problems.map(pr => opt(pr.id, a.problemId, pr.id + ": " + pr.text)).join("")}</select>` : ""}
     ${(a.kind === "early-adopters" || a.kind === "customers") ? `<div class="lab">Linked segment</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="customerId" style="max-width:100%"><option value="">None</option>${(S.compass.customers||[]).map(c => opt(c.id, a.customerId, c.text)).join("")}</select>` : ""}
@@ -1762,7 +1799,7 @@ function pointTile(x){
     <div class="h" style="margin-top:6px">${esc(s.why)}.</div></div>`;
 }
 function statusTiles(counts){
-  return `<div class="tiles">${["Contradicted","Shaky","Untested","Holding up"].map(k => `<div class="tile"><div class="l"><i class="gy ${glyphCls(k)}"></i>${k === "Untested" ? "No evidence yet" : k}</div><div class="n">${counts[k]}</div></div>`).join("")}</div>`;
+  return `<div class="tiles five">${STATUSES.map(k => `<div class="tile"><div class="l"><i class="gy ${glyphCls(k)}"></i>${k === "Untested" ? "No evidence yet" : k}</div><div class="n">${counts[k]}</div></div>`).join("")}</div>`;
 }
 function beliefBox(area){
   const C = S.compass; const probs = sortById([...S.problems]);
@@ -1781,7 +1818,7 @@ function pivotBox(area, r){
   if (open.length) body = open.map(x => pivotCard(x)).join("");
   else {
     const top = r.list[0]; const short = top ? interviewsShort(top.a, top.s) : null;
-    body = `<p class="small" style="margin:0"><b>No pivot signal yet.</b> ${top ? `Riskiest assumption here, <a href="#/compass/map/${esc(top.a.id)}" class="mono">${esc(top.a.id)}</a>: ${esc(top.s.why)}${short !== null ? ` (${short} confirmed interview${short === 1 ? "" : "s"} short)` : ""}.` : "No assumptions in this area yet."} Your AI proposes a pivot only when an assumption here is shaky or contradicted by confirmed evidence.</p>`;
+    body = `<p class="small" style="margin:0"><b>No pivot signal yet.</b> ${top ? `Riskiest assumption here, <a href="#/compass/map/${esc(top.a.id)}" class="mono">${esc(top.a.id)}</a>: ${esc(top.s.why)}${short !== null ? ` (${short} confirmed interview${short === 1 ? "" : "s"} short of ${top.s.status === "Weak signal" ? "a strong signal" : "a reading"})` : ""}.` : "No assumptions in this area yet."} Your AI proposes a pivot only when an assumption here is shaky or contradicted by confirmed evidence.</p>`;
   }
   const rest = closed.length ? `<div class="h" style="margin-top:8px">${closed.map(x => `<div><span class="mono">${esc(x.pv.id)}</span> ${esc((PIVOT_KINDS[x.pv.kind] || {label:x.pv.kind}).label)}: ${esc(x.pv.text)} <span class="chip gray">${esc(x.g.why)}</span></div>`).join("")}</div>` : "";
   return `<div class="box soft"><h3>If this breaks</h3><p class="ins">Pivots your AI proposed, in play only while the assumption they hang on is shaky or contradicted. You accept or dismiss each from its point on the map.</p>${body}${rest}</div>`;
@@ -1801,7 +1838,7 @@ function insightsView(area){
   return tabs + `<div class="sheet">${docHead("Insights", esc(A.title), esc(A.lede))}
   ${statusTiles(r.counts)}
   <div class="boxes g2">${beliefBox(area)}<div class="box soft"><h3>How this gets tested</h3><p class="ins">Status is read from your confirmed evidence, never typed in.</p>
-    <p class="small" style="margin:0">${area === "problem" ? "Each problem assumption holds up when enough confirmed interviews score it Hair on Fire or Incremental Improvement." : area === "customers" ? "The early-adopter assumption holds up when your ideal segment shows more real pain than the other segments; set the segment on each interview so it counts. Your AI reads every transcript for where these people gather and suggests places to look; a place with no quote behind it is a guess until you've been there." : area === "solution" ? "Tag confirmed quotes for or against each solution assumption from its point on the map. Behavior counts; “I would use it” doesn't." : "Tag confirmed quotes for or against each alternative or competition assumption. A workaround they keep using is a quote about an alternative."}</p></div></div>
+    <p class="small" style="margin:0">${area === "problem" ? `Each problem assumption reads nothing under ${MIN_SCORED} confirmed interviews; a weak signal when the clean ones clear your ${Math.round(STRONG_SHARE * 100)}% bar on fewer than ${MIN_INTERVIEWS}; a strong signal at ${MIN_INTERVIEWS} or more with at least one clean Hair on Fire.` : area === "customers" ? "The early-adopter assumption shows a strong signal when your ideal segment shows more real pain than the other segments; set the segment on each interview so it counts. Your AI reads every transcript for where these people gather and suggests places to look; a place with no quote behind it is a guess until you've been there." : area === "solution" ? "Tag confirmed quotes for or against each solution assumption from its point on the map. Behavior counts; “I would use it” doesn't." : "Tag confirmed quotes for or against each alternative or competition assumption. A workaround they keep using is a quote about an alternative."}</p></div></div>
   <h2>Your assumptions in this area</h2>
   ${r.list.length ? betsTable(r.list) : `<div class="empty">No ${esc(A.title.toLowerCase())} points yet. <a href="#/compass/map">Add them on the map.</a></div>`}
   ${pivotBox(area, r)}
@@ -1812,7 +1849,7 @@ function insightsView(area){
 function problemsTiles(){
   if (!S.problems.length) return `<div class="empty">No problems yet. <a href="#/compass/canvas">Add them on the Leaner Canvas.</a></div>`;
   return `${sortById([...S.problems]).map(shareBar).join("")}
-  <p class="hint">Strong signal: at least ${MIN_INTERVIEWS} confirmed interviews score it and ${Math.round(STRONG_SHARE*100)}% or more land in Hair on Fire or Incremental Improvement.</p>`;
+  <p class="hint">Untested under ${MIN_SCORED} confirmed interviews. Shaky when under ${Math.round(STRONG_SHARE*100)}% land in Hair on Fire or Incremental Improvement, or only weak interviews get it there. Weak signal when the clean interviews clear that bar on fewer than ${MIN_INTERVIEWS}. Strong signal at ${MIN_INTERVIEWS} or more, clean, with at least one clean Hair on Fire. Contradicted at ${MIN_INTERVIEWS} or more with ${Math.round(CONTRADICTED_SHARE*100)}% or fewer.</p>`;
 }
 function personaSummary(){
   const P = S.persona; const filled = PERSONA_FIELDS.filter(([k]) => P.fields[k] && P.fields[k].text);
@@ -1872,7 +1909,7 @@ function segmentTable(){
   return `<div class="box flat soft"><table><tr><th>Segment</th><th class="right">Interviews</th><th class="right">Confirmed scores</th><th class="right">Hair on Fire</th><th class="right">Real pain</th></tr>
   ${rows.map(r => `<tr><td>${r.c.ideal ? "<b>1. " : ""}${esc(r.c.text)}${r.c.ideal ? "</b> <span class='chip blue'>ideal</span>" : ""}</td><td class="right">${r.ivs}</td><td class="right">${r.n}</td><td class="right">${r.hof}</td><td class="right">${r.n ? Math.round(r.share*100) + "%" : "–"}</td></tr>`).join("")}
   ${untagged ? `<tr><td class="muted">No segment set</td><td class="right">${untagged}</td><td colspan="3"><span class="chip warn">Set the segment on each interview</span></td></tr>` : ""}</table></div>
-  <p class="hint">Real pain = share of confirmed scores in the top two tiers. The early-adopter assumption holds up when the ideal segment beats the others by a clear margin; three confirmed scores per segment is the minimum before it reads anything.</p>`;
+  <p class="hint">Real pain = share of confirmed scores in the top two tiers. The early-adopter assumption shows a strong signal when the ideal segment clears the bar on clean interviews and no other segment beats it by a clear margin; ${MIN_SEGMENT} confirmed scores per segment is the minimum before it reads anything.</p>`;
 }
 function alternativesTable(){
   const alts = S.compass.alternatives || [];
@@ -1909,13 +1946,13 @@ const SECTIONS = {
       ["quotes","Quotes","What your AI pulled out, one decision at a time with the transcript beside it; then every confirmed and rejected quote across your interviews."],
       ["problems","Problems","The problems you believe exist, each with its confirmed quotes and pain scores."],
       ["persona","Persona","Your draft of who the customer is, line by line, each line linked to the quotes that back it."],
-      ["jobs","Jobs","Jobs to be done, kept for later, for when the problem holds up."]],
+      ["jobs","Jobs","Jobs to be done, kept for later, for when the problem shows a strong signal."]],
     ai:["Paste a transcript, then say <span class=\"kbd\">Review interview INT-003</span> with that interview's ID. Your AI pulls out every quote word for word, marks each for or against the problem, counts the leading questions and notes a pitch or demo, scores the pain for each problem by what the person did, and writes a short note on the interview. Each quote and score lands under Quotes, to be confirmed; the app checks every quote against the transcript and flags any it can't find.",
          "Say <span class=\"kbd\">Happy ears check</span> and it points at the confirmed quotes that are only opinion. Say <span class=\"kbd\">Audit the persona</span> and it says which lines no quote backs."],
     expect:[`Early interviews are often friends, pitched, or short on a specific recent instance; the app marks those so they can't carry an assumption on their own. Most quotes will be Nice to Have, and “I would use it” never moves a score.`,
             `The number that matters is confirmed interviews scored Hair on Fire or Incremental Improvement, per problem. The bar is ${MIN_INTERVIEWS} confirmed interviews with ${Math.round(STRONG_SHARE * 100)}% or more in those two tiers.`]},
   insights: {title:"Insights", lede:"The evidence read back against what you believe, one page per focus area.",
-    "for":["Each page takes the assumptions of one kind and shows what the confirmed evidence says about them. A status (Contradicted, Shaky, Untested, Holding up) is computed, never typed: a problem point from the share of confirmed interviews that score it in the top two tiers; a customer or early-adopter point by comparing pain across segments; a solution, alternative or competition point from the confirmed quotes you tag for or against it.",
+    "for":["Each page takes the assumptions of one kind and shows what the confirmed evidence says about them. A status (Contradicted, Shaky, Untested, Weak signal, Strong signal) is computed, never typed: a problem point from the share of confirmed interviews that score it in the top two tiers; a customer or early-adopter point by comparing pain across segments; a solution, alternative or competition point from the confirmed quotes you tag for or against it.",
            "The same status shows on the map and on the home page; these pages show the evidence behind it."],
     items:() => [["insights/problem","Problem","Pain per problem: the share bar, one slot per interview needed, and the quotes against."],
       ["insights/customers","Customers","Which segment feels it most, where your interviews came from, which places find real pain, where to look next, and the persona."],
@@ -1979,7 +2016,7 @@ function shell(content, bare){
           ["interviews","Interviews", `<span class="count">${S.interviews.length}</span>`],
           ["quotes","Quotes", m.toConfirm ? `<span class="pill">${m.toConfirm}</span>` : `<span class="count">${m.confirmed}</span>`]
         ], m.toConfirm, "evidence")}
-        ${group("insights", "Insights", Object.entries(AREAS).map(([k, v]) => { const ar = areaReadout(k); return ["insights/" + k, v.title, ar.counts.Contradicted ? `<span class="chip bad">${ar.counts.Contradicted}</span>` : ar.counts["Holding up"] ? `<span class="chip ok">${ar.counts["Holding up"]}</span>` : ""]; }), 0, "insights")}
+        ${group("insights", "Insights", Object.entries(AREAS).map(([k, v]) => { const ar = areaReadout(k); return ["insights/" + k, v.title, ar.counts.Contradicted ? `<span class="chip bad">${ar.counts.Contradicted}</span>` : ar.counts["Strong signal"] ? `<span class="chip ok">${ar.counts["Strong signal"]}</span>` : ""]; }), 0, "insights")}
         ${group("ai", "Your AI", [["ask","How to use AI"]])}
         ${group("help", "Help", [["guide","Pain Scale"], ["settings","Settings"]])}
       </nav>
@@ -2015,7 +2052,7 @@ function render(){
 /* ---------------- small building blocks ---------------- */
 function tierChip(t){ return t ? `<span class="chip tier ${TIER_CLASS[t]||""}">${esc(t)}</span>` : `<span class="chip gray">Not scored</span>`; }
 function statusChip(s){ return `<span class="chip ${s==="Confirmed"?"ok":s==="Rejected"?"gray":"warn"}">${esc(s === "Candidate" ? "Suggested" : s)}</span>`; }
-function signalChip(s){ return `<span class="chip ${s === "Strong signal" ? "ok" : s === "Weak signal" ? "bad" : "gray"}">${esc(s)}</span>`; }
+function signalChip(s){ return statusChipA(s); }
 function sourceChip(f){ return f ? `<span class="ai">${esc(f === "AI candidate" ? "AI" : f)}</span>` : ""; }
 const W = (cls, n, l, h, href) => `<div class="tile ${cls} ${href ? "click" : ""}" ${href ? `data-href="${href}"` : ""}><div class="n">${n}</div><div class="l">${l}</div>${h ? `<div class="h">${h}</div>` : ""}</div>`;
 const sep = `<span class="sep">·</span>`;
@@ -2187,7 +2224,7 @@ function dashView(){
   const m = metrics(); const [msg, h, btn] = nextStep(m); const c = compassReadout();
   const tot = Object.values(m.tierCounts).reduce((a, b) => a + b, 0);
   const fact = (n, l, sub, href) => `<div><a href="#/${href}"><div class="lbl">${l}</div><div class="n">${n}</div><div class="s">${sub || "&nbsp;"}</div></a></div>`;
-  const statusLine = ["Contradicted","Shaky","Untested","Holding up"].map(k => `${c.counts[k]} ${k === "Untested" ? "untested" : k.toLowerCase()}`).join(", ");
+  const statusLine = STATUSES.map(k => `${c.counts[k]} ${k.toLowerCase()}`).join(", ");
   return `<div class="sheet">
   <div class="spread" style="align-items:flex-end"><div class="tool">Where you stand · ${esc(S.config.venture || "Your venture")}${S.config.founder ? " · " + esc(S.config.founder) : ""}</div>${wordmark()}</div><div class="rule" style="margin-bottom:0"></div>
   <div class="vrow"><div><h1 class="verdict">${esc(c.verdict)}</h1>${c.rated ? postureGauge(c, true) : ""}</div>
@@ -2195,7 +2232,7 @@ function dashView(){
   <div class="nextline"><span class="lbl">Next</span><span>${esc(msg)}</span><span class="a"><a class="btn pri" href="#/${h}">${esc(btn)}</a></span></div>
   ${S.unreadable.length ? `<div class="notice bad" style="margin:14px 0">${S.unreadable.length} file${S.unreadable.length > 1 ? "s" : ""} in your folder couldn't be read and ${S.unreadable.length > 1 ? "were" : "was"} skipped: ${S.unreadable.map(esc).join(", ")}</div>` : ""}
   ${S.problems.length ? sortById([...S.problems]).map(shareBar).join("") : `<div class="lrow"><div class="lbl">Problem</div><div><p style="margin:0">No problem written yet. <a href="#/start">Start your snapshot.</a></p></div></div>`}
-  ${S.assumptions.length ? `<div class="lrow"><div class="lbl">Riskiest<br>assumptions<span class="sub">Priority = impact × (6 − confidence). ${statusLine}.</span></div><div>${c.top.length ? betsTable(c.top) : `<p style="margin:0">Drag your points into the grid to find the riskiest. <a href="#/compass/map">Open the map.</a></p>`}
+  ${S.assumptions.length ? `<div class="lrow"><div class="lbl">Riskiest<br>assumptions<span class="sub">Priority from where each point sits: higher up and further left comes first. ${statusLine}.</span></div><div>${c.top.length ? betsTable(c.top) : `<p style="margin:0">Drag your points into the grid to find the riskiest. <a href="#/compass/map">Open the map.</a></p>`}
     <p class="hint" style="margin:10px 0 0">Your AI's objection comes before its number, so you have to dismiss it on purpose. <a href="#/compass/map">Open the map</a>${c.pivots ? ` · <a href="#/compass/map">${c.pivots} pivot${c.pivots === 1 ? "" : "s"} in play</a>: an assumption is shaky or contradicted and your AI has proposed what you'd change` : ""}.</p></div></div>`
     : `<div class="lrow"><div class="lbl">Riskiest<br>assumptions</div><div><p style="margin:0">No points on the map yet. <a href="#/compass/map">Make them from your canvas.</a></p></div></div>`}
   ${tot ? `<div class="lrow hair"><div class="lbl">Confirmed scores<span class="sub">by tier, all problems</span></div><div><div class="bar tiers">${TIERS.map(t => m.tierCounts[t] ? `<div class="${TIER_CLASS[t]}" style="width:${m.tierCounts[t]/tot*100}%" title="${esc(t)}">${m.tierCounts[t]}</div>` : "").join("")}</div>
@@ -2410,7 +2447,7 @@ function problemView(id){
   const pains = S.pains.filter(x => x.problemId === id);
   return `<div class="sheet">${docHead("Insights · Problem", `${esc(p.text)} <span class="muted mono" style="font-size:14px;font-weight:400">${esc(p.id)}</span>`, "", `<div class="row">${signalChip(s.signal)}<button class="btn sm" data-act="newInterview">Log an interview</button></div>`, `<a href="#/insights/problem">Insights: Problem</a>`)}
   <div class="boxes g2"><div class="box soft"><h3>The problem</h3><form data-form="problem"><label class="f">In the customer's words<input type="text" name="text" value="${esc(p.text)}"></label><label class="f">Who has it<input type="text" name="who" value="${esc(p.who||"")}"></label></form></div>
-  <div class="box soft"><h3>Confirmed pain</h3><div class="bar" style="margin:4px 0 8px"><div style="width:${Math.min(100, s.n / minN * 100)}%;background:${s.signal === "Strong signal" ? "var(--ink)" : "var(--hatch)"}"></div></div><div class="row small" style="gap:6px">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}</div><p class="hint" style="margin:8px 0 0">${s.n} of ${minN} confirmed interviews scored on this problem. ${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}${s.against ? `, <b>${s.against} against the problem</b>` : ""}.</p></div></div>
+  <div class="box soft"><h3>Confirmed pain</h3><div class="bar" style="margin:4px 0 8px"><div style="width:${Math.min(100, s.n / minN * 100)}%;background:${s.signal === "Strong signal" ? "var(--ink)" : s.signal === "Weak signal" ? "var(--hatch-grey)" : "var(--hatch)"}"></div></div><div class="row small" style="gap:6px">${TIERS.map(t => `<span class="chip tier ${TIER_CLASS[t]}">${esc(t)}: ${s.counts[t]}</span>`).join("")}</div><p class="hint" style="margin:8px 0 0">${s.n} of ${minN} confirmed interviews scored on this problem. ${s.quotes} confirmed quote${s.quotes === 1 ? "" : "s"}${s.against ? `, <b>${s.against} against the problem</b>` : ""}.</p></div></div>
   <div class="split"><div><h2>Quotes (${quotes.length})</h2>${quotes.length ? sortById(quotes).map(e => quoteCard(e, S.transcripts[e.interviewId] ?? null, {showInterview:true})).join("") : `<div class="empty">No quotes linked yet.</div>`}</div>
   <div><h2>Pain scores (${pains.length})</h2>${pains.length ? pains.map(x => `<div class="q compact spread" style="align-items:center"><a href="#/interviews/${esc(x.interviewId)}">${esc(x.interviewId)}</a>${tierChip(x.tier)}${statusChip(x.status)}</div>`).join("") : `<div class="empty">None yet.</div>`}
   ${!quotes.length && !pains.length ? `<button class="btn sm" data-act="deleteProblem" data-id="${esc(p.id)}">Delete this problem</button>` : ""}</div></div>
@@ -2591,7 +2628,6 @@ document.addEventListener("click", async ev => {
   else if (a === "closeNote"){ deselect(); render(); }
   else if (a === "toggleShelf"){ ui.mapShelf = !ui.mapShelf; if (ui.mapShelf) deselect(); render(); }
   else if (a === "toggleFull"){ ui.mapFull = !ui.mapFull; render(); }
-  else if (a === "aScale"){ const x = byId(S.assumptions, el.dataset.id); const nx = {...x, [el.dataset.field]: Number(el.dataset.val)}; if (nx.impact && nx.confidence) nx.pos = {x:(nx.confidence - 1) / 4, y:(nx.impact - 1) / 4}; upsert("assumptions", nx); render(); }
   else if (a === "pivotStatus"){ const pv = byId(S.pivots, el.dataset.id); const prev = pv.status; upsert("pivots", {...pv, status: el.dataset.val}); render(); toast(el.dataset.val === "Active" ? `Accepted ${pv.id}.` : `Dismissed ${pv.id}.`, () => { upsert("pivots", {...byId(S.pivots, pv.id), status: prev}); render(); }); }
   else if (a === "aStatus"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, status: el.dataset.val}); if (el.dataset.val === "Retired"){ ui.selNote = null; dropSub(); } render(); }
   else if (a === "aStance"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).map(t => t.id === el.dataset.eid ? {...t, stance:el.dataset.val} : t)}); render(); }
