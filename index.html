@@ -37,7 +37,7 @@ a:hover{border-bottom-width:2px}
 a:active{opacity:.7}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 b,strong{font-weight:var(--wb)}
-@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}.pt:hover,.pt .dotp:hover,.btn:active,.tile.click:hover{transform:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}.pt:hover .dotp,.pt.dragging .dotp,.btn:active,.tile.click:hover{transform:none!important}}
 
 /* ===== frame: the sidebar is the first column of the grid, not a panel ===== */
 .app{display:grid;grid-template-columns:236px 1fr;height:100vh}
@@ -354,86 +354,91 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .drawer .db{overflow:auto;padding:18px 24px;flex:1}
 .drawer .transcript{max-height:none}
 
-/* ===== assumptions map: a light grid on the stone, 2px axes, square points ===== */
-.mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px}
-.mapwrap.sel{grid-template-columns:270px minmax(0,1fr) 290px}
-@media (max-width:1000px){.mapwrap,.mapwrap.sel{grid-template-columns:1fr}}
+/* ===== assumptions map: a whiteboard. The board fills the stage under the tab strip and the posture band; the grid is a
+   white square on the stone with 2px ink axes, the shelf a dashed strip below it. Points are glyphs, no labels. ===== */
 .mapfull{position:relative;flex:1;display:flex;flex-direction:column;min-height:0}
 .tabstrip{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 16px 0 24px;border-bottom:2px solid var(--ink);flex-shrink:0}
 .tabstrip .tabs{border:none;margin:0;gap:18px;min-width:0}
 .tabstrip>.row{flex-wrap:nowrap;flex-shrink:0}
-@media (max-width:1500px){.tabstrip{padding-left:20px}.tabstrip .tabs{gap:10px}.tabstrip>.row{gap:4px!important}.tabstrip .counts{gap:8px;margin-right:2px}}
+.tabstrip .seg button{padding:5px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.02em;line-height:1.2}
+@media (max-width:1500px){.tabstrip{padding-left:16px;padding-right:12px}.tabstrip .tabs{gap:8px}.tabstrip .tabs button{font-size:11px}.tabstrip>.row{gap:3px!important}.tabstrip .counts{gap:4px;margin-right:2px}.tabstrip .counts .dotp{margin-right:3px}.tabstrip .seg button{padding:5px 6px}.tabstrip .btn.sm{padding:5px 7px}}
 .tabstrip .tabs button{padding:12px 0}
 .mapband{display:grid;grid-template-columns:minmax(0,7fr) minmax(280px,5fr);column-gap:48px;align-items:end;padding:12px 24px 12px;border-bottom:1px solid var(--ink);flex-shrink:0}
 .mapband .lab{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
 @media (max-width:1100px){.mapband{grid-template-columns:1fr;row-gap:12px}}
 @media (max-width:1500px){.mapband .gauge .gl{font-size:10px}}
 @media (max-width:900px){.mapband .gauge .scale{height:20px}.mapband .gauge .needle{height:38px;top:-8px}}
-@media (max-width:900px){.tabstrip{flex-wrap:wrap;padding:0 16px}.tabstrip .tabs{width:100%;order:2;gap:14px}.tabstrip>.row{width:100%;padding:8px 0 4px;justify-content:flex-start}.mapband{padding:10px 16px}}
+@media (max-width:1300px){.tabstrip{flex-wrap:wrap;padding:0 16px}.tabstrip .tabs{width:100%;order:2;gap:14px;flex-wrap:wrap;overflow:visible}.tabstrip .tabs button{padding:8px 0}.tabstrip>.row{width:100%;padding:8px 0 4px;justify-content:flex-start;flex-wrap:wrap}}
+@media (max-width:900px){.mapband{padding:10px 16px}}
 .counts{display:inline-flex;gap:10px;align-items:center;font-size:12px;margin-right:6px}
 .counts .cnt{display:inline-flex;align-items:center;gap:0;font-weight:var(--wb)}
 .counts .dotp{display:inline-block;width:10px;height:10px;border:1px solid var(--ink);background:transparent;margin-right:5px}
 .counts .dotp.s-ok{background:var(--ink)} .counts .dotp.s-weak{box-shadow:inset 0 0 0 2px var(--ink)} .counts .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)} .counts .dotp.s-bad{background:var(--hatch)}
-.vp.full{flex:1;height:auto;border:none;min-height:0}
-/* With a point selected the stage becomes three columns: You | the map | Your AI. Columns, not overlays, so nothing sits on the grid. */
+/* The stage: the board, and on double-click one column on the right for the point's details. Columns, not overlays. */
 .mapstage{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
-.mapstage.sel{grid-template-columns:280px minmax(0,1fr) 300px}
-.mapstage>.panel{position:static;width:auto;max-height:none;min-height:0;overflow:auto;border:none;background:none;padding:16px 20px 20px}
-.mapstage>.p-you{border-right:2px solid var(--ink)}
-.mapstage>.p-ai{border-left:2px dashed var(--grey)}
-/* What the evidence says about the selected point: a strip across the top, under the posture band. */
-.selstrip{flex-shrink:0;max-height:38%;overflow:auto;padding:10px 24px 12px;border-bottom:1px solid var(--ink)}
+.mapstage.sel{grid-template-columns:minmax(0,1fr) 360px}
+.mappanel{min-height:0;overflow:auto;border-left:2px solid var(--ink);padding:16px 20px 24px;background:var(--stone)}
+.mappanel h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.mappanel .sec{margin-top:20px;padding-top:14px;border-top:2px solid var(--ink)}
+.mappanel .sec.aisec{border-top-style:dashed;border-top-color:var(--grey)}
+.mappanel .lab{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;margin:14px 0 4px}
+.mappanel .lab .muted{font-weight:var(--w);text-transform:none;letter-spacing:0}
+.mappanel .lab:first-of-type{margin-top:0}
+.mappanel .ed[data-act="aText"]{font-size:18px;margin:0 0 4px}
+.mappanel .seg{display:inline-flex}
 .ov{position:absolute;z-index:5;background:rgba(238,238,234,.97);border:2px solid var(--ink);padding:14px 16px;cursor:default}
 .ov.shelfpanel{right:14px;top:14px;bottom:52px;width:330px;overflow:auto}
-.ov h4,.panel h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase}
-@media (max-width:1000px){
-  /* Narrow: with a point selected the page scrolls as a document: band, strip, the map at a fixed height, then You and Your AI side by side. */
+.ov h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase}
+@media (max-width:1200px){
+  /* Under 1200px the board would be too narrow beside the panel, so the page scrolls as a document: band, the board at a fixed height, then the panel below it. */
   .mapfull:has(.mapstage.sel){overflow:auto}
-  .mapstage.sel{flex:none;grid-template-columns:1fr 1fr;grid-template-rows:min(440px,55vh) auto}
-  .mapstage.sel>.vp{grid-column:1/-1;grid-row:1;flex:none}
-  .mapstage>.panel{max-height:none;border:none;border-top:2px solid var(--ink);padding:12px 16px 16px}
-  .mapstage>.p-ai{border-top-style:dashed;border-top-color:var(--grey);border-left:1px solid var(--hair)}
-  .selstrip{padding:10px 16px 12px}
+  .mapstage.sel{flex:none;grid-template-columns:1fr;grid-template-rows:min(440px,55vh) auto}
+  .mapstage.sel>.vp{flex:none}
+  .mappanel{border-left:none;border-top:2px solid var(--ink);padding:12px 16px 16px}
   .ov.shelfpanel{width:calc(100% - 28px)}
 }
-.vp{position:relative;height:640px;border:2px solid var(--ink);overflow:hidden;background-color:var(--stone);cursor:grab;user-select:none;touch-action:none}
+/* The board itself. Everything in the world scales with the view; words and points undo the scale with --ik so they keep their screen size. */
+.vp{position:relative;flex:1;min-height:0;overflow:hidden;background:linear-gradient(180deg,var(--stone-top) 0,var(--stone) 480px);cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none}
 .vp.panning{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;--ik:1}
-.world .axis{position:absolute;background:var(--ink);height:2px;width:2px}
-.world .bounds{position:absolute;border:1px solid var(--hair);background:var(--stone)}
-.world .quad{position:absolute;background:rgba(17,17,17,.045)}
-.world .region{position:absolute;border:2px solid var(--ink)}
-.world .region.grid{background-color:var(--paper);background-image:linear-gradient(var(--hair) 1px,transparent 1px),linear-gradient(90deg,var(--hair) 1px,transparent 1px);background-size:25% 25%;background-position:-1px -1px}
-.world .region.shelf{border:1px dashed var(--grey);background:transparent}
-.world .wlab{position:absolute;width:0;height:0;transform:scale(var(--ik));transform-origin:0 0;pointer-events:none}
-.world .wlab span{position:absolute;transform:translate(0,-50%);white-space:nowrap;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;color:var(--ink);background:rgba(255,255,255,.85);padding:1px 5px}
-.world .wlab.l span{transform:translate(0,-50%)} .world .wlab.r span{transform:translate(-100%,-50%)} .world .wlab.c span{transform:translate(-50%,-50%)}
-.world .wlab.risk span{transform:none;color:var(--grey);text-align:left;line-height:1.2;background:none;font-weight:var(--w);text-transform:none;letter-spacing:0;font-size:12px}
-.world .wlab.risk small{display:block;font-size:12px}
-.world .wlab.shelf span{transform:none;color:var(--grey);font-weight:var(--w);letter-spacing:0;text-transform:none;background:none;font-size:12px}
-.world svg.links{position:absolute;left:0;top:0;overflow:visible;width:1px;height:1px;pointer-events:none}
+.world svg.geo{position:absolute;left:0;top:0;overflow:visible;width:1px;height:1px;pointer-events:none}
+.world svg.geo *{vector-effect:non-scaling-stroke}
+.world .wl{position:absolute;width:0;height:0;transform:scale(var(--ik));transform-origin:0 0;pointer-events:none}
+.world .wl span{position:absolute;white-space:nowrap;font-size:11px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;color:var(--ink);line-height:1}
+.world .wl.conf span{transform:translate(-50%,0);margin-top:14px} .world .wl.conf.odd span{margin-top:28px} .world .wl.conf.first span{transform:translate(-100%,0);margin-left:-6px} .world .wl.conf.last span{transform:translate(0,0);margin-left:6px}
+.world .wl.imp span{transform:translate(-100%,-50%);margin-left:-16px}
+.world .wl.axname span{color:var(--grey);font-weight:var(--w);text-transform:none;letter-spacing:0;font-size:12px}
+.world .wl.axname.h span{margin:28px 0 0 6px}
+.world .wl.axname.v span{writing-mode:vertical-rl;transform:rotate(180deg);margin:16px 0 0 -162px;line-height:12px}
+.world .wl.note span{color:var(--grey);font-weight:var(--w);text-transform:none;letter-spacing:0;font-size:12px;line-height:1.25;margin:10px 0 0 12px}
+.vp.tiny .wl.conf.odd,.vp.tiny .wl.axname{display:none}
+.world .wl.note small{display:block;font-size:12px}
+/* Points: a shape and a word (in the title), nothing else. */
 .pt{position:absolute;width:0;height:0;transform:scale(var(--ik));transform-origin:0 0;cursor:grab}
-.pt:active{cursor:grabbing}
+.pt:before{content:"";position:absolute;left:-14px;top:-14px;width:28px;height:28px}
 .pt .dotp{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border:2px solid var(--ink);background:var(--paper);transition:transform var(--t)}
 .pt:hover .dotp{transform:scale(1.25)}
 .pt .dotp.s-ok{background:var(--ink)} .pt .dotp.s-weak{background:linear-gradient(var(--paper),var(--paper)) center/4px 4px no-repeat,var(--ink)} .pt .dotp.s-warn{background:linear-gradient(90deg,var(--ink) 50%,var(--paper) 50%)} .pt .dotp.s-bad{background:var(--hatch),var(--paper)} .pt .dotp.s-none{background:var(--paper)}
 .pt.cand .dotp{border-style:dashed}
 .pt.sel .dotp{outline:2px solid var(--acc);outline-offset:3px}
 .pt.piv .dotp{box-shadow:0 0 0 3px var(--paper),0 0 0 4px var(--grey)}
-.pt.dragging{z-index:9}
-.lbx{position:absolute;transform:translate(0,-50%) scale(var(--ik));transform-origin:0 50%;width:max-content;max-width:240px;min-width:40px;min-height:22px;font-size:12px;line-height:1.35;color:var(--ink);background:rgba(255,255,255,.96);padding:3px 8px 3px 26px;border:1px solid var(--ink);cursor:grab;white-space:pre-wrap;outline:none;margin:0}
-.lbx:before{content:attr(data-k);position:absolute;left:7px;top:4px;font-size:10px;font-weight:var(--wb);letter-spacing:.02em}
-.lbx:empty:before{content:attr(data-k)}
-.lbx[data-ph]:empty:after{content:attr(data-ph);color:var(--grey);font-style:italic}
-.lbx:hover{border-width:1px;box-shadow:0 0 0 1px var(--ink)}
-.lbx.sel{box-shadow:0 0 0 2px var(--acc)}
-.lbx.cand{border-style:dashed;color:var(--grey)}
-.lbx:focus{cursor:text;background:var(--inset);box-shadow:0 0 0 2px var(--acc);user-select:text;-webkit-user-select:text}
-.lbx.dragging{z-index:9;opacity:.9}
-.pt.ai .lbl{position:absolute;left:9px;top:-8px;font-size:10px;font-weight:var(--wb);line-height:14px;color:var(--grey);background:rgba(255,255,255,.85);padding:0 4px;letter-spacing:.04em}
-.pt.ai{pointer-events:none}
+.pt.dragging{z-index:9;cursor:grabbing} .pt.dragging .dotp{transform:scale(1.25)}
+.pt.ai{cursor:pointer}
 .pt.ai .dotp{left:-6px;top:-6px;width:12px;height:12px;border:1px dashed var(--grey);background:transparent}
 .pt.ai.sel .dotp{outline:2px solid var(--acc);outline-offset:3px}
+.vp.f-mine .pt.ai,.vp.f-mine .tie,.vp.f-ai .pt.me,.vp.f-ai .tie{display:none}
+/* The card on click: next to the point, in screen space; it fades, nothing else moves. */
+.ptcard{position:absolute;z-index:5;width:272px;background:rgba(238,238,234,.97);border:2px solid var(--ink);padding:10px 12px 12px;cursor:default;opacity:0;transition:opacity var(--t);pointer-events:none}
+.ptcard.in{opacity:1;pointer-events:auto}
+.ptcard .head{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;align-items:baseline}
+.ptcard .head .lab{font-size:11px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em}
+.ptcard .head .st{display:inline-flex;align-items:center;white-space:nowrap}
+.ptcard .txt{font-size:15px;line-height:1.35} .ptcard .txt.empty{color:var(--grey);font-style:italic}
+.ptcard .ev{margin-top:6px;font-size:12px;color:var(--grey);line-height:1.35}
+.ptcard .ag{margin-top:8px;padding-top:6px;border-top:1px dashed var(--grey);font-size:12px;color:var(--grey);line-height:1.35}
+.ptcard .ag b{color:var(--ink);text-transform:uppercase;letter-spacing:.02em;font-size:11px;margin-right:4px}
+.ptcard .acts{margin-top:10px;display:flex;gap:6px}
+.ptcard .more{margin-top:8px;font-size:12px;color:var(--grey)}
 .vp .hud{position:absolute;right:14px;bottom:10px;display:flex;gap:4px;z-index:3}
 .vp .hud .btn{padding:3px 9px;font-size:12px;background:var(--stone)}
 .vp .hud .btn:hover{background:var(--ink)}
@@ -442,19 +447,10 @@ mark.focus-mark,mark.focus{outline:2px solid var(--acc);outline-offset:1px}
 .vp .hint2{position:absolute;left:50%;transform:translateX(-50%);top:12px;font-size:12px;color:var(--grey);background:rgba(238,238,234,.92);padding:3px 10px;white-space:nowrap;z-index:3}
 .vp:has(.ov) .hint2,.mapstage.sel .hint2{display:none}
 @media (max-width:1250px){.vp .hint2{display:none}}
-.panel{background:rgba(238,238,234,.97);border:2px solid var(--ink);padding:14px 16px;align-self:start}
-.panel.p-you{border-color:var(--ink)}
-.panel.p-ai{border-style:dashed}
-.panel h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;margin:0 0 10px;display:flex;align-items:center;gap:8px}
-.panel .lab{font-size:12px;font-weight:var(--wb);text-transform:uppercase;letter-spacing:.02em;margin:14px 0 4px}
-.panel .lab .muted{font-weight:var(--w);text-transform:none;letter-spacing:0}
-.panel .lab:first-of-type{margin-top:0}
-.panel .seg{display:flex} .panel .seg button{flex:1;padding:5px 0}
 .rate{display:flex;gap:4px}
 .rate i{flex:1;height:12px;border:1px solid var(--ink);display:block;background:transparent}
 .rate i.you{background:var(--ink)} .rate i.ai{background:var(--hatch)}
 .rate-l{display:flex;justify-content:space-between;font-size:11px;color:var(--grey);margin-top:3px}
-.selstrip .ed{font-size:18px;margin-top:8px}
 .sidebox{border-top:1px solid var(--ink);padding:12px 0 4px;margin-bottom:8px}
 .sidebox h4{font-size:12px;font-weight:var(--wb);letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px}
 
@@ -1258,14 +1254,16 @@ function seedAssumptions(){
 }
 
 /* ---- map geometry. pos is {x: 0..1 likely wrong -> likely right, y: 0..1 inconvenient -> catastrophic}, or null when
-   the point hasn't been rated. The canvas is bounded: the grid's edge is the farthest a point can go on either axis,
-   and unrated points wait on a shelf strip below the grid, inside the same bounds. ---- */
-/* margin leaves room for the axis words, which sit just outside the square so no point or label ever covers them */
-const MAP = {size:600, shelfTop:370, shelfH:120, pad:0.04, margin:320};
-const WORLD = {x0:-MAP.size / 2 - MAP.margin, x1:MAP.size / 2 + MAP.margin, y0:-MAP.size / 2 - 50, y1:MAP.shelfTop + MAP.shelfH + 20};
+   the point hasn't been rated. The board is a whiteboard: the grid is a square in world px, unrated points wait on a shelf
+   strip below it, and the view can zoom in without limit but never out past where the grid plus the shelf fit the viewport. ---- */
+const MAP = {size:600, gap:56, shelfH:96, pad:0.04, shelfStep:48};
+/* World distances that must read as at least n screen px at the zoom-out limit (ui.mapK): below k = 1 they grow, so the axis
+   words under the grid, the shelf note and the parked glyphs never pile up on a small board. At k >= 1 these are the prototype's numbers. */
+function mapMetrics(){ const k = Math.min(1, ui.mapK || 1); const px = n => n / k; return {gap:Math.max(MAP.gap, px(50)), row:Math.max(56, px(46)), step:Math.max(44, px(30)), xstep:Math.max(MAP.shelfStep, px(26)), pad:Math.max(40, px(26))}; }
+function shelfTop(){ return MAP.size / 2 + mapMetrics().gap; }
+const SCREEN_PAD = {l:168, r:104, t:28, b:48};                                   /* room on screen for the axis words, which don't scale with zoom */
 function worldOf(pos){ return {x:(pos.x - 0.5) * MAP.size, y:(0.5 - pos.y) * MAP.size}; }
 function posOf(w){ return {x:w.x / MAP.size + 0.5, y:0.5 - w.y / MAP.size}; }
-function clampWorld(w){ return {x:Math.min(WORLD.x1, Math.max(WORLD.x0, w.x)), y:Math.min(WORLD.y1, Math.max(WORLD.y0, w.y))}; }
 function inGrid(pos){ return !!pos && pos.x >= -MAP.pad && pos.x <= 1 + MAP.pad && pos.y >= -MAP.pad && pos.y <= 1 + MAP.pad; }
 function clampPos(pos){ return {x:Math.min(1, Math.max(0, pos.x)), y:Math.min(1, Math.max(0, pos.y))}; }
 function ratingOf(pos){ if (!inGrid(pos)) return {impact:"", confidence:""}; const c = v => Math.min(5, Math.max(1, Math.round(1 + v * 4))); return {impact:c(pos.y), confidence:c(pos.x)}; }
@@ -1274,7 +1272,13 @@ const IMPACT_WORDS = ["Not an issue if wrong","Kind of fine","Neutral","Kind of 
 const CONFIDENCE_WORDS = ["Likely wrong","Probably wrong","Untested","Probably right","Likely right"];
 const impactWord = v => IMPACT_WORDS[Math.min(5, Math.max(1, Number(v) || 0)) - 1] || "";
 const confidenceWord = v => CONFIDENCE_WORDS[Math.min(5, Math.max(1, Number(v) || 0)) - 1] || "";
-function shelfWorld(i){ const cols = 4; return {x:-MAP.size / 2 + 40 + (i % cols) * 150, y:MAP.shelfTop + 58 + Math.floor(i / cols) * 36}; }
+/* The shelf grows a row at a time when more points wait than fit across it. */
+function shelfCols(){ return Math.max(1, Math.floor((MAP.size - 72) / mapMetrics().xstep) + 1); }
+function shelfHeight(n){ const m = mapMetrics(); return Math.max(MAP.shelfH, m.row + m.pad + Math.max(0, Math.ceil(n / shelfCols()) - 1) * m.step); }
+function shelfWorld(i){ const m = mapMetrics(), c = shelfCols(); return {x:-MAP.size / 2 + 36 + (i % c) * m.xstep, y:shelfTop() + m.row + Math.floor(i / c) * m.step}; }
+function shelfCount(){ return S.assumptions.filter(a => a.status === "Candidate" || (a.status === "Active" && !inGrid(a.pos))).length; }
+/* What "fit" must show: the grid plus the shelf. */
+function mapBox(){ return {x0:-MAP.size / 2, x1:MAP.size / 2, y0:-MAP.size / 2, y1:shelfTop() + shelfHeight(shelfCount())}; }
 
 /* Evidence-based status. The reading comes from discovery data, never from a typed score. */
 function segShare(ps){ return ps.length ? ps.filter(p => ["Hair on Fire","Incremental Improvement"].includes(p.tier)).length / ps.length : 0; }
@@ -1573,16 +1577,14 @@ function problemSheet(){
   ${stepNav("compass/value", "Back", "compass/map", "Next: assumptions map")}`;
 }
 
-/* 04 Assumptions Map: the whole screen is the canvas. Left click adds a point, drag a point to rate it,
-   drag its label to tidy up, right-drag to pan, scroll to zoom. The grid's edge is as far as a point goes. */
+/* 04 Assumptions Map: a whiteboard. Double-click the board to add a point, drag a point to rate it, drag the board to pan,
+   scroll to zoom. Click a point for its card; double-click it for the panel. The position is the rating. */
 const statusDot = s => s === "Strong signal" ? "ok" : s === "Weak signal" ? "weak" : s === "Shaky" ? "warn" : s === "Contradicted" ? "bad" : "none";
-const LABEL_DEFAULT = {dx:18, dy:0};
-function labelOf(a){ const l = a.label && typeof a.label === "object" ? a.label : LABEL_DEFAULT; return {dx:Number(l.dx) || 0, dy:Number(l.dy) || 0}; }
-function pointHtml(x, w, extra){
-  const a = x.a; const sel = ui.selNote === a.id; const l = labelOf(a); const k = ASSUMPTION_KINDS[a.kind] || {short:"?"};
+const statusWordOf = s => s === "Untested" ? "No evidence yet" : s;
+function pointHtml(x, w){
+  const a = x.a; const sel = ui.selNote === a.id;
   const piv = pivotTriggerIds().has(a.id);
-  return `<div class="pt ${extra || ""} ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""} ${piv ? "piv" : ""}" data-pt="${esc(a.id)}" style="left:${w.x}px;top:${w.y}px"><span class="dotp s-${statusDot(x.s.status)}"></span></div>
-  <div class="lbx ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""}" data-lab="${esc(a.id)}" data-act="aText" data-id="${esc(a.id)}" contenteditable="plaintext-only" data-ph="Type the assumption" data-k="${esc(k.short)}" style="left:${w.x + l.dx}px;top:${w.y + l.dy}px">${esc(a.text)}</div>`;
+  return `<div class="pt me ${sel ? "sel" : ""} ${a.status === "Candidate" ? "cand" : ""} ${piv ? "piv" : ""}" data-pt="${esc(a.id)}" title="${esc(statusWordOf(x.s.status))}${a.status === "Candidate" ? " · suggested, accept it to move it" : ""}" style="left:${w.x}px;top:${w.y}px"><span class="dotp s-${statusDot(x.s.status)}"></span></div>`;
 }
 function mapView(){
   const r = compassReadout(); const ranked = rankedAssumptions();
@@ -1590,46 +1592,57 @@ function mapView(){
   const placed = active.filter(x => inGrid(x.a.pos));
   const shelf = active.filter(x => !inGrid(x.a.pos)).concat(cands);
   const sel = ui.selNote ? byId(S.assumptions, ui.selNote) : null;
-  const h = MAP.size / 2;
+  const panel = !!(sel && ui.mapPanel);
+  const h = MAP.size / 2, q = MAP.size / 4;
   const ai = active.filter(x => x.a.aiImpact && x.a.aiConfidence).map(x => ({x, w:worldOf({x:(Number(x.a.aiConfidence) - 1) / 4, y:(Number(x.a.aiImpact) - 1) / 4})}));
-  /* dy is a screen-pixel row offset on the caption (the span is inside the zoom-corrected label), so stacked captions stay apart at every zoom */
-  const lab = (x, y, cls, text, dy) => `<div class="wlab ${cls || ""}" style="left:${x}px;top:${y}px"><span${dy ? ` style="margin-top:${dy}px"` : ""}>${text}</span></div>`;
-  const worldPos = x => inGrid(x.a.pos) ? worldOf(x.a.pos) : shelfWorld(shelf.indexOf(x));
-  const leaders = active.concat(cands).map(x => { const w = worldPos(x); const l = labelOf(x.a); return `<line x1="${w.x}" y1="${w.y}" x2="${w.x + l.dx}" y2="${w.y + l.dy}" stroke="#c9c9c4" stroke-width="1.2"/>`; }).join("");
+  const wl = (x, y, cls, html) => `<div class="wl ${cls || ""}" style="left:${x}px;top:${y}px"><span>${html}</span></div>`;
+  const ticks = [0, 1, 2, 3, 4].map(i => `<line x1="${-h + i * q}" y1="${h}" x2="${-h + i * q}" y2="${h + 6}" stroke="#111"/><line x1="${-h - 6}" y1="${h - i * q}" x2="${-h}" y2="${h - i * q}" stroke="#111"/>`).join("");
+  const ties = ai.filter(g => inGrid(g.x.a.pos)).map(g => { const w = worldOf(g.x.a.pos); return `<line class="tie" data-tie="${esc(g.x.a.id)}" x1="${w.x}" y1="${w.y}" x2="${g.w.x}" y2="${g.w.y}" stroke="#8c8c88" stroke-dasharray="4 3" stroke-width="1.2"/>`; }).join("");
+  ui.mapKDrawn = ui.mapK || 0;
+  const geo = `<svg class="geo">
+        <rect x="${-h}" y="${-h}" width="${MAP.size}" height="${MAP.size}" fill="#fff" stroke="none"/>
+        <rect x="${-h}" y="${-h}" width="${h}" height="${h}" fill="rgba(17,17,17,.045)" stroke="none"/>
+        <line x1="${-q}" y1="${-h}" x2="${-q}" y2="${h}" stroke="#c9c9c4"/><line x1="${q}" y1="${-h}" x2="${q}" y2="${h}" stroke="#c9c9c4"/>
+        <line x1="${-h}" y1="${-q}" x2="${h}" y2="${-q}" stroke="#c9c9c4"/><line x1="${-h}" y1="${q}" x2="${h}" y2="${q}" stroke="#c9c9c4"/>
+        <rect x="${-h}" y="${-h}" width="${MAP.size}" height="${MAP.size}" fill="none" stroke="#111" stroke-width="2"/>
+        <line x1="${-h}" y1="0" x2="${h}" y2="0" stroke="#111" stroke-width="2"/><line x1="0" y1="${-h}" x2="0" y2="${h}" stroke="#111" stroke-width="2"/>
+        ${ticks}
+        <rect x="${-h}" y="${shelfTop()}" width="${MAP.size}" height="${shelfHeight(shelf.length)}" fill="none" stroke="#8c8c88" stroke-dasharray="4 3"/>
+        ${ties}</svg>`;
+  /* Every word is anchored on the grid's edge and offset in screen px (margins inside the zoom-corrected anchor), so the layout
+     of the words is the same at every zoom and they never land on the grid or on each other. */
+  const words = CONFIDENCE_WORDS.map((t, i) => wl(-h + i * q, h, `conf ${i === 0 ? "first" : i === 4 ? "last" : ""} ${i % 2 ? "odd" : ""}`, esc(t))).join("")
+    + IMPACT_WORDS.map((t, i) => wl(-h, h - i * q, "imp", esc(t))).join("")
+    + wl(h, h, "axname h", "Confidence →") + wl(-h, -h, "axname v", "Impact →")
+    + wl(-h, -h, "note", "Riskiest<small>test these first</small>")
+    + wl(-h, shelfTop(), "note", shelf.length ? "Not rated yet · drag into the grid" : "Nothing waiting · double-click the board to add a point");
   const steps = [["canvas","01 Leaner Canvas"],["value","02 Value Proposition"],["problem","03 Problem Statement"],["map","04 Assumptions Map"],["leads","05 Leads List"]];
-  const counts = STATUSES.map(k => `<span class="cnt" title="${k === "Untested" ? "No evidence yet" : k}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
+  const counts = STATUSES.map(k => `<span class="cnt" title="${statusWordOf(k)}"><i class="dotp s-${statusDot(k)}"></i>${r.counts[k]}</span>`).join("");
+  const filter = ui.mapFilter || "all";
+  const seg = `<span class="seg" title="Whose points to show">${[["mine","Mine"],["ai","AI"],["all","All"]].map(([v, l]) => `<button class="${filter === v ? "on" : ""}" data-act="mapFilter" data-val="${v}">${l}</button>`).join("")}</span>`;
   return `<div class="mapfull">
     <div class="tabstrip"><div class="tabs" style="margin:0;border:none">${steps.map(([k, l]) => `<button class="${k === "map" ? "on" : ""}" data-act="go" data-href="compass/${k}">${l}</button>`).join("")}</div>
-      <div class="row" style="gap:6px"><span class="counts">${counts}</span>
+      <div class="row" style="gap:6px"><span class="counts">${counts}</span>${seg}
         <button class="btn sm" data-act="seedAssumptions" title="Make a point for each item on your canvas">${S.assumptions.length ? "Points from canvas" : "Make points from my canvas"}</button>
         <button class="btn sm ${ui.mapShelf ? "pri" : ""}" data-act="toggleShelf" title="My riskiest assumption, how I'll get evidence, ask your AI">Notes</button>
         <button class="btn sm" data-act="toggleFull" title="${ui.mapFull ? "Show the sidebar" : "Hide the sidebar"}">${ui.mapFull ? "⤡" : "⤢"}</button></div></div>
     <div class="mapband"><div><div class="lab">Posture · ${active.length} active point${active.length === 1 ? "" : "s"}</div><h1 class="verdict sm">${esc(r.verdict)}</h1></div>${postureGauge(r, false)}</div>
-    ${sel ? selCard(sel) : ""}
-    <div class="mapstage ${sel ? "sel" : ""}">
-    ${sel ? youPanel(sel) : ""}
-    <div class="vp full" id="vp">
+    <div class="mapstage ${panel ? "sel" : ""}">
+    <div class="vp full f-${esc(filter)}" id="vp">
       <div class="world" id="world">
-        <div class="bounds" style="left:${WORLD.x0}px;top:${WORLD.y0}px;width:${WORLD.x1 - WORLD.x0}px;height:${WORLD.y1 - WORLD.y0}px"></div>
-        <div class="quad" style="left:${-h}px;top:${-h}px;width:${h}px;height:${h}px"></div>
-        <div class="region grid" style="left:${-h}px;top:${-h}px;width:${MAP.size}px;height:${MAP.size}px"></div>
-        <div class="axis h" style="left:${-h}px;top:-1px;width:${MAP.size}px"></div><div class="axis v" style="top:${-h}px;left:-1px;height:${MAP.size}px"></div>
-        ${IMPACT_WORDS.map((t, i) => lab(-h - 8, (0.5 - i / 4) * MAP.size, "r", t)).join("")}
-        ${CONFIDENCE_WORDS.map((t, i) => lab((i / 4 - 0.5) * MAP.size, h + 12, i === 0 ? "l" : i === 4 ? "r" : "c", t, i % 2 ? 18 : 0)).join("")}
-        ${lab(-h + 14, -h + 28, "risk", "Riskiest<small>test these first</small>")}
-        <div class="region shelf" style="left:${-h}px;top:${MAP.shelfTop}px;width:${MAP.size}px;height:${Math.max(MAP.shelfH, 76 + Math.ceil(shelf.length / 4) * 36)}px"></div>
-        ${lab(-h + 14, MAP.shelfTop + 6, "shelf", shelf.length ? "Not rated yet · drag into the grid" : "Nothing waiting · click anywhere to add a point")}
-        <svg class="links">${leaders}${ai.filter(g => inGrid(g.x.a.pos)).map(g => { const w = worldOf(g.x.a.pos); return `<line x1="${w.x}" y1="${w.y}" x2="${g.w.x}" y2="${g.w.y}" stroke="#8c8c88" stroke-dasharray="4 3" stroke-width="1.2"/>`; }).join("")}</svg>
-        ${ai.map(g => `<div class="pt ai ${ui.selNote === g.x.a.id ? "sel" : ""}" style="left:${g.w.x}px;top:${g.w.y}px"><span class="dotp"></span><span class="lbl">AI</span></div>`).join("")}
-        ${shelf.map((x, i) => pointHtml(x, shelfWorld(i), "parked")).join("")}
+        ${geo}
+        ${words}
+        ${ai.map(g => `<div class="pt ai ${ui.selNote === g.x.a.id ? "sel" : ""}" data-pt="${esc(g.x.a.id)}" data-ai="1" title="${esc(statusWordOf(g.x.s.status))} · AI's placement" style="left:${g.w.x}px;top:${g.w.y}px"><span class="dotp"></span></div>`).join("")}
+        ${shelf.map((x, i) => pointHtml(x, shelfWorld(i))).join("")}
         ${placed.map(x => pointHtml(x, worldOf(x.a.pos))).join("")}
       </div>
-      <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit">Fit</button></div>
+      <div class="ptcard" id="card">${sel && !panel ? mapCard(sel) : ""}</div>
+      <div class="hud"><button class="btn" data-act="mapZoom" data-val="out" title="Zoom out">−</button><button class="btn" data-act="mapZoom" data-val="in" title="Zoom in">+</button><button class="btn" data-act="mapZoom" data-val="fit" title="Fit the grid and the shelf to the window">Fit</button></div>
       <div class="legend"><span><i style="background:var(--hatch)"></i>Contradicted</span><span><i style="background:linear-gradient(90deg,var(--ink) 50%,transparent 50%)"></i>Shaky</span><span><i></i>No evidence yet</span><span><i style="box-shadow:inset 0 0 0 2px var(--ink)"></i>Weak signal</span><span><i style="background:var(--ink)"></i>Strong signal</span><span><i style="border-style:dashed;border-color:var(--grey)"></i>AI's placement</span><span><i style="box-shadow:0 0 0 2px var(--stone),0 0 0 3px var(--grey);margin-left:3px;margin-right:8px"></i>Pivot in play</span></div>
-      <div class="hint2">Click to add a point · drag a point to rate it · drag its label to tidy · right-drag to pan · scroll to zoom</div>
+      <div class="hint2">Double-click the board to add a point · drag a point to rate it · drag the board to pan · scroll to zoom</div>
       ${ui.mapShelf && !sel ? notesShelf(r) : ""}
     </div>
-    ${sel ? aiPanel(sel) : ""}
+    ${panel ? mapPanel(sel) : ""}
     </div>
   </div>`;
 }
@@ -1644,23 +1657,57 @@ function notesShelf(r){
     ${notesFor("map").length ? `<div class="sidebox"><h4>From your AI</h4>${noteBlocks(notesFor("map"))}</div>` : ""}
   </div>`;
 }
-/* The selected point: what the evidence says. Neither yours nor the AI's: the data's. Floats at the top of the canvas. */
-function selCard(a){
+/* The card on click: kind, status, the words, what the evidence says, the AI's objection. Placed next to the point by placeCard(). */
+function mapCard(a){
+  const s = assumptionStatus(a); const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind};
+  return `<div class="head"><span class="lab">${esc(k.label)}</span><span class="st lab"><i class="gy ${glyphCls(s.status)}"></i>${esc(statusWordOf(s.status))}</span></div>
+    ${a.status === "Candidate" ? `<div class="ev" style="margin:0 0 6px">Suggested by ${esc(a.foundBy || "AI")} · accept it to move it</div>` : ""}
+    <div class="txt ${a.text ? "" : "empty"}">${a.text ? esc(a.text) : "Nothing written yet · double-click to edit"}</div>
+    <div class="ev">${esc(s.why)}.</div>
+    <div class="ag"><b>Against</b>${esc(a.aiAgainst || "The AI hasn't looked at this point yet.")}</div>
+    ${a.status === "Candidate" ? `<div class="acts"><button class="btn pri sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">Accept</button><button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Dismiss</button></div>` : ""}
+    <div class="more">Double-click the point to edit it</div>`;
+}
+/* The panel on double-click: one column on the right. What the evidence says, then your side, the quotes you tag, your AI's side, and any pivot. */
+function mapPanel(a){
   const x = {a, p:assumptionPriority(a), s:assumptionStatus(a)}; const k = ASSUMPTION_KINDS[a.kind] || {label:a.kind, test:""};
   const area = areaOf(a);
   const link = a.kind === "problem" && a.problemId ? `<a href="#/problems/${esc(a.problemId)}">Open this problem's evidence</a>` : `<a href="#/insights/${area}">Open ${esc(AREAS[area].title)} insights</a>`;
   const taggable = !((a.kind === "problem" && a.problemId) || ((a.kind === "early-adopters" || a.kind === "customers") && a.customerId));
   const tagged = (a.evidence || []).map(t => ({...t, e:byId(S.evidence, t.id)})).filter(t => t.e);
   const confirmedQuotes = S.evidence.filter(e => e.status === "Confirmed");
-  const where = x.p ? `<span class="chip gray">Priority ${x.p}</span>` : `<span class="chip warn">Not rated yet</span>`;
-  return `<div class="selstrip">
-    <div class="spread"><div class="row" style="gap:6px"><span class="mono muted">${esc(a.id)}</span><span class="chip blue">${esc(k.label)}</span>${where}${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
+  const placed = !!(a.impact && a.confidence);
+  const basis = aiBasis(a); const p = aiPriority(a); const dis = disagreement(a);
+  const aiSec = basis.kind === "none"
+    ? `<p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Diagnose my snapshot</pre><button class="btn sm" data-act="copyText" data-text="Diagnose my snapshot">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on and is told to say so when it has none, flags what's untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</p>`
+    : `<div style="margin-bottom:12px">${basis.kind === "evidence" ? `<span class="stamp ok">${esc(basis.label)}</span>` : `<span class="stamp">${esc(basis.label)}</span>`}</div>
+    <div class="lab">The case against</div><p class="small" style="margin:0 0 10px">${a.aiAgainst ? esc(a.aiAgainst) : `<span class="muted">No objection written yet. In your AI assistant, say <b>Poke holes</b>.</span>`}</p>
+    ${a.aiWouldChange ? `<div class="lab">What would change its mind</div><p class="small" style="margin:0 0 10px">${esc(a.aiWouldChange)}</p>` : ""}
+    <div class="lab">Impact if wrong <span class="muted">${esc(a.aiImpact || "?")}</span></div>${bar5(a.aiImpact, "ai")}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
+    <div class="lab">Likely right? <span class="muted">${esc(a.aiConfidence || "?")}</span></div>${bar5(a.aiConfidence, "ai")}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
+    <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b>` : `<span class="small muted">Incomplete rating</span>`}</div>
+    <div class="lab">Why</div><p class="small" style="margin:0">${esc(a.aiReason || "No reason given.")}</p>
+    ${basis.ids.length ? `<div class="lab">What it relied on</div>${basis.ids.map(id => { const e = byId(S.evidence, id); return e ? `<div class="q compact s-${esc(e.status)}" style="margin:0 0 6px;padding:8px 10px 6px 12px"><span class="words" style="font-size:13.5px">${esc(e.quote)}</span><div class="meta"><a href="#/interviews/${esc(e.interviewId)}">${esc(e.interviewId)}</a>${e.status !== "Confirmed" ? statusChip(e.status) : ""}</div></div>` : `<span class="chip bad">${esc(id)} not found</span>`; }).join("")}` : `<p class="hint" style="margin-top:10px">${basis.kind === "guess" ? "It had no confirmed quotes to go on. This is a reasoned guess, the same kind you're making. Interviews settle it." : ""}</p>`}
+    ${dis ? `<div class="notice warn" style="margin-top:10px">You and your AI are 2 or more apart. Who's reading the evidence right?</div>` : ""}`;
+  return `<div class="mappanel">
+    <div class="spread"><div class="row" style="gap:6px"><span class="mono muted">${esc(a.id)}</span><span class="chip blue">${esc(k.label)}</span>${a.status === "Candidate" ? `<span class="ai">Suggested by ${esc(a.foundBy || "AI")}</span>` : ""}</div>
       <div class="row">${a.status === "Candidate" ? `<button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Dismiss</button><button class="btn pri sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Active">Accept</button>` : ""}<button class="btn icon" data-act="closeNote" title="Close (Esc)">✕</button></div></div>
-    <div class="notice ${x.s.status === "Strong signal" ? "ok" : x.s.status === "Contradicted" ? "bad" : x.s.status === "Shaky" || x.s.status === "Weak signal" ? "warn" : "plain"}" style="margin-top:8px"><b>${esc(x.s.status === "Untested" ? "No evidence yet" : x.s.status)}.</b> ${esc(x.s.why)}. <span class="muted">Read from ${esc(k.test)}.</span> ${link}</div>
-    ${taggable ? `<details class="fold" style="margin-top:8px;padding:6px 12px"><summary>Quotes for and against (${tagged.length})</summary>
+    <div class="notice ${x.s.status === "Strong signal" ? "ok" : x.s.status === "Contradicted" ? "bad" : x.s.status === "Shaky" || x.s.status === "Weak signal" ? "warn" : "plain"}" style="margin-top:10px"><b>${esc(statusWordOf(x.s.status))}.</b> ${esc(x.s.why)}. <span class="muted">Read from ${esc(k.test)}.</span> ${link}</div>
+    <div class="sec"><h4>You</h4>
+    <div class="lab">Assumption</div>${ed("aText", `data-id="${esc(a.id)}"`, a.text, "Type the assumption")}
+    <div class="lab">Impact if wrong</div><p class="small" style="margin:0 0 10px">${placed ? esc(impactWord(a.impact)) : `<span class="muted">Not placed yet. Drag the point into the grid: up is catastrophic.</span>`}</p>
+    <div class="lab">Likely right?</div><p class="small" style="margin:0 0 10px">${placed ? esc(confidenceWord(a.confidence)) : `<span class="muted">Not placed yet. Left is likely wrong.</span>`}</p>
+    <div class="lab">Kind of assumption</div><select class="inline" data-act="aKind" data-id="${esc(a.id)}">${Object.entries(ASSUMPTION_KINDS).map(([k2, v]) => opt(k2, a.kind, v.label)).join("")}</select>
+    ${a.kind === "problem" ? `<div class="lab">Linked problem</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="problemId" style="max-width:100%"><option value="">None</option>${S.problems.map(pr => opt(pr.id, a.problemId, pr.id + ": " + pr.text)).join("")}</select>` : ""}
+    ${(a.kind === "early-adopters" || a.kind === "customers") ? `<div class="lab">Linked segment</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="customerId" style="max-width:100%"><option value="">None</option>${(S.compass.customers||[]).map(c => opt(c.id, a.customerId, c.text)).join("")}</select>` : ""}
+    <div class="lab">Your note</div>${ed("aNote", `data-id="${esc(a.id)}"`, a.note, "Anything to remember about this one", "sans")}
+    ${a.status === "Active" ? `<div style="margin-top:14px"><button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Retire this point</button></div>` : ""}
+    </div>
+    ${taggable ? `<div class="sec"><h4>Quotes for and against <span class="muted" style="font-weight:var(--w);text-transform:none;letter-spacing:0">(${tagged.length})</span></h4>
       ${tagged.map(t => `<div class="q compact s-${esc(t.e.status)}" style="margin:8px 0 6px"><div class="spread"><span class="words">${esc(t.e.quote)}</span><div class="row"><span class="seg"><button class="${t.stance === "supports" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="supports">For</button><button class="${t.stance === "contradicts" ? "on" : ""}" data-act="aStance" data-id="${esc(a.id)}" data-eid="${esc(t.id)}" data-val="contradicts">Against</button></span><button class="btn icon no" title="Untag" data-act="aUntag" data-id="${esc(a.id)}" data-eid="${esc(t.id)}">✕</button></div></div><div class="meta"><a href="#/interviews/${esc(t.e.interviewId)}">${esc(t.e.interviewId)}</a>${t.e.status !== "Confirmed" ? statusChip(t.e.status) : ""}</div></div>`).join("")}
-      <select data-act="aTag" data-id="${esc(a.id)}" style="max-width:100%;margin-top:6px"><option value="">Tag a confirmed quote…</option>${confirmedQuotes.filter(e => !(a.evidence||[]).some(t => t.id === e.id)).map(e => opt(e.id, "", `${e.id}: ${e.quote.slice(0, 90)}`)).join("")}</select></details>` : ""}
-    ${pivotsSection(a, x.s)}
+      <select data-act="aTag" data-id="${esc(a.id)}" style="max-width:100%;margin-top:6px"><option value="">Tag a confirmed quote…</option>${confirmedQuotes.filter(e => !(a.evidence||[]).some(t => t.id === e.id)).map(e => opt(e.id, "", `${e.id}: ${e.quote.slice(0, 90)}`)).join("")}</select></div>` : ""}
+    <div class="sec aisec"><h4>Your AI</h4>${aiSec}</div>
+    ${pivotsSection(a, x.s) ? `<div class="sec">${pivotsSection(a, x.s)}</div>` : ""}
   </div>`;
 }
 /* One pivot: the move, what it rests on, and whether the evidence has opened the gate. Shown on the selected point and on the Insights page for its area. */
@@ -1684,36 +1731,6 @@ function pivotsSection(a, s){
   return `<div class="lab" style="font-size:12.5px;color:var(--ink-2);margin:10px 0 4px">If this is wrong</div>${list.map(x => pivotCard(x, {showTriggers:false})).join("")}`;
 }
 function bar5(val, cls){ const v = Number(val) || 0; return `<div class="rate">${[1,2,3,4,5].map(n => `<i class="${n <= v ? cls : ""}"></i>`).join("")}</div>`; }
-/* Your side of the page. The rating is where the point sits; it reads back in words. The AI alone works in numbers. */
-function youPanel(a){
-  const placed = !!(a.impact && a.confidence);
-  return `<div class="panel p-you"><h4>You</h4>
-    <div class="lab">Impact if wrong</div><p class="small" style="margin:0 0 10px">${placed ? esc(impactWord(a.impact)) : `<span class="muted">Not placed yet. Drag the point into the grid: up is catastrophic.</span>`}</p>
-    <div class="lab">Likely right?</div><p class="small" style="margin:0 0 10px">${placed ? esc(confidenceWord(a.confidence)) : `<span class="muted">Not placed yet. Left is likely wrong.</span>`}</p>
-    <div class="lab">Kind of assumption</div><select class="inline" data-act="aKind" data-id="${esc(a.id)}">${Object.entries(ASSUMPTION_KINDS).map(([k2, v]) => opt(k2, a.kind, v.label)).join("")}</select>
-    ${a.kind === "problem" ? `<div class="lab">Linked problem</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="problemId" style="max-width:100%"><option value="">None</option>${S.problems.map(pr => opt(pr.id, a.problemId, pr.id + ": " + pr.text)).join("")}</select>` : ""}
-    ${(a.kind === "early-adopters" || a.kind === "customers") ? `<div class="lab">Linked segment</div><select class="inline" data-act="aLink" data-id="${esc(a.id)}" data-field="customerId" style="max-width:100%"><option value="">None</option>${(S.compass.customers||[]).map(c => opt(c.id, a.customerId, c.text)).join("")}</select>` : ""}
-    <div class="lab">Your note</div>${ed("aNote", `data-id="${esc(a.id)}"`, a.note, "Anything to remember about this one", "sans")}
-    ${a.status === "Active" ? `<div style="margin-top:14px"><button class="btn sm" data-act="aStatus" data-id="${esc(a.id)}" data-val="Retired">Retire this point</button></div>` : ""}
-  </div>`;
-}
-/* The AI's side of the page. Always says what the rating rests on. */
-function aiPanel(a){
-  const basis = aiBasis(a); const p = aiPriority(a); const dis = disagreement(a);
-  if (basis.kind === "none") return `<div class="panel p-ai"><h4>Your AI</h4><p class="small muted" style="margin:0 0 8px">Hasn't rated this one. In your AI assistant, say:</p><pre class="code" style="margin:0 0 8px">Diagnose my snapshot</pre><button class="btn sm" data-act="copyText" data-text="Diagnose my snapshot">Copy</button><p class="hint" style="margin-top:12px">It rates every point for impact and confidence, lists the quotes it relied on and is told to say so when it has none, flags what's untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first.</p></div>`;
-  return `<div class="panel p-ai"><h4>Your AI</h4>
-    <div style="margin-bottom:12px">${basis.kind === "evidence" ? `<span class="stamp ok">${esc(basis.label)}</span>` : `<span class="stamp">${esc(basis.label)}</span>`}</div>
-    <div class="lab">The case against</div><p class="small" style="margin:0 0 10px">${a.aiAgainst ? esc(a.aiAgainst) : `<span class="muted">No objection written yet. In your AI assistant, say <b>Poke holes</b>.</span>`}</p>
-    ${a.aiWouldChange ? `<div class="lab">What would change its mind</div><p class="small" style="margin:0 0 10px">${esc(a.aiWouldChange)}</p>` : ""}
-    <div class="lab">Impact if wrong <span class="muted">${esc(a.aiImpact || "?")}</span></div>${bar5(a.aiImpact, "ai")}<div class="rate-l"><span>inconvenient</span><span>catastrophic</span></div>
-    <div class="lab">Likely right? <span class="muted">${esc(a.aiConfidence || "?")}</span></div>${bar5(a.aiConfidence, "ai")}<div class="rate-l"><span>likely wrong</span><span>likely right</span></div>
-    <div class="lab">Priority</div><div>${p ? `<b style="font-size:20px">${p}</b>` : `<span class="small muted">Incomplete rating</span>`}</div>
-    <div class="lab">Why</div><p class="small" style="margin:0">${esc(a.aiReason || "No reason given.")}</p>
-    ${basis.ids.length ? `<div class="lab">What it relied on</div>${basis.ids.map(id => { const e = byId(S.evidence, id); return e ? `<div class="q compact s-${esc(e.status)}" style="margin:0 0 6px;padding:8px 10px 6px 12px"><span class="words" style="font-size:13.5px">${esc(e.quote)}</span><div class="meta"><a href="#/interviews/${esc(e.interviewId)}">${esc(e.interviewId)}</a>${e.status !== "Confirmed" ? statusChip(e.status) : ""}</div></div>` : `<span class="chip bad">${esc(id)} not found</span>`; }).join("")}` : `<p class="hint" style="margin-top:10px">${basis.kind === "guess" ? "It had no confirmed quotes to go on. This is a reasoned guess, the same kind you're making. Interviews settle it." : ""}</p>`}
-    ${dis ? `<div class="notice warn" style="margin-top:10px">You and your AI are 2 or more apart. Who's reading the evidence right?</div>` : ""}
-  </div>`;
-}
-
 /* 05 Leads List */
 function leadsTable(minRows){
   const leads = S.compass.leads || []; const rows = Math.max(minRows, leads.length);
@@ -1985,8 +2002,14 @@ function route(){
 }
 function go(h){ location.hash = "#/" + h; }
 function dropSub(){ const r = route(); if (r.sub) history.replaceState(null, "", "#/" + r.page + "/" + r.id); }
-window.addEventListener("hashchange", () => { const r = route(); const prev = ui.selNote; ui.drawer = null; ui.askFor = null; ui.selNote = (r.page === "compass" && r.id === "map" && r.sub) ? r.sub : null; if (prev !== ui.selNote) cleanupEmpty(prev); ui.editQuote = null; render(); });
-document.addEventListener("keydown", ev => { if (ev.key === "Escape" && (ui.drawer || ui.askFor || ui.selNote || ui.mapShelf)){ if (ev.target.isContentEditable && !ev.target.classList.contains("lbx")){ ev.target.blur(); return; } if (ev.target.isContentEditable) ev.target.blur(); ui.drawer = null; ui.askFor = null; ui.mapShelf = false; deselect(); render(); } });
+window.addEventListener("hashchange", () => { const r = route(); const prev = ui.selNote; ui.drawer = null; ui.askFor = null; ui.selNote = (r.page === "compass" && r.id === "map" && r.sub) ? r.sub : null; ui.mapPanel = !!ui.selNote; if (prev !== ui.selNote) cleanupEmpty(prev); ui.editQuote = null; render(); });
+document.addEventListener("keydown", ev => {
+  if (ev.key !== "Escape") return;
+  if (ev.target.isContentEditable){ ev.target.blur(); return; }
+  if (ui.drawer || ui.askFor || ui.mapShelf){ ui.drawer = null; ui.askFor = null; ui.mapShelf = false; render(); return; }
+  if (ui.selNote && ui.mapPanel){ ui.mapPanel = false; render(); return; }    // panel open: close it, keep the card
+  if (ui.selNote){ deselect(); render(); }
+});
 
 function shell(content, bare){
   const m = metrics(); const r = route(); const demo = store.kind === "demo";
@@ -2034,7 +2057,7 @@ function render(){
   if (store.needsSetup){ root.innerHTML = setupView(); return; }
   const r = route();
   if (REDIRECTS[location.hash.replace(/^#\/?/, "").split("/")[0]]) history.replaceState(null, "", "#/" + r.page);
-  if (r.page === "compass" && r.id === "map" && r.sub && !ui.selNote) ui.selNote = r.sub;
+  if (r.page === "compass" && r.id === "map" && r.sub && !ui.selNote){ ui.selNote = r.sub; ui.mapPanel = true; }
   const views = {home:dashView, start:startSheet, compass:compassView, insights:insightsView, section:sectionView, ledger:ledgerView, interviews:r.id ? interviewView : interviewsView, quotes:quotesView, problems:r.id ? problemView : () => insightsView("problem"), persona:personaView, jobs:jobsView, mvp:mvpView, ask:askView, guide:guideView, settings:settingsView};
   const scrollEl = document.querySelector(".main"); const keep = scrollEl && root.dataset.page === location.hash ? scrollEl.scrollTop : 0;
   const bare = r.page === "compass" && r.id === "map";
@@ -2606,7 +2629,8 @@ document.addEventListener("click", async ev => {
   else if (a === "placeLead"){ const pl = byId(S.places, el.dataset.id); const list = S.compass.leads = S.compass.leads || []; list.push({id:nextId("L-", list, 2), name:"", org:"", why:pl.who ? `${pl.who}: ${pl.how || ""}`.trim() : (pl.how || ""), how:pl.name, done:false}); persist("compass"); go("compass/leads"); setTimeout(() => focusLast('[data-kind="leads"][data-field="name"]'), 50); }
   else if (a === "editQuote"){ ui.editQuote = ui.editQuote === el.dataset.id ? null : el.dataset.id; render(); }
   else if (a === "reviewNext"){ const n = reviewQueue().length; if (!n) return; ui.reviewIdx = (Math.min(ui.reviewIdx || 0, n - 1) + 1) % n; render(); }
-  else if (a === "mapZoom"){ const vp = document.getElementById("vp"); if (!vp) return; if (el.dataset.val === "fit"){ fitMap(vp); applyView(); } else { const r = vp.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, el.dataset.val === "in" ? 1.25 : 0.8); } }
+  else if (a === "mapFilter"){ ui.mapFilter = el.dataset.val; render(); }
+  else if (a === "mapZoom"){ const vp = document.getElementById("vp"); if (!vp) return; if (el.dataset.val === "fit") fitView(vp); else { const r = vp.getBoundingClientRect(); zoomAt(r.width / 2, r.height / 2, el.dataset.val === "in" ? 1.25 : 0.8); } }
   else if (a === "cAdd"){
     const k = el.dataset.kind;
     if (k === "problem"){ upsert("problems", {id:nextId("PR-", S.problems, 2), text:"", who:""}); render(); focusLast('[data-act="pField"][data-field="text"]'); return; }
@@ -2623,13 +2647,13 @@ document.addEventListener("click", async ev => {
     l.done = true; l.interviewId = id; persist("compass"); ui.tab[id] = "quotes"; go("interviews/" + id); }
   else if (a === "startSeed"){ const n = seedAssumptions(); go("compass/map"); toast(n ? `Added ${n} point${n > 1 ? "s" : ""} from your snapshot. Drag them into the grid to rate them.` : "Everything on your snapshot already has a point. Drag the points into the grid to rate them."); }
   else if (a === "seedAssumptions"){ const n = seedAssumptions(); render(); toast(n ? `Added ${n} point${n > 1 ? "s" : ""} from your canvas. Drag them into the grid to rate them.` : "Nothing new. Everything on the canvas already has a point."); }
-  else if (a === "newAssumption"){ const id = nextId("A-", S.assumptions, 2); upsert("assumptions", blankAssumption(id)); selectPoint(id); ui.focusLab = id; render(); }
+  else if (a === "newAssumption"){ const id = nextId("A-", S.assumptions, 2); upsert("assumptions", blankAssumption(id)); selectPoint(id); ui.mapPanel = true; ui.focusText = id; render(); }
   else if (a === "selNote"){ selectPoint(el.dataset.id); render(); }
-  else if (a === "closeNote"){ deselect(); render(); }
+  else if (a === "closeNote"){ ui.mapPanel = false; render(); }
   else if (a === "toggleShelf"){ ui.mapShelf = !ui.mapShelf; if (ui.mapShelf) deselect(); render(); }
   else if (a === "toggleFull"){ ui.mapFull = !ui.mapFull; render(); }
   else if (a === "pivotStatus"){ const pv = byId(S.pivots, el.dataset.id); const prev = pv.status; upsert("pivots", {...pv, status: el.dataset.val}); render(); toast(el.dataset.val === "Active" ? `Accepted ${pv.id}.` : `Dismissed ${pv.id}.`, () => { upsert("pivots", {...byId(S.pivots, pv.id), status: prev}); render(); }); }
-  else if (a === "aStatus"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, status: el.dataset.val}); if (el.dataset.val === "Retired"){ ui.selNote = null; dropSub(); } render(); }
+  else if (a === "aStatus"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, status: el.dataset.val}); if (el.dataset.val === "Retired"){ ui.selNote = null; ui.mapPanel = false; dropSub(); } render(); }
   else if (a === "aStance"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).map(t => t.id === el.dataset.eid ? {...t, stance:el.dataset.val} : t)}); render(); }
   else if (a === "aUntag"){ const x = byId(S.assumptions, el.dataset.id); upsert("assumptions", {...x, evidence:(x.evidence||[]).filter(t => t.id !== el.dataset.eid)}); render(); }
   else if (a === "newJob"){ const id = nextId("JB-", S.jobs, 2); upsert("jobs", {id, statement:"", type:"", problemId:S.persona.problemId || "", workaround:"", moment:"", frequency:"", consequence:"", decision:"Undecided", why:""}); render(); }
@@ -2682,7 +2706,7 @@ document.addEventListener("focusout", ev => {
   // Delay the refresh so a click that caused the blur lands on the element the person aimed at.
   setTimeout(() => { if (!document.activeElement || !document.activeElement.isContentEditable) render(); }, 160);
 });
-document.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && ev.target.isContentEditable && (ev.target.classList.contains("ed") || ev.target.classList.contains("lbx"))){ ev.preventDefault(); ev.target.blur(); } });
+document.addEventListener("keydown", ev => { if (ev.key === "Enter" && !ev.shiftKey && ev.target.isContentEditable && ev.target.classList.contains("ed")){ ev.preventDefault(); ev.target.blur(); } });
 document.addEventListener("input", ev => {
   const el = ev.target;
   if (el.id === "transcriptBox"){ ui.drafts.transcript[el.dataset.iv] = el.value; return; }
@@ -2710,76 +2734,105 @@ document.addEventListener("submit", async ev => {
     upsert("evidence", {id, interviewId:r.id, problemId:d.problemId, jobId:"", quote:d.quote.trim(), where:d.where, type:d.type, foundBy:"Founder", status:"Confirmed", note:""}); ui.addQuote = null; render(); }
 });
 
-/* ---------------- the assumptions map: an infinite canvas ----------------
+/* ---------------- the assumptions map: a whiteboard ----------------
    ui.view = {x, y, k}: where the world sits in the viewport and how zoomed. Points live in world px.
-   Dragging a point moves it and saves its rating; dragging the background pans; ctrl/cmd + wheel zooms. */
+   Zoom in has no cap; zoom out stops where the grid plus the shelf fit the viewport (ui.kmin), and that limit follows the
+   viewport's size. Left-drag on a point moves it and saves its rating; left-drag on the board pans; wheel zooms. */
 function mountMap(){
-  const vp = document.getElementById("vp"); if (!vp) return;
-  const w = vp.getBoundingClientRect().width;
-  if (!ui.view) fitMap(vp);
-  else if (ui.viewW && Math.abs(w - ui.viewW) > 2){ if (ui.view.k === ui.fitK) fitMap(vp); else ui.view.x += (w - ui.viewW) / 2; }   // layout changed (a point selected or not): re-fit if it was fitted, else keep the view centred
-  ui.viewW = w; applyView();
-  if (ui.focusLab){ const el = vp.querySelector(`.lbx[data-lab="${CSS.escape(ui.focusLab)}"]`); ui.focusLab = null; if (el){ el.focus(); const s = window.getSelection(), rg = document.createRange(); rg.selectNodeContents(el); rg.collapse(false); s.removeAllRanges(); s.addRange(rg); } }
+  const vp = document.getElementById("vp");
+  if (!vp){ if (ui.mapRO){ ui.mapRO.disconnect(); ui.mapRO = null; } return; }
+  if (!ui.view) fitView(vp); else { const was = ui.view.k <= ui.kmin + 1e-9; ui.kmin = fitK(vp); if (was) fitView(vp); else applyView(); }   // at the limit: re-fit to the new room; else keep the view
+  if (settleMetrics(vp)) return;                                                 // the board's proportions changed with the room: drawn again, once
+  if (ui.mapRO) ui.mapRO.disconnect();
+  ui.mapRO = new ResizeObserver(() => { const v = document.getElementById("vp"); if (!v || !ui.view) return; const was = ui.view.k <= ui.kmin + 1e-9; ui.kmin = fitK(v); if (was) fitView(v); else applyView(); settleMetrics(v); });
+  ui.mapRO.observe(vp); const lgd = vp.querySelector(".legend"); if (lgd) ui.mapRO.observe(lgd);   // the legend too: it wraps when the webfont lands or the board narrows, and the fit leaves room for it
+  if (ui.focusText){ const el = document.querySelector(`.mappanel .ed[data-act="aText"][data-id="${CSS.escape(ui.focusText)}"]`); ui.focusText = null; if (el){ el.focus(); const s = window.getSelection(), rg = document.createRange(); rg.selectNodeContents(el); rg.collapse(false); s.removeAllRanges(); s.addRange(rg); } }
+  const card = document.getElementById("card");
+  if (card && card.innerHTML.trim()){ placeCard(); if (ui.cardFor === ui.selNote) card.classList.add("in"); else requestAnimationFrame(() => card.classList.add("in")); ui.cardFor = ui.selNote; }
+  else ui.cardFor = null;
 }
-function fitK(vp){ const r = vp.getBoundingClientRect(); const pad = 12; return Math.max(0.15, Math.min((r.width - pad * 2) / (WORLD.x1 - WORLD.x0), (r.height - pad * 2) / (WORLD.y1 - WORLD.y0))); }
-function fitMap(vp){ const r = vp.getBoundingClientRect(); const k = fitK(vp); ui.fitK = k; ui.view = {k, x:r.width / 2 - k * (WORLD.x0 + WORLD.x1) / 2, y:r.height / 2 - k * (WORLD.y0 + WORLD.y1) / 2}; }
-/* The world has edges: you can't zoom out past the whole map, and you can't pan it off the screen. */
+/* Room on screen around the fitted board: the axis words left and right, the hint above when shown, the legend below. */
+function screenPad(vp){
+  const shown = el => el && getComputedStyle(el).display !== "none";
+  const hint = vp.querySelector(".hint2"), legend = vp.querySelector(".legend");
+  return {l:SCREEN_PAD.l, r:SCREEN_PAD.r, t:shown(hint) ? hint.offsetTop + hint.offsetHeight + 12 : SCREEN_PAD.t, b:shown(legend) ? legend.offsetHeight + 24 : SCREEN_PAD.b};
+}
+/* The shelf's geometry depends on the zoom-out limit, which depends on the shelf's geometry: two passes settle it. A re-render
+   happens only when the limit moved enough (8%) to change what's drawn, and never twice in a row. */
+function settleMetrics(vp){
+  const wasAtLimit = ui.view.k <= ui.kmin + 1e-9, drawn = ui.mapKDrawn || 0;
+  let k = ui.mapK || fitK(vp); for (let i = 0; i < 8; i++){ ui.mapK = k; const k2 = fitK(vp); if (Math.abs(k2 - k) < 1e-3){ k = k2; break; } k = k2; }   // the limit and the shelf's size depend on each other: iterate to the fixed point
+  if (Math.abs(k - drawn) / (drawn || k) > 0.08 && !ui.mapSettling){ ui.mapK = k; ui.kmin = k; if (wasAtLimit) ui.view.k = k; ui.mapSettling = true; render(); ui.mapSettling = false; return true; }
+  ui.mapK = drawn || k; return false;
+}
+function fitK(vp){ const r = vp.getBoundingClientRect(), b = mapBox(), p = screenPad(vp); return Math.max(0.05, Math.min((r.width - p.l - p.r) / (b.x1 - b.x0), (r.height - p.t - p.b) / (b.y1 - b.y0))); }
+/* The view at the zoom-out limit: the grid plus the shelf, centred in the room the axis words leave. */
+function fitted(vp){
+  const r = vp.getBoundingClientRect(), b = mapBox(), k = fitK(vp), p = screenPad(vp);
+  return {k, x:p.l + ((r.width - p.l - p.r) - (b.x1 - b.x0) * k) / 2 - b.x0 * k,
+             y:p.t + ((r.height - p.t - p.b) - (b.y1 - b.y0) * k) / 2 - b.y0 * k};
+}
+function fitView(vp){ ui.kmin = fitK(vp); ui.view = fitted(vp); applyView(); }
 function clampView(vp){
-  const v = ui.view; const r = vp.getBoundingClientRect(); const kmin = fitK(vp);
-  if (v.k < kmin) v.k = kmin;
-  const ww = (WORLD.x1 - WORLD.x0) * v.k, wh = (WORLD.y1 - WORLD.y0) * v.k;
-  const minX = r.width - WORLD.x1 * v.k, maxX = -WORLD.x0 * v.k;      // world right edge at the viewport's right … world left edge at the viewport's left
-  v.x = ww <= r.width ? (r.width - ww) / 2 - WORLD.x0 * v.k : Math.min(maxX, Math.max(minX, v.x));
-  const minY = r.height - WORLD.y1 * v.k, maxY = -WORLD.y0 * v.k;
-  v.y = wh <= r.height ? (r.height - wh) / 2 - WORLD.y0 * v.k : Math.min(maxY, Math.max(minY, v.y));
+  const v = ui.view;
+  if (v.k <= ui.kmin + 1e-9){ ui.view = fitted(vp); return; }                 // at the limit the board sits exactly fitted
+  const r = vp.getBoundingClientRect(), b = mapBox(), keep = 80;              // otherwise the grid can't be panned fully off the screen
+  v.x = Math.min(r.width - keep - b.x0 * v.k, Math.max(keep - b.x1 * v.k, v.x));
+  v.y = Math.min(r.height - keep - b.y0 * v.k, Math.max(keep - b.y1 * v.k, v.y));
 }
-function applyView(){ const w = document.getElementById("world"), vp = document.getElementById("vp"); if (!w || !vp || !ui.view) return; clampView(vp); w.style.transform = `translate(${ui.view.x}px,${ui.view.y}px) scale(${ui.view.k})`; w.style.setProperty("--ik", 1 / ui.view.k); }
-function zoomAt(cx, cy, f){ const v = ui.view; if (!v) return; const k2 = Math.min(4, v.k * f); const wx = (cx - v.x) / v.k, wy = (cy - v.y) / v.k; v.k = k2; v.x = cx - wx * k2; v.y = cy - wy * k2; applyView(); }
+function applyView(){
+  const w = document.getElementById("world"), vp = document.getElementById("vp"); if (!w || !vp || !ui.view) return;
+  if (ui.kmin == null) ui.kmin = fitK(vp);
+  if (ui.view.k < ui.kmin) ui.view.k = ui.kmin;
+  clampView(vp);
+  w.style.transform = `translate(${ui.view.x}px,${ui.view.y}px) scale(${ui.view.k})`; w.style.setProperty("--ik", 1 / ui.view.k);
+  vp.classList.toggle("tiny", ui.view.k < 0.4);                                   // too small for five words across: the two "Probably" words and the axis names go
+  placeCard();
+}
+function zoomAt(cx, cy, f){ const v = ui.view; if (!v) return; const k2 = Math.max(ui.kmin || 0, v.k * f); const wx = (cx - v.x) / v.k, wy = (cy - v.y) / v.k; v.k = k2; v.x = cx - wx * k2; v.y = cy - wy * k2; applyView(); }
 function worldAt(vp, clientX, clientY){ const r = vp.getBoundingClientRect(); const v = ui.view; return {x:(clientX - r.left - v.x) / v.k, y:(clientY - r.top - v.y) / v.k}; }
+/* The card sits next to the selected point in screen space, flipping left when it would run off the board. */
+function placeCard(){
+  const card = document.getElementById("card"), vp = document.getElementById("vp"); if (!card || !vp || !ui.view || !ui.selNote || !card.innerHTML.trim()) return;
+  const pt = vp.querySelector(`.pt.me[data-pt="${CSS.escape(ui.selNote)}"]`); if (!pt) return;
+  const r = vp.getBoundingClientRect(), v = ui.view, sx = v.x + parseFloat(pt.style.left) * v.k, sy = v.y + parseFloat(pt.style.top) * v.k;
+  const cw = card.offsetWidth, ch = card.offsetHeight;
+  let x = sx + 20, y = sy - 14;
+  if (x + cw > r.width - 12) x = sx - 20 - cw;
+  if (y + ch > r.height - 12) y = r.height - 12 - ch;
+  card.style.left = Math.max(12, x) + "px"; card.style.top = Math.max(12, y) + "px";
+}
 /* A point with nothing written on it disappears when you click away. */
 function cleanupEmpty(id){ const a = id && byId(S.assumptions, id); if (a && a.status === "Active" && !a.seed && !(a.text || "").trim() && !a.aiImpact && !a.aiReason && !(a.evidence || []).length && !(a.note || "").trim()) removeRec("assumptions", a.id); }
-function deselect(){ const prev = ui.selNote; ui.selNote = null; dropSub(); cleanupEmpty(prev); }
-function selectPoint(id){ if (ui.selNote === id) return; const prev = ui.selNote; ui.selNote = id; dropSub(); cleanupEmpty(prev); }
-let drag = null, dragLab = null, pan = null;
-document.addEventListener("contextmenu", ev => { if (ev.target.closest && ev.target.closest("#vp")) ev.preventDefault(); });
+function deselect(){ const prev = ui.selNote; ui.selNote = null; ui.mapPanel = false; dropSub(); cleanupEmpty(prev); }
+function selectPoint(id){ if (ui.selNote === id) return; const prev = ui.selNote; ui.selNote = id; ui.mapPanel = false; dropSub(); cleanupEmpty(prev); }
+let drag = null, pan = null;
+const MAP_CHROME = ".ptcard,.hud,.legend,.hint2,.ov,button,select,input,a,[contenteditable]";
 document.addEventListener("pointerdown", ev => {
   const vp = ev.target.closest("#vp"); if (!vp || !ui.view) return;
-  if (ev.target.closest(".hud,.legend,.hint2,.ov,button,select,input")) return;
-  if (ev.button === 0){
-    const pt = ev.target.closest(".pt[data-pt]");
-    if (pt){ const a = byId(S.assumptions, pt.dataset.pt); if (!a) return;
-      drag = {id:a.id, el:pt, lab:vp.querySelector(`.lbx[data-lab="${CSS.escape(a.id)}"]`), startX:ev.clientX, startY:ev.clientY, moved:false, locked:a.status === "Candidate", wx:parseFloat(pt.style.left), wy:parseFloat(pt.style.top)};
-      pt.setPointerCapture(ev.pointerId); return; }
-    const lab = ev.target.closest(".lbx[data-lab]");
-    if (lab){ if (document.activeElement === lab) return;           // already editing: let the mouse select text
-      ev.preventDefault();
-      dragLab = {id:lab.dataset.lab, el:lab, startX:ev.clientX, startY:ev.clientY, moved:false, wx:parseFloat(lab.style.left), wy:parseFloat(lab.style.top)};
-      lab.setPointerCapture(ev.pointerId); return; }
-    if (ev.target.closest("[contenteditable]")) return;
+  if (ev.target.closest(MAP_CHROME)) return;
+  const pt = ev.target.closest(".pt[data-pt]");
+  if (pt && ev.button === 0){
+    const a = byId(S.assumptions, pt.dataset.pt); if (!a) return;
+    drag = {id:a.id, el:pt, startX:ev.clientX, startY:ev.clientY, moved:false, locked:!!pt.dataset.ai || a.status === "Candidate", wx:parseFloat(pt.style.left), wy:parseFloat(pt.style.top)};
+    pt.setPointerCapture(ev.pointerId); return;                              // capture on the point, so a double-click still lands on it
   }
-  if (ev.button > 2) return;
+  if (ev.button !== 0 && ev.button !== 1) return;
   ev.preventDefault();
-  pan = {button:ev.button, startX:ev.clientX, startY:ev.clientY, vx:ui.view.x, vy:ui.view.y, moved:false, vp};
+  pan = {button:ev.button, startX:ev.clientX, startY:ev.clientY, vx:ui.view.x, vy:ui.view.y, moved:false, vp, onBoard:!pt};
   vp.setPointerCapture(ev.pointerId);
 });
 document.addEventListener("pointermove", ev => {
   if (drag){
-    const dx = ev.clientX - drag.startX, dy = ev.clientY - drag.startY;
-    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     if (drag.locked) return;
-    if (!drag.moved){ drag.moved = true; ui.dragging = true; drag.el.classList.add("dragging"); }
+    const dx = ev.clientX - drag.startX, dy = ev.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;                        // 4px threshold: a click never nudges
+    if (!drag.moved){ drag.moved = true; ui.dragging = true; drag.el.classList.add("dragging"); const c = document.getElementById("card"); if (c) c.classList.remove("in"); }
     const w0 = {x:drag.wx + dx / ui.view.k, y:drag.wy + dy / ui.view.k}; const raw = posOf(w0);
-    drag.w = inGrid(raw) ? worldOf(clampPos(raw)) : clampWorld(w0);            // inside the grid the edge is the limit
+    drag.w = inGrid(raw) ? worldOf(clampPos(raw)) : w0;                       // inside the grid the edge is the limit
     drag.el.style.left = drag.w.x + "px"; drag.el.style.top = drag.w.y + "px";
-    if (drag.lab){ const l = labelOf(byId(S.assumptions, drag.id)); drag.lab.style.left = (drag.w.x + l.dx) + "px"; drag.lab.style.top = (drag.w.y + l.dy) + "px"; }
+    const tie = document.querySelector(`#world line[data-tie="${CSS.escape(drag.id)}"]`); if (tie){ tie.setAttribute("x1", drag.w.x); tie.setAttribute("y1", drag.w.y); }
     return;
-  }
-  if (dragLab){
-    const dx = ev.clientX - dragLab.startX, dy = ev.clientY - dragLab.startY;
-    if (!dragLab.moved && Math.hypot(dx, dy) < 4) return;
-    if (!dragLab.moved){ dragLab.moved = true; ui.dragging = true; dragLab.el.classList.add("dragging"); }
-    dragLab.w = clampWorld({x:dragLab.wx + dx / ui.view.k, y:dragLab.wy + dy / ui.view.k});
-    dragLab.el.style.left = dragLab.w.x + "px"; dragLab.el.style.top = dragLab.w.y + "px"; return;
   }
   if (pan){
     const dx = ev.clientX - pan.startX, dy = ev.clientY - pan.startY;
@@ -2788,35 +2841,36 @@ document.addEventListener("pointermove", ev => {
     ui.view.x = pan.vx + dx; ui.view.y = pan.vy + dy; applyView();
   }
 });
-document.addEventListener("pointerup", ev => {
+function endPointer(ev){
   if (drag){
-    const d = drag; drag = null; ui.dragging = false;
-    if (!d.moved){ selectPoint(d.id); render(); return; }
+    const d = drag; drag = null; ui.dragging = false; d.el.classList.remove("dragging");
+    if (!d.moved){ if (ui.selNote !== d.id){ selectPoint(d.id); render(); } return; }   // a click: select; the second click of a double-click changes nothing, so dblclick lands on the same point
     const a = byId(S.assumptions, d.id); if (!a) return;
-    const raw = posOf(d.w); const pos = inGrid(raw) ? clampPos(raw) : null;   // in the grid: rated; outside: back on the shelf
+    const raw = posOf(d.w); const pos = inGrid(raw) ? clampPos(raw) : null;   // release: snap into the grid, rated; or onto the shelf
     upsert("assumptions", {...a, pos, ...(pos ? ratingOf(pos) : {impact:"", confidence:""})}); render(); return;
-  }
-  if (dragLab){
-    const d = dragLab; dragLab = null; ui.dragging = false;
-    const a = byId(S.assumptions, d.id); if (!a) return;
-    if (!d.moved){ selectPoint(d.id); ui.focusLab = d.id; render(); return; }   // a click on the label: edit it
-    const pt = document.querySelector(`#vp .pt[data-pt="${CSS.escape(d.id)}"]`); const px = parseFloat(pt.style.left), py = parseFloat(pt.style.top);
-    upsert("assumptions", {...a, label:{dx:Math.round(d.w.x - px), dy:Math.round(d.w.y - py)}}); render(); return;
   }
   if (pan){
     const p = pan; pan = null; ui.dragging = false; p.vp.classList.remove("panning");
-    if (p.moved || p.button !== 0) return;
-    // a plain left click on empty canvas adds a point there
-    const raw = posOf(clampWorld(worldAt(p.vp, ev.clientX, ev.clientY))); const pos = inGrid(raw) ? clampPos(raw) : null; const id = nextId("A-", S.assumptions, 2);
-    const prev = ui.selNote; upsert("assumptions", {...blankAssumption(id), pos, ...(pos ? ratingOf(pos) : {})}); ui.selNote = id; dropSub(); cleanupEmpty(prev); ui.focusLab = id; render();
+    if (p.moved || p.button !== 0 || !p.onBoard || ev.type !== "pointerup") return;
+    if (ui.selNote){ deselect(); render(); }                                  // a click on empty board closes the card
   }
+}
+document.addEventListener("pointerup", endPointer); document.addEventListener("pointercancel", endPointer);
+document.addEventListener("dblclick", ev => {
+  const vp = ev.target.closest("#vp"); if (!vp || !ui.view) return;
+  if (ev.target.closest(MAP_CHROME)) return;
+  const pt = ev.target.closest(".pt[data-pt]");
+  if (pt){ const a = byId(S.assumptions, pt.dataset.pt); if (!a) return; if (ui.selNote !== a.id) selectPoint(a.id); ui.mapPanel = true; render(); return; }
+  // double-click on empty board adds a point there, selects it and opens the panel with the text ready to type
+  const raw = posOf(worldAt(vp, ev.clientX, ev.clientY)); const pos = inGrid(raw) ? clampPos(raw) : null; const id = nextId("A-", S.assumptions, 2);
+  const prev = ui.selNote; upsert("assumptions", {...blankAssumption(id), pos, ...(pos ? ratingOf(pos) : {})}); ui.selNote = id; ui.mapPanel = true; dropSub(); cleanupEmpty(prev); ui.focusText = id; render();
 });
 document.addEventListener("wheel", ev => {
   const vp = ev.target.closest && ev.target.closest("#vp"); if (!vp || !ui.view) return;
-  if (ev.target.closest(".ov")) return;                                          // panels scroll normally
+  if (ev.target.closest(".ov,.ptcard")) return;                                  // panels scroll normally
   ev.preventDefault();
   const r = vp.getBoundingClientRect();
-  zoomAt(ev.clientX - r.left, ev.clientY - r.top, Math.exp(-ev.deltaY * (ev.ctrlKey || ev.metaKey ? 0.01 : 0.0018)));
+  zoomAt(ev.clientX - r.left, ev.clientY - r.top, Math.exp(-ev.deltaY * (ev.ctrlKey || ev.metaKey ? 0.01 : 0.0015)));   // trackpad pinch arrives as ctrl+wheel
 }, {passive:false});
 
 /* ---------------- folder handling + watching for AI writes ---------------- */
