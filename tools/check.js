@@ -5,7 +5,7 @@
 const fs = require("fs"), path = require("path");
 const root = path.resolve(__dirname, "..", "drm");
 const read = d => { const dir = path.join(root, d); if (!fs.existsSync(dir)) return []; return fs.readdirSync(dir).filter(f => f.endsWith(".json")).map(f => { try { return {file: d + "/" + f, ...JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"))}; } catch (e) { return {file: d + "/" + f, _unreadable: e.message}; } }); };
-const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs"), places = read("places"), leads = read("leads"), pivots = read("pivots");
+const interviews = read("interviews"), evidence = read("evidence"), pains = read("pain-scores"), problems = read("problems"), assumptions = read("assumptions"), jobs = read("jobs"), places = read("places"), leads = read("leads"), competitors = read("competitors"), pivots = read("pivots");
 let compass = {}; try { compass = JSON.parse(fs.readFileSync(path.join(root, "compass.json"), "utf8")); } catch (e) {}
 const transcripts = {}; const tdir = path.join(root, "transcripts"); if (fs.existsSync(tdir)) for (const f of fs.readdirSync(tdir)) if (f.endsWith(".md")) transcripts[f.slice(0, -3)] = fs.readFileSync(path.join(tdir, f), "utf8");
 const TYPES = ["Past behavior, irreversible","Past behavior, reversible","Current workaround","Frequency","Cost (time or money)","Strong language","Opinion or future intent"];
@@ -13,11 +13,12 @@ const TIERS = ["Hair on Fire","Incremental Improvement","Nice to Have","Latent",
 const KINDS = ["problem","solution","customers","early-adopters","alternatives","competition","other"];
 const PLACE_KINDS = ["LinkedIn search","Online community","Event or meetup","Organisation or club","Referral","Other"];
 const PIVOT_KINDS = ["zoom-in","customer-segment","problem","channel","value-capture","platform"];
+const COMPETITOR_KINDS = ["alternative","competitor"];
 const out = []; const bad = (w, m) => out.push(["PROBLEM", w, m]); const warn = (w, m) => out.push(["warning", w, m]); const note = (w, m) => out.push(["note", w, m]);
 function quoteRegex(q){ const t = String(q||"").trim().replace(/^["“”']+|["“”']+$/g, "").trim(); if (t.length < 4) return null; const body = t.split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/['’‘]/g, "['’‘]").replace(/["“”]/g, '["“”]')).join("\\s+"); try { return new RegExp(body, "i"); } catch (e) { return null; } }
 const byId = (list, id) => list.find(r => r.id === id);
-for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places, ...leads, ...pivots]) { if (r._unreadable) bad(r.file, "Not valid JSON: " + r._unreadable); else if (!r.id) bad(r.file, "Missing id"); else if (r.file.split("/")[1] !== r.id + ".json") warn(r.file, `File name doesn't match id ${r.id}`); }
-const seen = new Set(); for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places, ...leads, ...pivots]) { if (!r.id) continue; if (seen.has(r.id)) bad(r.file, "Duplicate id " + r.id); seen.add(r.id); }
+for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places, ...leads, ...competitors, ...pivots]) { if (r._unreadable) bad(r.file, "Not valid JSON: " + r._unreadable); else if (!r.id) bad(r.file, "Missing id"); else if (r.file.split("/")[1] !== r.id + ".json") warn(r.file, `File name doesn't match id ${r.id}`); }
+const seen = new Set(); for (const r of [...interviews, ...evidence, ...pains, ...problems, ...assumptions, ...jobs, ...places, ...leads, ...competitors, ...pivots]) { if (!r.id) continue; if (seen.has(r.id)) bad(r.file, "Duplicate id " + r.id); seen.add(r.id); }
 for (const e of evidence) {
   if (e._unreadable || !e.id) continue;
   if (!["Candidate","Confirmed","Rejected"].includes(e.status)) bad(e.file, `Bad status "${e.status}"`);
@@ -89,6 +90,21 @@ for (const l of leads) {
   if (l.customerId && !((compass.customers || []).some(c => c.id === l.customerId))) warn(l.file, `customerId ${l.customerId} isn't a segment in compass.json`);
   if (l.placeId && !byId(places, l.placeId)) warn(l.file, `placeId ${l.placeId} doesn't exist`);
 }
+for (const c of competitors) {
+  if (c._unreadable || !c.id) continue;
+  if (!["Candidate","Accepted","Dismissed"].includes(c.status)) bad(c.file, `Bad status "${c.status}" (Candidate, Accepted or Dismissed)`);
+  if (c.status === "Dismissed") continue;
+  if (!c.name) bad(c.file, "Competitor has no name. Name only what you actually found: a page you opened, or the thing an interviewee named in a confirmed quote.");
+  if (!COMPETITOR_KINDS.includes(c.kind)) warn(c.file, `kind "${c.kind}" must be alternative or competitor`);
+  const ids = (c.evidenceIds || []).filter(Boolean); const missing = ids.filter(id => !byId(evidence, id));
+  if (missing.length) bad(c.file, "evidenceIds cites quotes that don't exist: " + missing.join(", "));
+  if (!ids.length) note(c.file, "Competitor lists no quote behind it. Allowed, but `why` must say it's a guess from the segment and the problem; the app stamps it as one.");
+  if (!c.why) warn(c.file, "Competitor has no `why`: say which interview or quote it rests on, or that it's a guess.");
+  if (c.url && !/^https?:\/\//.test(c.url)) warn(c.file, "url should be a full http(s) address you actually opened, or empty");
+  if (c.url && !c.verified) warn(c.file, "You listed a page but didn't say what you saw there, or when. Fill in `verified`, or clear `url` if you never opened it.");
+  if (c.customerId && !((compass.customers || []).some(x => x.id === c.customerId))) warn(c.file, `customerId ${c.customerId} isn't a segment in compass.json`);
+  if (c.problemId && !byId(problems, c.problemId)) warn(c.file, `problemId ${c.problemId} doesn't exist`);
+}
 /* The pivot gate, computed the way the app computes assumption status (CLAUDE.md, The Compass and Poke holes): a pivot is in play only when every trigger is Shaky or Contradicted.
    Five statuses, fixed thresholds (not founder-adjustable). Per problem, from confirmed scores: Untested under 2; Contradicted at 5 or more with 20% or fewer in the top two tiers;
    Shaky when the top-two share is under 50%, or reaches it only with weak interviews; Weak signal when clean interviews clear 50% on fewer than 5 (or with no clean Hair on Fire);
@@ -158,5 +174,5 @@ const ndir = path.join(root, "notes"); if (fs.existsSync(ndir)) for (const f of 
 }
 const counts = {PROBLEM:0, warning:0, note:0}; for (const [s] of out) counts[s]++;
 for (const [s, w, m] of out.sort((x, y) => ["PROBLEM","warning","note"].indexOf(x[0]) - ["PROBLEM","warning","note"].indexOf(y[0]))) console.log(`${s.padEnd(8)} ${w}: ${m}`);
-console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions, ${places.length} places, ${leads.length} leads, ${pivots.length} pivots.`);
+console.log(`\n${counts.PROBLEM} problem(s), ${counts.warning} warning(s), ${counts.note} note(s). ${interviews.length} interviews, ${evidence.length} quotes, ${pains.length} pain scores, ${assumptions.length} assumptions, ${places.length} places, ${leads.length} leads, ${pivots.length} pivots, ${competitors.length} competitors.`);
 process.exit(counts.PROBLEM ? 1 : 0);

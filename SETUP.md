@@ -59,7 +59,7 @@ After setup the app opens on **Your snapshot, in one sitting**: seven questions 
 3. **04 Assumptions Map:** the whole screen is a whiteboard. Double-click the board to add a point and type its assumption; drag a point into the grid to rate it (up means catastrophic if wrong, left means likely wrong; top-left gets tested first; the position is the rating, and a point dropped outside the grid goes back to the shelf below it); drag the board to pan and scroll to zoom. Click a point for its card: its status, its words, what the evidence says and your AI's case against. Double-click it to edit: a panel opens on the right with your rating in words, the quotes you tag for and against, and your AI's rating. The Notes button pops out "My riskiest assumption" and "How I'll get evidence this week". Ask your AI to **Diagnose my snapshot**: it places its own dashed point next to yours, says what evidence that rests on, lists what's stated but untestable, proposes the assumptions hiding in your canvas, and names the two interviews to run first. A point it rates with no evidence is stamped as a guess.
 4. **05 Leads List:** who you could talk to. Log an interview straight from a row.
 
-From then on, every interview updates the map. A note's status (No evidence yet, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score anyone types. **Insights** shows the picture by focus area: Problem, Customers, Solution, Alternatives and competition.
+From then on, every interview updates the map. A note's status (No evidence yet, Shaky, Holding up, Contradicted) comes from your confirmed pain scores and quotes, not from a score anyone types. **Insights** shows the picture by focus area: Problem, Customers, Solution, Alternatives and competition. The Alternatives and competition page also shows the competitors your AI found for you to accept onto the canvas or dismiss.
 
 ## Connect your AI
 
@@ -80,7 +80,7 @@ No AI tool that can read your folder? Every interview page has a fallback where 
 4. Read the AI's note under **AI notes**. It will tell you what to ask next time.
 5. Level 1: fill in **Customer persona**, linking a confirmed quote to every line. Level 2: add **Jobs**, mark one as the wedge, and check **MVP scope**.
 
-Other things to ask your AI, any time: **Diagnose my snapshot**, **Happy ears check**, **Audit the persona**, **Rank the jobs**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
+Other things to ask your AI, any time: **Diagnose my snapshot**, **Scan for alternatives and competitors**, **Happy ears check**, **Audit the persona**, **Rank the jobs**. After each one it runs `node tools/check.js`, a check that every quote is word for word, every pain tier is justified by the quotes it cites, and every rating says what it rests on. You can see the same check under **Ledger check** in the app.
 
 The three rules: **quotes, not summaries**, **behavior, not interpretation**, and **argue against it**: your AI leans slightly sceptical, so every rating comes with the strongest case against it and you dismiss the objection on purpose. It never confirms anything on your behalf.
 
