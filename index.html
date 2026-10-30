@@ -679,14 +679,19 @@ const idb = {
 const DIRS = {interviews:"interviews", evidence:"evidence", pains:"pain-scores", problems:"problems", jobs:"jobs", assumptions:"assumptions", places:"places", leads:"leads", pivots:"pivots", competitors:"competitors"};
 
 class FolderStore {
-  constructor(root){ this.root = root; this.kind = "folder"; this.name = root.name; this.stamps = null; }
+  constructor(root){ this.root = root; this.kind = "folder"; this.name = root.name; this.stamps = null; this.pending = 0; this.writes = 0; }
   async dir(path, create=true){ let d = this.root; for (const p of path.split("/").filter(Boolean)) d = await d.getDirectoryHandle(p, {create}); return d; }
+  /* `pending` counts writes still in flight and `writes` every write started, so the folder watcher never reads the
+     folder back while the app itself is halfway through a save (the browser writes to a swap file, then swaps it in). */
   async write(path, text){
-    const parts = path.split("/"); const file = parts.pop();
-    const d = await this.dir(parts.join("/"));
-    const fh = await d.getFileHandle(file, {create:true});
-    const w = await fh.createWritable(); await w.write(text); await w.close();
-    if (this.stamps) this.stamps[path] = (await (await fh.getFile()).lastModified);
+    this.pending++; this.writes++;
+    try {
+      const parts = path.split("/"); const file = parts.pop();
+      const d = await this.dir(parts.join("/"));
+      const fh = await d.getFileHandle(file, {create:true});
+      const w = await fh.createWritable(); await w.write(text); await w.close();
+      if (this.stamps) this.stamps[path] = (await (await fh.getFile()).lastModified);
+    } finally { this.pending--; }
   }
   async read(path){
     try { const parts = path.split("/"); const file = parts.pop(); const d = await this.dir(parts.join("/"), false); const f = await (await d.getFileHandle(file)).getFile(); return await f.text(); }
@@ -716,9 +721,11 @@ class FolderStore {
   async scan(){
     const out = {};
     let drm; try { drm = await this.root.getDirectoryHandle("drm"); } catch(e){ return out; }
+    const skip = n => /\.crswap$/i.test(n) || n.startsWith(".");   /* the browser's swap files and the OS's dot files aren't data */
     for await (const [name, h] of drm.entries()){
+      if (skip(name)) continue;
       if (h.kind === "file"){ out["drm/" + name] = (await h.getFile()).lastModified; continue; }
-      for await (const [n2, h2] of h.entries()) if (h2.kind === "file") out[`drm/${name}/${n2}`] = (await h2.getFile()).lastModified;
+      for await (const [n2, h2] of h.entries()) if (h2.kind === "file" && !skip(n2)) out[`drm/${name}/${n2}`] = (await h2.getFile()).lastModified;
     }
     return out;
   }
@@ -3095,14 +3102,17 @@ function startWatching(){
 async function checkFolder(){
   if (!store || store.kind !== "folder" || document.hidden) return;
   const ae = document.activeElement; if (ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT" || ae.isContentEditable)) return;   // don't yank the page while typing
-  if (ui.dragging) return;
+  if (ui.dragging || store.pending) return;   // the app's own save is still in flight: look again next tick
+  const seq = store.writes;
   let now; try { now = await store.scan(); } catch(e){ return; }
   const before = store.stamps || {};
   const changed = Object.keys(now).filter(k => now[k] !== before[k]).concat(Object.keys(before).filter(k => !(k in now)));
-  if (!changed.length) return;
+  if (!changed.length || store.writes !== seq) return;
   const beforeCand = S.evidence.filter(e => e.status === "Candidate").length + S.pains.filter(p => p.status === "Candidate").length;
   const beforeNotes = S.notes.length;
-  S = await store.loadAll(); lastPush = await store.lastPush(); render();
+  const loaded = await store.loadAll();
+  if (store.writes !== seq){ store.stamps = before; return; }   // something was saved while reading: keep what's in memory and re-check next tick
+  S = loaded; lastPush = await store.lastPush(); render();
   const cand = S.evidence.filter(e => e.status === "Candidate").length + S.pains.filter(p => p.status === "Candidate").length;
   if (cand > beforeCand) toast(`${cand - beforeCand} new suggestion${cand - beforeCand > 1 ? "s" : ""} from your AI. Review them when you're ready.`);
   else if (S.notes.length > beforeNotes) toast("Your AI wrote a new note.");
